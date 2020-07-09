@@ -126,7 +126,7 @@ static void createBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkDev
 
 }
 
-static VkCommandBuffer beginCommandBuffer(VkDevice device, VkCommandPool commandPool){
+static VkCommandBuffer beginCommandBuffer(VkDevice device, VkCommandPool commandPool) {
     // Command buffer to hold transfer commands
     VkCommandBuffer commandBuffer;
     // Command buffer details
@@ -150,7 +150,8 @@ static VkCommandBuffer beginCommandBuffer(VkDevice device, VkCommandPool command
     return commandBuffer;
 }
 
-static void endAndSubmitCommandBuffer(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkCommandBuffer commandBuffer){
+static void
+endAndSubmitCommandBuffer(VkDevice device, VkCommandPool commandPool, VkQueue queue, VkCommandBuffer commandBuffer) {
 
 
     // End commands
@@ -190,7 +191,7 @@ static void copyBuffer(VkDevice device, VkQueue transferQueue, VkCommandPool tra
 }
 
 static void copyImageBuffer(VkDevice device, VkQueue transferQueue, VkCommandPool transferCommandPool,
-        VkBuffer srcBuffer, VkImage image, uint32_t width, uint32_t height){
+                            VkBuffer srcBuffer, VkImage image, uint32_t width, uint32_t height) {
 
     VkCommandBuffer transferCommandBuffer = beginCommandBuffer(device, transferCommandPool);
 
@@ -202,18 +203,68 @@ static void copyImageBuffer(VkDevice device, VkQueue transferQueue, VkCommandPoo
     imageRegion.imageSubresource.mipLevel = 0;                              // Mipmap level to copy
     imageRegion.imageSubresource.baseArrayLayer = 0;                        // Starting array layer (if array)
     imageRegion.imageSubresource.layerCount = 1;                            // How many layers we want to copy accros
-    imageRegion.imageOffset = {0, 0, 0};                          // Start at the origin and copy everything from there. (offset into image as opposed to raw data in buffer offset)
+    imageRegion.imageOffset = {0, 0,
+                               0};                          // Start at the origin and copy everything from there. (offset into image as opposed to raw data in buffer offset)
     imageRegion.imageExtent.depth = 1;
     imageRegion.imageExtent.height = height;
     imageRegion.imageExtent.width = width;
 
     // Copy buffer to given image
-    vkCmdCopyBufferToImage(transferCommandBuffer, srcBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageRegion);
+    vkCmdCopyBufferToImage(transferCommandBuffer, srcBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
+                           &imageRegion);
 
 
     endAndSubmitCommandBuffer(device, transferCommandPool, transferQueue, transferCommandBuffer);
 
 }
 
+static void transitionImageLayout(VkDevice device, VkQueue queue, VkCommandPool commandPool, VkImage image, VkImageLayout oldLayout,
+                      VkImageLayout newLayout) {
+    VkCommandBuffer commandBuffer = beginCommandBuffer(device, commandPool);
+
+    VkImageMemoryBarrier imageMemoryBarrier = {};
+    imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    imageMemoryBarrier.oldLayout = oldLayout;                                    // Layout to transition from
+    imageMemoryBarrier.newLayout = newLayout;                                    // Layout to transition to
+    imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;            // Queue Family to transition from
+    imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;            // Queue Family to transition to
+    imageMemoryBarrier.image = image;                                            // Image being accessed and modified as part of barrier
+    imageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;  // Aspect of image being altered
+    imageMemoryBarrier.subresourceRange.baseMipLevel = 0;                        // First mip level to start alteration on
+    imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;                      // Number of mip levels to alter starting form base
+    imageMemoryBarrier.subresourceRange.layerCount = 1;                          // First layer to start alterations on
+    imageMemoryBarrier.subresourceRange.levelCount = 1;                          // Number of layers to alter starting from baseArrayLayer
+
+    VkPipelineStageFlags srcStage;
+    VkPipelineStageFlags dstStage;
+
+    if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+        imageMemoryBarrier.srcAccessMask = 0;                                        // Starting from any point in time we want a transfer from oldLayout to newLayout to transfer before dstAccessMask
+        imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;             // The destination
+
+        srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+    }
+    // IF transitioning from transfer destination to shader available
+    else if(oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL){
+        imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    }
+
+    vkCmdPipelineBarrier(
+            commandBuffer,
+            srcStage, dstStage,                                            // Pipeline stages (match to src and dst AccessMaks
+            0,                                                        // Dependency flags
+            0, nullptr,                              // Memory barrier count + data
+            0, nullptr,                     // Buffer memory barrier count + data
+            1, &imageMemoryBarrier                             // Image memory barrier count + data
+            );
+
+    endAndSubmitCommandBuffer(device, commandPool, queue, commandBuffer);
+}
 
 #endif //UDEMY_VULCAN_UTILITIES_H
