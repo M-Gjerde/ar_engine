@@ -5,6 +5,8 @@
 #ifndef UDEMY_VULCAN_VULKANRENDERER_HPP
 #define UDEMY_VULCAN_VULKANRENDERER_HPP
 
+#include "stb_image.h"
+
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
@@ -16,6 +18,7 @@
 #include <algorithm>
 #include "utilities.h"
 #include "Mesh.hpp"
+
 
 class VulkanRenderer {
 
@@ -87,6 +90,10 @@ private:
     VkDeviceSize minUniformBufferOffset{};
     //size_t modelUniformAlignment{};
     Model * modelTransferSpace{};
+
+    // - Assets
+    std::vector<VkImage> textureImages;
+    std::vector<VkDeviceMemory> textureImageMemory;
 
     // - Pipeline
     VkPipeline graphicsPipeline{};
@@ -165,7 +172,10 @@ private:
     VkImage createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
             VkImageUsageFlags useFlags, VkMemoryPropertyFlags propFlags, VkDeviceMemory *imageMemory);
     VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) const;
-    [[nodiscard]] VkShaderModule createShaderModule(const std::vector<char> &code) const;
+    VkShaderModule createShaderModule(const std::vector<char> &code) const;
+    static stbi_uc * loadTextureFile(std::string fileName, int* width, int* height, VkDeviceSize* imageSize);
+
+    int createTexture(std::string fileName);
 
     //  -- Debugger functions
     static VkResult
