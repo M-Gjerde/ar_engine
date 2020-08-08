@@ -79,15 +79,15 @@ private:
     VkDeviceMemory depthBufferImageMemory{};
     VkImageView depthBufferImageView{};
 
-    VkSampler textureSampler;
+    VkSampler textureSampler{};
 
     // - Descriptors
     VkDescriptorSetLayout descriptorSetLayout{};
-    VkDescriptorSetLayout samplerSetLayout;
+    VkDescriptorSetLayout samplerSetLayout{};
     VkPushConstantRange pushConstantRange{};
 
     VkDescriptorPool descriptorPool = {};
-    VkDescriptorPool samplerDescriptorPool;
+    VkDescriptorPool samplerDescriptorPool{};
     std::vector<VkDescriptorSet> descriptorSets;
     std::vector<VkDescriptorSet> samplerDescriptorSets;     // Not chained to swapchain images
 
