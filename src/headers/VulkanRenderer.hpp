@@ -9,8 +9,11 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-
 #include <glm/gtc/matrix_transform.hpp>
+
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 #include <stdexcept>
 #include <vector>
@@ -18,6 +21,7 @@
 #include <algorithm>
 #include "utilities.h"
 #include "Mesh.hpp"
+#include "MeshModel.h"
 
 
 class VulkanRenderer {
@@ -27,6 +31,7 @@ public:
 
     int init(GLFWwindow *newWindow);
 
+    int createMeshModel(std::string modelFile);
     void updateModel(int modelId, glm::mat4 newModel);
 
     void draw();
@@ -40,7 +45,8 @@ private:
     int currentFrame = 0;
 
     // Scene Objects
-    std::vector<Mesh> meshList;
+    std::vector<MeshModel> modelList;
+
 
     // Scene Settings
     struct UboViewProjection {
@@ -186,6 +192,7 @@ private:
     int createTextureImage(std::string fileName);
     int createTexture(std::string fileName);
     int createTextureDescriptor(VkImageView textureImage);
+
 
     //  -- Debugger functions
     static VkResult

@@ -6,9 +6,7 @@
 #define UDEMY_VULCAN_UTILITIES_H
 
 #define GLFW_INCLUDE_VULKAN
-
 #include <GLFW/glfw3.h>
-
 #include <glm/glm.hpp>
 #include <fstream>
 
