@@ -6,8 +6,7 @@
 #define UDEMY_VULCAN_MESH_HPP
 
 #define GLFW_INCLUDE_VULKAN
-
-#include "../../external/glfw-3.3.2/include/GLFW/glfw3.h"
+#include <GLFW/glfw3.h>
 #include <vector>
 #include "utilities.h"
 
@@ -21,7 +20,7 @@ public:
     Mesh();
 
     Mesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue transferQueue,
-         VkCommandPool transferCommandPool, std::vector<Vertex> *vertices, std::vector<uint32_t> *indices);
+         VkCommandPool transferCommandPool, std::vector<Vertex> *vertices, std::vector<uint32_t> *indices, int newTexId);
 
 
     void setModel(glm::mat4 newModel);
@@ -33,6 +32,7 @@ public:
 
     VkBuffer getVertexBuffer();
     VkBuffer getIndexBuffer();
+    int getTexId();
 
     void destroyBuffers();
 
@@ -40,6 +40,8 @@ public:
 
 private:
     Model model;
+
+    int texId;
 
     int vertexCount{};
     VkBuffer vertexBuffer{};

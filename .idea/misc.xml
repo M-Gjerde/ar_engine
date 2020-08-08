@@ -2,9 +2,9 @@
 <project version="4">
   <component name="CMakeWorkspace" PROJECT_DIR="$PROJECT_DIR$" />
   <component name="CidrRootsConfiguration">
-    <excludeRoots>
+    <libraryRoots>
       <file path="$PROJECT_DIR$/external" />
-    </excludeRoots>
+    </libraryRoots>
   </component>
   <component name="JavaScriptSettings">
     <option name="languageLevel" value="ES6" />

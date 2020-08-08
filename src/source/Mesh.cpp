@@ -2,12 +2,13 @@
 // Created by magnus on 7/7/20.
 //
 
+#include <cstring>
 #include "../headers/Mesh.hpp"
 
 Mesh::Mesh() = default;
 
 Mesh::Mesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue transferQueue,
-           VkCommandPool transferCommandPool, std::vector<Vertex> *vertices, std::vector<uint32_t> *indices) {
+           VkCommandPool transferCommandPool, std::vector<Vertex> *vertices, std::vector<uint32_t> *indices, int newTexId) {
     physicalDevice = newPhysicalDevice;
     device = newDevice;
     vertexCount = vertices->size();
@@ -16,6 +17,7 @@ Mesh::Mesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue trans
     createIndexBuffer(transferQueue, transferCommandPool, indices);
 
     model.model = glm::mat4(1.0f);
+    texId = newTexId;
 }
 
 [[maybe_unused]] [[maybe_unused]] int Mesh::getVertexCount() const {
@@ -24,6 +26,10 @@ Mesh::Mesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue trans
 
 VkBuffer Mesh::getVertexBuffer() {
     return vertexBuffer;
+}
+
+int Mesh::getTexId(){
+    return texId;
 }
 
 

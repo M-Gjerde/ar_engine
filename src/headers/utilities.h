@@ -24,6 +24,7 @@ const std::vector<const char *> deviceExtensions = {
 struct Vertex {
     glm::vec3 pos; // Vertex Position (x, y, z)
     glm::vec3 col; // Vertex color (r, g, b)
+    glm::vec2 tex; // Texture coordinates (u, v)
 };
 
 //  Indices (locations) of Queue Families (if they exist at all)
@@ -82,6 +83,7 @@ findMemoryTypeIndex(VkPhysicalDevice physicalDevice, uint32_t allowedTypes, VkMe
             return i; // This memory type is valid, so return index.
         }
     }
+    return -1;
 
 }
 
