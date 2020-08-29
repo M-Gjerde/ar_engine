@@ -5,6 +5,7 @@
       <w>glfw</w>
       <w>magnus</w>
       <w>subpass</w>
+      <w>subpasses</w>
       <w>swapchain</w>
     </words>
   </dictionary>

@@ -16,23 +16,18 @@ struct AllocationMetrics {
         return TotalAllocated - TotalFreed;
     }
 };
-
 static AllocationMetrics s_AllocationMetrics;
-
 void *operator new(size_t size) {
     s_AllocationMetrics.TotalAllocated += size;
     return malloc(size);
 }
-
 void operator delete(void *memory, size_t size) {
     s_AllocationMetrics.TotalFreed += size;
     return free(memory);
 }
-
 struct Object {
     int x, y, z;
 };
-
 static void printMemoryUsage() {
     std::cout << "Memory Usage: " << s_AllocationMetrics.currentUsage() << " bytes" << std::endl;
 }
