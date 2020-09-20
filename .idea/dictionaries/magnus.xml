@@ -7,6 +7,7 @@
       <w>subpass</w>
       <w>subpasses</w>
       <w>swapchain</w>
+      <w>wwindow</w>
     </words>
   </dictionary>
 </component>

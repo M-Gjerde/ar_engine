@@ -5,23 +5,29 @@
 #ifndef UDEMY_VULCAN_VULKANRENDERER_HPP
 #define UDEMY_VULCAN_VULKANRENDERER_HPP
 
-#include "stb_image.h"
-
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
-
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include <cstdlib>
+#include <vector>
+#include <cstring>
+#include <iostream>
+#include <array>
 #include <stdexcept>
 #include <vector>
 #include <set>
 #include <algorithm>
+
 #include "utilities.h"
 #include "Mesh.hpp"
 #include "MeshModel.h"
+#include "PlayerController.h"
+#include "stb_image.h"
+#include "InitiateVulkan.h"
 
 
 class VulkanRenderer {
@@ -39,21 +45,23 @@ public:
 
     ~VulkanRenderer();
 
+    // Scene settings
+    PlayerController::UboViewProjection getPlayerController();
+    void setPlayerController(PlayerController::UboViewProjection newUboViewProjection);
+
 private:
 
     GLFWwindow *window{};
     int currentFrame = 0;
 
+    // Init vulkan
+    InitiateVulkan initiateVulkan;
+
     // Scene Objects
     std::vector<MeshModel> modelList;
 
-
     // Scene Settings
-    struct UboViewProjection {
-        glm::mat4 projection;
-        glm::mat4 view;
-    }uboViewProjection
-    {};
+    PlayerController playerController;
 
     //  Vulcan Components
     //  - Main
@@ -105,10 +113,6 @@ private:
     std::vector<VkDeviceMemory> modelDynamicUniformBufferMemory;
 
 
-    VkDeviceSize minUniformBufferOffset{};
-    //size_t modelUniformAlignment{};
-    Model * modelTransferSpace{};
-
     // - Assets
     std::vector<VkImage> textureImages;
     std::vector<VkDeviceMemory> textureImageMemory;
@@ -119,8 +123,8 @@ private:
     VkPipelineLayout pipelineLayout{};
     VkRenderPass renderPass{};
 
-    VkPipeline secondPipeline;
-    VkPipelineLayout secondPipelineLayout;
+    VkPipeline secondPipeline{};
+    VkPipelineLayout secondPipelineLayout{};
 
     //  - Pools
     VkCommandPool graphicsCommandPool{};
@@ -136,18 +140,14 @@ private:
     std::vector<VkSemaphore> renderFinished;
     std::vector<VkFence> drawFences;
 
-    //  - Validation Layers
-    const std::vector<const char *> validationLayers = {
-            "VK_LAYER_KHRONOS_validation"
-    };
 
     //  Vulcan functions
     //  - Create functions
-    void createInstance();
     void setDebugMessenger();
-    void createLogicalDevice();
-    void createSurface();
-    void createSwapChain();
+    void getLogicalDevice();
+    void getQueues();
+    void getSurface();
+    void getSwapchain();
     void createRenderPass();
     void createDescriptorSetLayout();
     void createPushConstantRange();
@@ -172,6 +172,7 @@ private:
 
     //  - Get functions
     void getPhysicalDevice();
+    void getVulkanInstance();
 
     // - Allocate functions
     void allocateDynamicBufferTransferSpace();
