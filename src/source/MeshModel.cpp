@@ -118,6 +118,7 @@ Mesh MeshModel::LoadMesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice,
         }
     }
 
+
     // Create new Mesh with details and return it
     Mesh newMesh = Mesh(
             newPhysicalDevice,

@@ -22,12 +22,15 @@
 #include <set>
 #include <algorithm>
 
-#include "utilities.h"
+#include "../libs/Utils.h"
+#include "../include/utilities.h"
 #include "Mesh.hpp"
 #include "MeshModel.h"
 #include "PlayerController.h"
-#include "stb_image.h"
-#include "InitiateVulkan.h"
+#include "../include/stb_image.h"
+#include "Vfd.h"
+#include "../libs/TextureLoading.h"
+#include "../libs/GraphicsPipeline.h"
 
 
 class VulkanRenderer {
@@ -54,8 +57,10 @@ private:
     GLFWwindow *window{};
     int currentFrame = 0;
 
-    // Init vulkan
-    InitiateVulkan initiateVulkan;
+    // Create class handles
+    Vfd vfd;
+    TextureLoading textureLoading;
+    GraphicsPipeline myPipe;
 
     // Scene Objects
     std::vector<MeshModel> modelList;
@@ -72,14 +77,11 @@ private:
     VkSurfaceKHR surface{};
     VkSwapchainKHR swapchain{};
 
-    struct {
-        VkPhysicalDevice physicalDevice;
-        VkDevice logicalDevice;
-    } mainDevice{};
+    Utils::MainDevice mainDevice{};
 
 
     //  Following 3 handles are 1:1 connected
-    std::vector<SwapchainImage> swapChainImages;
+    std::vector<Utils::SwapchainImage> swapChainImages;
     std::vector<VkFramebuffer> swapChainFramebuffers;
     std::vector<VkCommandBuffer> commandBuffers;
 
@@ -133,8 +135,6 @@ private:
     VkFormat  swapChainImageFormat;
     VkExtent2D swapChainExtent{};
 
-
-
     // - Synchronisation
     std::vector<VkSemaphore> imageAvailable;
     std::vector<VkSemaphore> renderFinished;
@@ -148,9 +148,10 @@ private:
     void getQueues();
     void getSurface();
     void getSwapchain();
-    void createRenderPass();
-    void createDescriptorSetLayout();
-    void createPushConstantRange();
+    void getRenderPass();
+    void getDescriptorSetLayout();
+    void getPushConstantRange();
+    void getGraphicsPipeline();
     void createGraphicsPipeline();
     void createColorBufferImage();
     void createDepthBufferImage();
@@ -158,7 +159,7 @@ private:
     void createCommandPool();
     void createCommandBuffers();
     void createSynchronisation();
-    void createTextureSampler();
+    void getTextureSampler();
 
     void createUniformBuffers();
     void createDescriptorPool();
@@ -178,45 +179,17 @@ private:
     void allocateDynamicBufferTransferSpace();
 
     //  - Support functions
-    //  -- Checker functions
-    static bool checkDeviceExtensionSupport(VkPhysicalDevice device);
-    static bool checkInstanceExtensionSupport(std::vector<const char *> *checkExtensions);
-    bool checkDeviceSuitable(VkPhysicalDevice device);
-    bool checkValidationLayerSupport();
 
     //  -- Getter functions
-    QueueFamilyIndices getQueueFamilies(VkPhysicalDevice device);
-    SwapChainDetails getSwapChainDetails(VkPhysicalDevice device);
+    Utils::QueueFamilyIndices getQueueFamilies(VkPhysicalDevice device);
 
     //  -- Choose functions
-    static VkSurfaceFormatKHR chooseBestSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &formats);
-    static VkPresentModeKHR chooseBestPresentMode(const std::vector<VkPresentModeKHR>& presentationModes);
-    VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &surfaceCapabilities);
-    VkFormat chooseSupportedFormat(const std::vector<VkFormat> &formats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags);
+    VkFormat chooseSupportedFormat(const std::vector<VkFormat> &formats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags) const;
 
     //  -- Create functions
-    VkImage createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
-            VkImageUsageFlags useFlags, VkMemoryPropertyFlags propFlags, VkDeviceMemory *imageMemory);
-    VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) const;
-    VkShaderModule createShaderModule(const std::vector<char> &code) const;
-    static stbi_uc * loadTextureFile(std::string fileName, int* width, int* height, VkDeviceSize* imageSize);
+    [[nodiscard]] VkShaderModule createShaderModule(const std::vector<char> &code) const;
 
-    int createTextureImage(std::string fileName);
     int createTexture(std::string fileName);
-    int createTextureDescriptor(VkImageView textureImage);
-
-
-    //  -- Debugger functions
-    static VkResult
-    CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
-                                 const VkAllocationCallbacks *pAllocator, VkDebugUtilsMessengerEXT *pDebugMessenger);
-    static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
-                                              const VkAllocationCallbacks *pAllocator);
-    static VKAPI_ATTR VkBool32 VKAPI_CALL
-    debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                  [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT messageType,
-                  const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, [[maybe_unused]] void *pUserData);
-
 
 };
 

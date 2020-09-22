@@ -2,8 +2,8 @@
 // Created by magnus on 9/20/20.
 //
 
-#ifndef AR_ENGINE_INITIATEVULKAN_H
-#define AR_ENGINE_INITIATEVULKAN_H
+#ifndef AR_ENGINE_VFD_H
+#define AR_ENGINE_VFD_H
 
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
@@ -15,18 +15,19 @@ const bool enableValidationLayers = true;
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 #include "../source/Allocator.h"
-#include "../headers/utilities.h"
+#include "../include/utilities.h"
+#include "../libs/Utils.h"
 
 #include <iostream>
 #include <vector>
 #include <cstring>
 #include <set>
 
-class InitiateVulkan {
+class Vfd {
 public:
-    InitiateVulkan();
+    Vfd();
 
-    ~InitiateVulkan();
+    ~Vfd();
 
     int init(GLFWwindow *newWindow);
     void cleanUp();
@@ -40,11 +41,12 @@ public:
     void getGraphicsQueue(VkQueue* pQueue);
     void getPresentationQueue(VkQueue* pQueue);
     void getSwapchain(VkSwapchainKHR* pSwapchain);
-    void getSwapchainImages(std::vector<SwapchainImage>* pSwapchainImages);
+    void getSwapchainImages(std::vector<Utils::SwapchainImage> *pSwapchainImages);
     void getSwapchainImageFormat(VkFormat* pFormat);
     void getSwapchainExtent(VkExtent2D* pExtent2D);
     void getSwapchainFramebuffers(std::vector<VkFramebuffer>* pFrameBuffers);
 
+    VkAllocationCallbacks getAllocator();
 private:
     GLFWwindow* window{};
 
@@ -58,7 +60,7 @@ private:
     VkSurfaceKHR surface{};
 
     VkSwapchainKHR swapchain{};
-    std::vector<SwapchainImage> swapChainImages;
+    std::vector<Utils::SwapchainImage> swapChainImages;
     std::vector<VkFramebuffer> swapChainFramebuffers;
 
     //  - Utility
@@ -84,9 +86,9 @@ private:
     bool checkValidationLayerSupport();
     static bool checkInstanceExtensionSupport(std::vector <const char*> *checkExtensions);
     bool checkDeviceSuitable(VkPhysicalDevice device);
-    QueueFamilyIndices getQueueFamilies(VkPhysicalDevice device);
+    Utils::QueueFamilyIndices getQueueFamilies(VkPhysicalDevice device);
     static bool checkDeviceExtensionSupport(VkPhysicalDevice device);
-    SwapChainDetails getSwapChainDetails(VkPhysicalDevice device);
+    Utils::SwapChainDetails getSwapChainDetails(VkPhysicalDevice device);
     static VkSurfaceFormatKHR chooseBestSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &formats);
     static VkPresentModeKHR chooseBestPresentMode(const std::vector<VkPresentModeKHR>& presentationModes);
     VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &surfaceCapabilities);
@@ -114,4 +116,4 @@ private:
 };
 
 
-#endif //AR_ENGINE_INITIATEVULKAN_H
+#endif //AR_ENGINE_VFD_H

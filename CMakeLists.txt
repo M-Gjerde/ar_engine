@@ -10,8 +10,14 @@ add_subdirectory(external/assimp-5.0.1)
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -I/home/magnus/libraries/vulkan/1.2.148.0/x86_64/include -L/home/magnus/libraries/vulkan/1.2.148.0/x86_64/lib -lvulkan")
 
-add_library(static_vulkan src/source/InitiateVulkan.cpp src/headers/InitiateVulkan.h)
+add_library(static_vulkan src/source/Vfd.cpp src/headers/Vfd.h)
 target_link_libraries(static_vulkan
+        glfw ${GLFW_LIBRARIES}
+        vulkan
+        )
+
+add_library(dynamic_vulkan src/libs/Utils.cpp src/libs/TextureLoading.cpp src/libs/Utils.h src/libs/TextureLoading.h src/libs/GraphicsPipeline.cpp src/libs/GraphicsPipeline.h)
+target_link_libraries(dynamic_vulkan
         glfw ${GLFW_LIBRARIES}
         vulkan
         )
@@ -19,13 +25,18 @@ target_link_libraries(static_vulkan
 add_library(mesh src/source/Mesh.cpp src/headers/Mesh.hpp)
 
 add_library(VulkanRenderer src/source/VulkanRenderer.cpp src/headers/VulkanRenderer.hpp)
-
 target_link_libraries(VulkanRenderer
         glfw ${GLFW_LIBRARIES}
         vulkan
         mesh
-        assimp
         static_vulkan
+        dynamic_vulkan
+        assimp
+        )
+
+add_library(GameApplication src/source/GameApplication.cpp src/source/GameApplication.h)
+target_link_libraries(GameApplication
+        VulkanRenderer
         )
 
 add_executable(engine main.cpp src/source/MeshModel.cpp src/headers/MeshModel.h src/headers/PlayerController.h  src/source/Allocator.cpp src/source/Allocator.h)
@@ -35,4 +46,6 @@ target_link_libraries(engine
         vulkan
         VulkanRenderer
         mesh
+        assimp
+        GameApplication
         )

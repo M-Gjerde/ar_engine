@@ -4,6 +4,7 @@
 
 #include <cstring>
 #include "../headers/Mesh.hpp"
+#include "../libs/Utils.h"
 
 Mesh::Mesh() = default;
 
@@ -52,7 +53,7 @@ void Mesh::createVertexBuffer(VkQueue transferQueue,
     VkDeviceMemory stagingBufferMemory;
 
     // Create Staging buffer and allocate memory to it
-    createBuffer(physicalDevice,
+    Utils::createBuffer(physicalDevice,
                  device,
                  bufferSize,
                  VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -71,7 +72,7 @@ void Mesh::createVertexBuffer(VkQueue transferQueue,
 
     // Create buffer with TRANSFER_DST_BIT to mark as recipient of transfer data (also VERTEX_BUFFER)
     // Buffer memory is to be DEVICE_LOCAL_BIT meaning memory is on the GPU and only accessible by it and not the CPU
-    createBuffer(physicalDevice,
+    Utils::createBuffer(physicalDevice,
                  device,
                  bufferSize,
                  VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
@@ -81,7 +82,7 @@ void Mesh::createVertexBuffer(VkQueue transferQueue,
     );
 
     // Copy staging buffer to vertex buffer on GPU
-    copyBuffer(device, transferQueue, transferCommandPool, stagingBuffer, vertexBuffer, bufferSize);
+    Utils::copyBuffer(device, transferQueue, transferCommandPool, stagingBuffer, vertexBuffer, bufferSize);
 
     // Destroy temporary staging buffer -> cleanup
     vkDestroyBuffer(device, stagingBuffer, nullptr);
@@ -97,7 +98,7 @@ void Mesh::createIndexBuffer(VkQueue transferQueue, VkCommandPool transferComman
     VkDeviceMemory stagingBufferMemory;
     VkBuffer stagingBuffer;
 
-    createBuffer(physicalDevice, device, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+    Utils::createBuffer(physicalDevice, device, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                  &stagingBuffer, &stagingBufferMemory);
 
@@ -108,7 +109,7 @@ void Mesh::createIndexBuffer(VkQueue transferQueue, VkCommandPool transferComman
     vkUnmapMemory(device, stagingBufferMemory);
 
     // Create buffer for INDEX data on GPU access only area
-    createBuffer(physicalDevice,
+    Utils::createBuffer(physicalDevice,
                  device,
                  bufferSize,
                  VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
@@ -117,7 +118,7 @@ void Mesh::createIndexBuffer(VkQueue transferQueue, VkCommandPool transferComman
                  &indexBufferMemory);
 
     // Copy from staging buffer to GPU access buffer
-    copyBuffer(device, transferQueue, transferCommandPool, stagingBuffer, indexBuffer, bufferSize);
+    Utils::copyBuffer(device, transferQueue, transferCommandPool, stagingBuffer, indexBuffer, bufferSize);
 
     // Destroy + release staging buffer resource
     vkDestroyBuffer(device, stagingBuffer, nullptr);

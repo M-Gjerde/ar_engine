@@ -8,7 +8,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <vector>
-#include "utilities.h"
+#include "../include/utilities.h"
 
 
 struct Model {
