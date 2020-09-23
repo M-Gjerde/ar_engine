@@ -9,6 +9,7 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 #include <string>
+#include "../source/Allocator.h"
 
 class Utils {
 
@@ -43,6 +44,12 @@ public:
         VkImageView imageView;
     };
 
+    struct Pipelines{
+        VkPipeline pipeline{};
+        VkPipelineLayout pipelineLayout{};
+        VkRenderPass renderPass{};
+    };
+
     struct MainDevice {
         VkPhysicalDevice physicalDevice;
         VkDevice logicalDevice;
@@ -58,7 +65,7 @@ public:
                     VkImage image, uint32_t width, uint32_t height);
 
 
-    static void createBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkDeviceSize bufferSize,
+    static void createBuffer(MainDevice mainDevice, VkDeviceSize bufferSize,
                              VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags bufferProperties, VkBuffer *buffer,
                              VkDeviceMemory *bufferMemory);
 

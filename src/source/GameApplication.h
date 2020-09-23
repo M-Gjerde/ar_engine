@@ -16,6 +16,7 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include "../headers/VulkanRenderer.hpp"
+#include "../headers/Camera.h"
 
 
 class GameApplication {
@@ -23,13 +24,31 @@ class GameApplication {
 public:
     GLFWwindow *window;
     VulkanRenderer vulkanRenderer;
-    explicit GameApplication(std::string title) {
+    Camera camera;
+
+    void initCamera() {
+
+        glm::mat4 projection = glm::perspective(glm::radians(45.0f),
+                                                (float) 1280 /
+                                                (float) 480, 0.1f, 100.0f);
+        glm::mat4 view = glm::lookAt(glm::vec3(5.0f, 0.0f, 20.0f),
+                                     glm::vec3(0.0f, 0.0f, -5.0f),
+                                     glm::vec3(0.0f, 1.0f, 0.0f));
+        projection[1][1] *= -1; // Flip the y-axis because Vulkan and OpenGL are different and glm was initially made for openGL
+
+        camera.setProjection(projection);
+        camera.setView(view);
+        camera.enableCamera(true);
+
+    }
+
+    explicit GameApplication(const std::string& title) {
 
         // boilerplate stuff (ie. basic window setup, initialize OpenGL) occurs in abstract class
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-        window = glfwCreateWindow(640, 480, title.c_str(), nullptr, nullptr);
+        window = glfwCreateWindow(640 * 2, 480, title.c_str(), nullptr, nullptr);
         glfwMakeContextCurrent(window);
 
         glfwSetErrorCallback(error_callback);
@@ -38,17 +57,21 @@ public:
         if (vulkanRenderer.init(window) == EXIT_FAILURE)
             throw std::runtime_error("Failed to init");
 
+        // Setup Scene Camera
+        initCamera();
+        vulkanRenderer.setCamera(camera);
+
     }
 
-    virtual void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-        // basic window handling
-        if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        {
+    virtual void keyCallback(GLFWwindow *glfWwindow, int key, int scancode, int action, int mods) {
+        // basic glfWwindow handling
+        if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
 
             std::cout << "exiting..." << std::endl;
-            glfwSetWindowShouldClose(window, GL_TRUE);
+            glfwSetWindowShouldClose(glfWwindow, GL_TRUE);
         }
     }
+
     // must be overridden in derived class
     virtual void update() = 0;
 
@@ -57,14 +80,15 @@ public:
             glfwPollEvents();
             update();
 
+            vulkanRenderer.draw();
         }
         vulkanRenderer.cleanup();
         glfwTerminate();
     }
 
 private:
-    static void error_callback(int error, const char* description)
-    {
+
+    static void error_callback(int error, const char *description) {
         fprintf(stderr, "Error: %s\n", description);
     }
 
@@ -74,43 +98,27 @@ private:
 class AppExtension : public GameApplication {
 public:
 
-    explicit AppExtension(std::string title) : GameApplication(title) {
+    explicit AppExtension(const std::string& title) : GameApplication(title) {
 
     }
 
-    void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) override {
-        GameApplication::keyCallback(window, key, scancode, action, mods);
 
-        if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
-            // anotherClass.Draw();
-            std::cout << "space pressed!" << std::endl;
-        }
-    }
+    void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) override;
+    void update() override;
 
+private:
+    // Scene settings
     int helicopter = vulkanRenderer.createMeshModel("../objects/uh60.obj");
-    double angle = 0.0f;
-    double deltaTime = 0.0f;
+
+    double motion = 0.0f;
+    [[maybe_unused]] double deltaTime = 0.0f;
     double lastTime = 0.0f;
 
-    void update() override {
-        double now = glfwGetTime();
-        deltaTime = now - lastTime;
-        lastTime = now;
-
-        angle += 0.1f * deltaTime;
-        if (angle > 10) angle -= 10.0f;
-
-        glm::mat4 testMat = glm::rotate(glm::mat4(1.0f), glm::radians(static_cast<float>(0)), glm::vec3(0.0f, 1.0f, 0.0f));;
-        vulkanRenderer.updateModel(helicopter, testMat);
-        vulkanRenderer.draw();
-    }
 };
 
-GameApplication* getApplication() {
+GameApplication *getApplication() {
     return new AppExtension("AppExtension");
 }
-
-
 
 
 #endif //AR_ENGINE_GAMEAPPLICATION_H

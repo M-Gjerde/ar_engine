@@ -2,7 +2,7 @@
 // Created by magnus on 8/8/20.
 //
 
-#include "../headers/MeshModel.h"
+#include "MeshModel.h"
 
 MeshModel::MeshModel() = default;
 
@@ -65,18 +65,18 @@ std::vector<std::string> MeshModel::LoadMaterials(const aiScene *scene) {
     return textureList;
 }
 
-std::vector<Mesh> MeshModel::LoadNode(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue transferQueue,
+std::vector<Mesh> MeshModel::LoadNode(Utils::MainDevice mainDevice, VkQueue transferQueue,
                                       VkCommandPool transferCommandPool, aiNode *node, const aiScene *scene,
                                       std::vector<int> matToTex) {
     std::vector<Mesh> meshList;
     // Go through each mesh at this node and create it, then add it to our meshList
     for (size_t i = 0; i < node->mNumMeshes; i++) {
         meshList.push_back(
-                LoadMesh(newPhysicalDevice,newDevice, transferQueue, transferCommandPool, scene->mMeshes[node->mMeshes[i]], scene, matToTex));
+                LoadMesh(mainDevice, transferQueue, transferCommandPool, scene->mMeshes[node->mMeshes[i]], scene, matToTex));
     }
     // Go through each node attached to this node and load it, then append their meshes to this node's mesh list
     for (size_t i = 0; i < node->mNumChildren; i++) {
-        std::vector<Mesh> newList = LoadNode(newPhysicalDevice, newDevice, transferQueue, transferCommandPool,
+        std::vector<Mesh> newList = LoadNode(mainDevice, transferQueue, transferCommandPool,
                                              node->mChildren[i], scene, matToTex);
         meshList.insert(meshList.end(), newList.begin(), newList.end());
     }
@@ -84,7 +84,7 @@ std::vector<Mesh> MeshModel::LoadNode(VkPhysicalDevice newPhysicalDevice, VkDevi
     return meshList;
 }
 
-Mesh MeshModel::LoadMesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue transferQueue,
+Mesh MeshModel::LoadMesh(Utils::MainDevice mainDevice, VkQueue transferQueue,
                          VkCommandPool transferCommandPool, aiMesh *mesh, const aiScene *scene,
                          std::vector<int> matToTex) {
     std::vector<Vertex> vertices;
@@ -121,8 +121,7 @@ Mesh MeshModel::LoadMesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice,
 
     // Create new Mesh with details and return it
     Mesh newMesh = Mesh(
-            newPhysicalDevice,
-            newDevice,
+            mainDevice,
             transferQueue,
             transferCommandPool,
             &vertices,

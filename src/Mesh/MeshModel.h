@@ -23,10 +23,10 @@ public:
     void destroyMeshModel();
 
     static std::vector<std::string> LoadMaterials(const aiScene* scene);
-    static std::vector<Mesh> LoadNode(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue transferQueue,
+    static std::vector<Mesh> LoadNode(Utils::MainDevice mainDevice, VkQueue transferQueue,
                                       VkCommandPool transferCommandPool, aiNode * node, const aiScene* scene, std::vector<int> matToTex);
 
-    static Mesh LoadMesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue transferQueue,
+    static Mesh LoadMesh(Utils::MainDevice mainDevice, VkQueue transferQueue,
                          VkCommandPool transferCommandPool, aiMesh * mesh, const aiScene* scene, std::vector<int> matToTex);
     ~MeshModel();
 

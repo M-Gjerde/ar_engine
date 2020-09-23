@@ -10,8 +10,6 @@
 #include <vector>
 #include <stdexcept>
 
-#include "../headers/PlayerController.h"
-
 #include "Utils.h"
 
 
@@ -26,9 +24,21 @@ public:
                                 VkDescriptorSetLayout *pDescriptorSetLayout1,
                                 VkDescriptorSetLayout *pDescriptorSetLayout2);
 
-    void getGraphicsPipeline(Utils::MainDevice mainDevice, VkExtent2D swapChainExtent, VkPipelineLayout * pPipelineLayout, VkPipeline * pPipeline, VkPipelineLayout * pPipelineLayout2, VkPipeline * pPipeline2 );
+
+    void
+    createGraphicsPipeline(Utils::MainDevice mainDevice, VkExtent2D swapchainExtent, Utils::Pipelines *pipelineObject,
+                           Utils::Pipelines *secondPipeline);
+
+    void createBoxPipeline(Utils::MainDevice mainDevice, VkExtent2D swapchainExtent, Utils::Pipelines *pipelineToBind);
+    void createAnotherRenderPass(Utils::MainDevice mainDevice, VkFormat swapchainImageFormat, Utils::Pipelines *pipes);
+
+    void createRenderPass(Utils::MainDevice mainDevice, VkFormat swapChainImageFormat, Utils::Pipelines *renderPass);
+
 
 private:
+    // Allocator
+    VkAllocationCallbacks vkAllocationCallbacks = Allocator().operator VkAllocationCallbacks();
+
     // Vulkan components
     // - Descriptors
     VkDescriptorSetLayout descriptorSetLayout{};
@@ -36,18 +46,11 @@ private:
     VkDescriptorSetLayout inputSetLayout{};
     VkPushConstantRange pushConstantRange{};
 
-    // - Pipeline
-    VkPipeline graphicsPipeline{};
-    VkPipelineLayout pipelineLayout{};
-    VkRenderPass renderPass{};
 
-    VkPipeline secondPipeline{};
-    VkPipelineLayout secondPipelineLayout{};
+    Utils::Pipelines boxPipeline;
 
-    void createRenderPass(Utils::MainDevice mainDevice, VkFormat swapChainImageFormat);
     void createPushConstantRange();
     void createDescriptorSetLayout(Utils::MainDevice mainDevice);
-    void createGraphicsPipeline(Utils::MainDevice mainDevice, VkExtent2D swapChainExtent);
     static VkShaderModule createShaderModule(Utils::MainDevice mainDevice, const std::vector<char> &code) ;
 };
 

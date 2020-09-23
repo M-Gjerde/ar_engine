@@ -15,7 +15,6 @@ const bool enableValidationLayers = true;
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 #include "../source/Allocator.h"
-#include "../include/utilities.h"
 #include "../libs/Utils.h"
 
 #include <iostream>

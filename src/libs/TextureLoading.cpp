@@ -71,7 +71,7 @@ int TextureLoading::getTextureImageLoc(Utils::MainDevice mainDevice, std::string
     // Create staging buffer to hold loaded data, ready to copy to device
     VkBuffer imageStagingBuffer;
     VkDeviceMemory imageStagingBufferMemory;
-    Utils::createBuffer(mainDevice.physicalDevice, mainDevice.logicalDevice, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+    Utils::createBuffer(mainDevice, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &imageStagingBuffer,
                         &imageStagingBufferMemory);
 

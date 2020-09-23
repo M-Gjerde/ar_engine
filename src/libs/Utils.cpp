@@ -87,7 +87,7 @@ void Utils::endAndSubmitCommandBuffer(VkDevice device, VkCommandPool commandPool
     vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
 }
 
-void Utils::createBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkDeviceSize bufferSize,
+void Utils::createBuffer(MainDevice mainDevice, VkDeviceSize bufferSize,
                          VkBufferUsageFlags bufferUsage, VkMemoryPropertyFlags bufferProperties, VkBuffer *buffer,
                          VkDeviceMemory *bufferMemory) {
 
@@ -99,30 +99,30 @@ void Utils::createBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkDev
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;             // Similar to swap chain images, can share vertex buffers
 
     // Create buffer
-    VkResult result = vkCreateBuffer(device, &bufferInfo, nullptr, buffer);
+    VkResult result = vkCreateBuffer(mainDevice.logicalDevice, &bufferInfo, nullptr, buffer);
     if (result != VK_SUCCESS)
         throw std::runtime_error("Failed to create buffer");
 
     // GET BUFFER MEMORY REQUIREMENTS
     VkMemoryRequirements memRequirements = {};
-    vkGetBufferMemoryRequirements(device, *buffer, &memRequirements);
+    vkGetBufferMemoryRequirements(mainDevice.logicalDevice, *buffer, &memRequirements);
 
     // ALLOCATE MEMORY TO BUFFER
     VkMemoryAllocateInfo memoryAllocateInfo = {};
     memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     memoryAllocateInfo.allocationSize = memRequirements.size;
-    memoryAllocateInfo.memoryTypeIndex = findMemoryTypeIndex(physicalDevice,
+    memoryAllocateInfo.memoryTypeIndex = findMemoryTypeIndex(mainDevice.physicalDevice,
                                                              memRequirements.memoryTypeBits,              //Index of memory type on physical device that has required bit flags
                                                              bufferProperties);                        // VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT : CPU can interact with memory
     // VK_MEMORY_PROPERTY_HOST_COHERENT_BIT : CPU can interact without cache capabilities
 
     // Allocate memory to VkDeviceMemory
-    result = vkAllocateMemory(device, &memoryAllocateInfo, nullptr, bufferMemory);
+    result = vkAllocateMemory(mainDevice.logicalDevice, &memoryAllocateInfo, nullptr, bufferMemory);
     if (result != VK_SUCCESS)
         throw std::runtime_error("Failed to allocate buffer memory");
 
     // Allocate memory to given vertex buffer
-    vkBindBufferMemory(device, *buffer, *bufferMemory, 0);
+    vkBindBufferMemory(mainDevice.logicalDevice, *buffer, *bufferMemory, 0);
 
 
 }

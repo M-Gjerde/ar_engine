@@ -8,7 +8,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <vector>
-#include "../include/utilities.h"
+#include "Object.h"
+#include "../libs/Utils.h"
 
 
 struct Model {
@@ -19,7 +20,7 @@ class Mesh {
 public:
     Mesh();
 
-    Mesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue transferQueue,
+    Mesh(Utils::MainDevice newMainDevice, VkQueue transferQueue,
          VkCommandPool transferCommandPool, std::vector<Vertex> *vertices, std::vector<uint32_t> *indices, int newTexId);
 
 
@@ -51,6 +52,7 @@ private:
     VkBuffer indexBuffer{};
     VkDeviceMemory indexBufferMemory{};
 
+    Utils::MainDevice mainDevice;
     VkPhysicalDevice physicalDevice{};
     VkDevice device{};
 

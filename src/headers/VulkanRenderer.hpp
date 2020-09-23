@@ -23,14 +23,14 @@
 #include <algorithm>
 
 #include "../libs/Utils.h"
-#include "../include/utilities.h"
-#include "Mesh.hpp"
-#include "MeshModel.h"
-#include "PlayerController.h"
+#include "../Mesh/Mesh.hpp"
+#include "../Mesh/MeshModel.h"
 #include "../include/stb_image.h"
 #include "Vfd.h"
 #include "../libs/TextureLoading.h"
 #include "../libs/GraphicsPipeline.h"
+#include "Camera.h"
+#include "../libs/TextureLoading.h"
 
 
 class VulkanRenderer {
@@ -42,17 +42,18 @@ public:
 
     int createMeshModel(std::string modelFile);
     void updateModel(int modelId, glm::mat4 newModel);
+    void setCamera(Camera newCamera);
 
     void draw();
     void cleanup();
 
     ~VulkanRenderer();
 
-    // Scene settings
-    PlayerController::UboViewProjection getPlayerController();
-    void setPlayerController(PlayerController::UboViewProjection newUboViewProjection);
 
 private:
+    // Allocator
+    VkAllocationCallbacks vkAllocationCallbacks = Allocator().operator VkAllocationCallbacks();
+
 
     GLFWwindow *window{};
     int currentFrame = 0;
@@ -66,7 +67,7 @@ private:
     std::vector<MeshModel> modelList;
 
     // Scene Settings
-    PlayerController playerController;
+    Camera camera;
 
     //  Vulcan Components
     //  - Main
@@ -83,6 +84,7 @@ private:
     //  Following 3 handles are 1:1 connected
     std::vector<Utils::SwapchainImage> swapChainImages;
     std::vector<VkFramebuffer> swapChainFramebuffers;
+
     std::vector<VkCommandBuffer> commandBuffers;
 
     std::vector<VkImage> colorBufferImage{};
@@ -94,6 +96,10 @@ private:
     std::vector<VkImageView> depthBufferImageView{};
 
     VkSampler textureSampler{};
+
+    // Vertex buffers
+    VkBuffer boxBuffer;
+    VkDeviceMemory boxBufferMemory;
 
     // - Descriptors
     VkDescriptorSetLayout descriptorSetLayout{};
@@ -120,13 +126,11 @@ private:
     std::vector<VkDeviceMemory> textureImageMemory;
     std::vector<VkImageView> textureImageViews;
 
-    // - Pipeline
-    VkPipeline graphicsPipeline{};
-    VkPipelineLayout pipelineLayout{};
-    VkRenderPass renderPass{};
+    // - Pipelines
 
-    VkPipeline secondPipeline{};
-    VkPipelineLayout secondPipelineLayout{};
+    Utils::Pipelines boxPipeline{};
+    Utils::Pipelines modelPipeline{};
+    Utils::Pipelines secondPipeline{};
 
     //  - Pools
     VkCommandPool graphicsCommandPool{};
@@ -152,9 +156,11 @@ private:
     void getDescriptorSetLayout();
     void getPushConstantRange();
     void getGraphicsPipeline();
-    void createGraphicsPipeline();
+
     void createColorBufferImage();
     void createDepthBufferImage();
+    void createVertexBuffer();
+
     void createFramebuffer();
     void createCommandPool();
     void createCommandBuffers();
