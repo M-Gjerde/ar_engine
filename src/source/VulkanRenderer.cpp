@@ -7,6 +7,7 @@
 
 
 #include "../headers/VulkanRenderer.hpp"
+#include "../libs/Descriptors.h"
 
 
 VulkanRenderer::VulkanRenderer() = default;
@@ -32,7 +33,7 @@ int VulkanRenderer::init(GLFWwindow *newWindow) {
 
         createColorBufferImage();
         createDepthBufferImage();
-        createVertexBuffer();
+        createTriangle();
 
         createFramebuffer();
         createCommandPool();
@@ -45,6 +46,22 @@ int VulkanRenderer::init(GLFWwindow *newWindow) {
         createDescriptorSets();
         createInputDescriptorSets();
         createSynchronisation();
+
+
+        triangleModel.model = glm::mat4(1.0f);
+
+        // Create a mesh
+        // Vertex Data
+        std::vector<TriangleVertex> triangleVertices = {
+                { { -0.1, -0.4, 0.0 },{ 1.0f, 0.0f, 0.0f } },	// 0
+                { { -0.1, 0.4, 0.0 },{ 0.0f, 1.0f, 0.0f } },	    // 1
+                { { -0.9, 0.4, 0.0 },{ 0.0f, 0.0f, 1.0f } },    // 2
+        };
+
+        Mesh triangleMesh = Mesh(mainDevice, graphicsQueue, graphicsCommandPool, &triangleVertices);
+
+        meshList.push_back(triangleMesh);
+
 
 
         createTexture("../textures/landscape.jpg");
@@ -74,8 +91,11 @@ void VulkanRenderer::cleanup() {
 
     vkDestroySampler(mainDevice.logicalDevice, textureSampler, &tempAllocator);
 
-    vkFreeMemory(mainDevice.logicalDevice, boxBufferMemory, nullptr);
-    vkDestroyBuffer(mainDevice.logicalDevice, boxBuffer, nullptr);
+    for (int i = 0; i < swapChainImages.size(); ++i) {
+        vkFreeMemory(mainDevice.logicalDevice, triangle.bufferMemory[i], nullptr);
+        vkDestroyBuffer(mainDevice.logicalDevice, triangle.buffer[i], nullptr);
+    }
+
 
     for (size_t i = 0; i < textureImages.size(); ++i) {
         vkDestroyImageView(mainDevice.logicalDevice, textureImageViews[i], nullptr);
@@ -313,12 +333,26 @@ void VulkanRenderer::recordCommands(uint32_t currentImage) {
 
     vkCmdBindPipeline(commandBuffers[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, boxPipeline.pipeline);
 
-    VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(commandBuffers[currentImage], 0, 1, &boxBuffer, offsets);
+    for (int i = 0; i < meshList.size(); ++i) {
+
+        VkBuffer vertexBuffer[] = {meshList[i].getVertexBuffer()};
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(commandBuffers[currentImage], 0, 1, vertexBuffer, offsets);
 
 
-    vkCmdDraw(commandBuffers[currentImage], static_cast<uint32_t>(boxVertices.size()), 1, 0, 0);
+        vkCmdBindDescriptorSets(commandBuffers[currentImage],
+                                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                boxPipeline.pipelineLayout,
+                                0,
+                                1,
+                                &triangle.descriptorSets[currentImage],
+                                0,
+                                nullptr);
 
+
+        vkCmdDraw(commandBuffers[currentImage], static_cast<uint32_t>(meshList[i].getVertexCount()), 1, 0, 0);
+
+    }
 
     // Bind Pipeline to be used in render pass
     vkCmdBindPipeline(commandBuffers[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, modelPipeline.pipeline);
@@ -439,6 +473,7 @@ void VulkanRenderer::createUniformBuffers() {
 
 void VulkanRenderer::createDescriptorPool() {
 
+
     // CREATE UNIFORM DESCRIPTOR POOL
     // Type of descriptors + how many DESCRIPTORS, not Descriptor sets (combined makes the pool size)
     VkDescriptorPoolSize vpPoolSize = {};
@@ -450,7 +485,7 @@ void VulkanRenderer::createDescriptorPool() {
     modelPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     modelPoolSize.descriptorCount = static_cast<uint32_t>(modelDynamicUniformBuffer.size());
 */
-    std::vector <VkDescriptorPoolSize> poolList = {vpPoolSize,};
+    std::vector <VkDescriptorPoolSize> poolList = {vpPoolSize};
 
     // Data to create descriptor pool
     VkDescriptorPoolCreateInfo poolCreateInfo = {};
@@ -581,12 +616,15 @@ void VulkanRenderer::updateUniformBuffers(uint32_t imageIndex) {
         memcpy(data, &camera.uboViewProjection, sizeof(Camera::UboViewProjection));
         vkUnmapMemory(mainDevice.logicalDevice, vpUniformBufferMemory[imageIndex]);
     }
-    uint32_t size = sizeof(boxVertices[0]) * boxVertices.size();
+
+    uint32_t size = sizeof(TriangleModel);
 
     void* data2;
-    vkMapMemory(mainDevice.logicalDevice, boxBufferMemory, 0, size, 0, &data2);
-    memcpy(data2, boxVertices.data(), (size_t) size);
-    vkUnmapMemory(mainDevice.logicalDevice, boxBufferMemory);
+    vkMapMemory(mainDevice.logicalDevice, triangle.bufferMemory[imageIndex], 0, size, 0, &data2);
+    memcpy(data2, &triangleModel, (size_t) size);
+    vkUnmapMemory(mainDevice.logicalDevice, triangle.bufferMemory[imageIndex]);
+
+
 
     // Copy Model data
     // Only used for dynamic uniform buffer
@@ -610,6 +648,8 @@ void VulkanRenderer::updateModel(int modelId, glm::mat4 newModel) {
     if (modelId >= modelList.size()) return;
 
     modelList[modelId].setModel(newModel);
+
+
 }
 
 void VulkanRenderer::allocateDynamicBufferTransferSpace() {
@@ -837,22 +877,43 @@ void VulkanRenderer::setCamera(Camera newCamera) {
     camera = newCamera;
 }
 
-void VulkanRenderer::createVertexBuffer() {
+void VulkanRenderer::createTriangle() {
 
-    uint32_t size = sizeof(boxVertices[0]) * boxVertices.size();
+    triangle.buffer.resize(swapChainImages.size());
+    triangle.bufferMemory.resize(swapChainImages.size());
+    triangle.descriptorSets.resize(swapChainImages.size());
 
-    Utils::createBuffer(mainDevice, size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &boxBuffer, &boxBufferMemory);
+    uint32_t size = sizeof(TriangleModel);
 
-    void* data;
-    vkMapMemory(mainDevice.logicalDevice, boxBufferMemory, 0, size, 0, &data);
-    memcpy(data, boxVertices.data(), (size_t) size);
-    vkUnmapMemory(mainDevice.logicalDevice, boxBufferMemory);
+
+    for (int i = 0; i < swapChainImages.size(); ++i) {
+
+
+        Utils::createBuffer(mainDevice, size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &triangle.buffer[i],
+                            &triangle.bufferMemory[i]);
+    }
+
+    // Create Descriptor sets
+    Descriptors descriptors(mainDevice);
+
+    descriptors.createDescriptorSetLayout(&triangle.descriptorSetLayout);
 
     //myPipe.createAnotherRenderPass(mainDevice, swapChainImageFormat, &boxPipeline);
     // retrieve render pass
     myPipe.createRenderPass(mainDevice, swapChainImageFormat, &boxPipeline);
     // retrieve graphics pipeline
-    myPipe.createBoxPipeline(mainDevice, swapChainExtent, &boxPipeline);
+    myPipe.createBoxPipeline(mainDevice, swapChainExtent, triangle.descriptorSetLayout, &boxPipeline);
+
+
+    // Get descriptor pool
+    descriptors.createDescriptorSetPool(&triangle.descriptorPool, swapChainImages.size());
+
+    // Get descriptor sets
+    for (int i = 0; i < swapChainImages.size(); ++i) {
+        descriptors.createDescriptorSet(triangle.descriptorSetLayout, triangle.descriptorPool, triangle.buffer[i], &triangle.descriptorSets[i], sizeof(TriangleModel));
+    }
+
 
 }
 
@@ -888,6 +949,9 @@ Utils::QueueFamilyIndices VulkanRenderer::getQueueFamilies(VkPhysicalDevice devi
     return indices;
 }
 
+void VulkanRenderer::updateTriangle(glm::mat4 newModel) {
+        triangleModel.model = newModel;
+}
 
 
 #pragma clang diagnostic pop

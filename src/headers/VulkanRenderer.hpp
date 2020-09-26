@@ -42,6 +42,7 @@ public:
 
     int createMeshModel(std::string modelFile);
     void updateModel(int modelId, glm::mat4 newModel);
+    void updateTriangle(glm::mat4 newModel);
     void setCamera(Camera newCamera);
 
     void draw();
@@ -55,6 +56,7 @@ private:
     VkAllocationCallbacks vkAllocationCallbacks = Allocator().operator VkAllocationCallbacks();
 
 
+    TriangleModel triangleModel;
     GLFWwindow *window{};
     int currentFrame = 0;
 
@@ -65,6 +67,7 @@ private:
 
     // Scene Objects
     std::vector<MeshModel> modelList;
+    std::vector<Mesh> meshList;
 
     // Scene Settings
     Camera camera;
@@ -97,15 +100,14 @@ private:
 
     VkSampler textureSampler{};
 
-    // Vertex buffers
-    VkBuffer boxBuffer;
-    VkDeviceMemory boxBufferMemory;
 
     // - Descriptors
     VkDescriptorSetLayout descriptorSetLayout{};
     VkDescriptorSetLayout samplerSetLayout{};
     VkDescriptorSetLayout inputSetLayout{};
     VkPushConstantRange pushConstantRange{};
+
+    Utils::UniformBuffer triangle{};
 
     VkDescriptorPool descriptorPool = {};
     VkDescriptorPool samplerDescriptorPool{};
@@ -159,7 +161,7 @@ private:
 
     void createColorBufferImage();
     void createDepthBufferImage();
-    void createVertexBuffer();
+    void createTriangle();
 
     void createFramebuffer();
     void createCommandPool();

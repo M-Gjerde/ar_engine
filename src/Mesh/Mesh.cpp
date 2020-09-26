@@ -21,6 +21,16 @@ Mesh::Mesh(Utils::MainDevice newMainDevice, VkQueue transferQueue,
     texId = newTexId;
 }
 
+Mesh::Mesh(Utils::MainDevice newMainDevice, VkQueue transferQueue, VkCommandPool transferCommandPool,
+           std::vector<TriangleVertex> *vertices) {
+
+    mainDevice = newMainDevice;
+    vertexCount = vertices->size();
+    createTriangleVertexBuffer(transferQueue, transferCommandPool, vertices);
+
+    model.model = glm::mat4(1.0f);
+}
+
 [[maybe_unused]] [[maybe_unused]] int Mesh::getVertexCount() const {
     return vertexCount;
 }
@@ -138,6 +148,53 @@ Model Mesh::getModel()
 {
     return model;
 }
+
+void Mesh::createTriangleVertexBuffer(VkQueue transferQueue, VkCommandPool transferCommandPool,
+                                      std::vector<TriangleVertex> *vertices) {
+
+
+    //Get size of buffer needed for vertices
+    VkDeviceSize bufferSize = sizeof(TriangleModel) * vertices->size();
+
+    // Temporary buffer to "stage" vertex data before transferring to GPU
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+
+    // Create Staging buffer and allocate memory to it
+    Utils::createBuffer(mainDevice,
+                        bufferSize,
+                        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                        &stagingBuffer,
+                        &stagingBufferMemory);
+
+
+    // MAP MEMORY TO STAGING BUFFER
+    void *data;                                                              // 1. Create pointer to a point in normal memory
+    vkMapMemory(mainDevice.logicalDevice, stagingBufferMemory, 0, bufferSize, 0,
+                &data);                                                     // 2. "Map" the vertex buffer memory to that point
+    memcpy(data, vertices->data(),
+           (size_t) bufferSize);                                            // 3. Copy memory from vertices vector to the point
+    vkUnmapMemory(mainDevice.logicalDevice, stagingBufferMemory);                              // 4. Unmap the vertex buffer memory
+
+    // Create buffer with TRANSFER_DST_BIT to mark as recipient of transfer data (also VERTEX_BUFFER)
+    // Buffer memory is to be DEVICE_LOCAL_BIT meaning memory is on the GPU and only accessible by it and not the CPU
+    Utils::createBuffer(mainDevice,
+                        bufferSize,
+                        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                        &vertexBuffer,
+                        &vertexBufferMemory
+    );
+
+    // Copy staging buffer to vertex buffer on GPU
+    Utils::copyBuffer(mainDevice.logicalDevice, transferQueue, transferCommandPool, stagingBuffer, vertexBuffer, bufferSize);
+
+    // Destroy temporary staging buffer -> cleanup
+    vkDestroyBuffer(mainDevice.logicalDevice, stagingBuffer, nullptr);
+    vkFreeMemory(mainDevice.logicalDevice, stagingBufferMemory, nullptr);
+}
+
 
 
 Mesh::~Mesh() = default;

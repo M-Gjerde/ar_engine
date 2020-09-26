@@ -55,6 +55,16 @@ public:
         VkDevice logicalDevice;
     };
 
+    struct UniformBuffer{
+        VkDescriptorSetLayout descriptorSetLayout{};
+        VkDescriptorPool descriptorPool{};
+        std::vector<VkBuffer> buffer{};
+        std::vector<VkDeviceMemory> bufferMemory{};
+        std::vector<VkDescriptorSet> descriptorSets{};
+    };
+
+
+
 
     static VkFormat
     chooseSupportedFormat(Utils::MainDevice mainDevice, const std::vector<VkFormat> &formats, VkImageTiling tiling,

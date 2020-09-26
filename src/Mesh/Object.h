@@ -18,19 +18,13 @@ struct Vertex {
 
 };
 
-struct Box {
+struct TriangleVertex {
     glm::vec3 pos;
     glm::vec3 col;
 };
 
-const std::vector<Box> boxVertices = {
-        {{0.4, -0.4, -0.4}, {1.0f, 0.0f, 0.0f}},
-        {{0.4, 0.4, 0.0}, {0.0f, 1.0f, 0.0f}},
-        {{-0.4, 0.4, 0.4}, {0.0f, 0.0f, 1.0f}},
-
-        { { -0.4, 0.4, 0.0 }, {0.0f, 0.0f, 1.0f}},
-        { { -0.4, -0.4, 0.0 }, {1.0f, 1.0f, 0.0f} },
-        { { 0.4, -0.4, 0.0 }, {1.0f, 0.0f, 0.0f} }
+struct TriangleModel {
+    glm::mat4 model;
 };
 
 

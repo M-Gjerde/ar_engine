@@ -8,9 +8,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <vector>
-#include "Object.h"
 #include "../libs/Utils.h"
-
+#include "Object.h"
 
 struct Model {
     glm::mat4 model;
@@ -23,6 +22,8 @@ public:
     Mesh(Utils::MainDevice newMainDevice, VkQueue transferQueue,
          VkCommandPool transferCommandPool, std::vector<Vertex> *vertices, std::vector<uint32_t> *indices, int newTexId);
 
+    Mesh(Utils::MainDevice newMainDevice, VkQueue transferQueue,
+         VkCommandPool transferCommandPool, std::vector<TriangleVertex> *vertices);
 
     void setModel(glm::mat4 newModel);
     Model getModel();
@@ -60,6 +61,9 @@ private:
                             VkCommandPool transferCommandPool, std::vector<Vertex> *vertices);
     void createIndexBuffer(VkQueue transferQueue,
                            VkCommandPool transferCommandPool, std::vector<uint32_t> *indices);
+
+    void createTriangleVertexBuffer(VkQueue transferQueue,
+                                    VkCommandPool transferCommandPool, std::vector<TriangleVertex> *vertices);
 
 
 };

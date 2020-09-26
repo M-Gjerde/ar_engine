@@ -291,6 +291,9 @@ void GraphicsPipeline::createGraphicsPipeline(Utils::MainDevice mainDevice, VkEx
 
 }
 
+
+
+
 void GraphicsPipeline::createDescriptorSetLayout(Utils::MainDevice mainDevice) {
 
     // UNIFORM VALUES DESCRIPTOR SET LAYOUT
@@ -527,7 +530,6 @@ void GraphicsPipeline::createRenderPass(Utils::MainDevice mainDevice, VkFormat s
 
 }
 
-
 void GraphicsPipeline::getPushConstantRange(VkPushConstantRange *pPushConstantRange) {
     createPushConstantRange();
     *pPushConstantRange = pushConstantRange;
@@ -535,8 +537,7 @@ void GraphicsPipeline::getPushConstantRange(VkPushConstantRange *pPushConstantRa
 }
 
 void GraphicsPipeline::getDescriptorSetLayout(Utils::MainDevice mainDevice, VkDescriptorSetLayout *pDescriptorSetLayout,
-                                              VkDescriptorSetLayout *pDescriptorSetLayout1,
-                                              VkDescriptorSetLayout *pDescriptorSetLayout2) {
+                                              VkDescriptorSetLayout *pDescriptorSetLayout1,VkDescriptorSetLayout *pDescriptorSetLayout2) {
     createDescriptorSetLayout(mainDevice);
     *pDescriptorSetLayout = descriptorSetLayout;
     *pDescriptorSetLayout1 = samplerSetLayout;
@@ -544,9 +545,8 @@ void GraphicsPipeline::getDescriptorSetLayout(Utils::MainDevice mainDevice, VkDe
 
 }
 
-
 void GraphicsPipeline::createBoxPipeline(Utils::MainDevice mainDevice, VkExtent2D swapchainExtent,
-                                         Utils::Pipelines *pipelineToBind) {
+                                         VkDescriptorSetLayout descriptorLayout, Utils::Pipelines *pipelineToBind) {
     auto vertexShaderCode = Utils::readFile("../shaders/boxShaderVert.spv");
     auto fragmentShaderCode = Utils::readFile("../shaders/boxShaderFrag.spv");
 
@@ -575,7 +575,7 @@ void GraphicsPipeline::createBoxPipeline(Utils::MainDevice mainDevice, VkExtent2
     // How the data for a single vertex (including info such as position, color, texture coords, normals, etc) is as a whole
     VkVertexInputBindingDescription bindingDescription = {};
     bindingDescription.binding = 0;
-    bindingDescription.stride = sizeof(Box);
+    bindingDescription.stride = sizeof(TriangleVertex);
     bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     // How the data for an attribute is defined within a vertex
@@ -585,12 +585,12 @@ void GraphicsPipeline::createBoxPipeline(Utils::MainDevice mainDevice, VkExtent2
     attributeDescriptions[0].binding = 0;
     attributeDescriptions[0].location = 0;
     attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attributeDescriptions[0].offset = offsetof(Box, pos);
+    attributeDescriptions[0].offset = offsetof(TriangleVertex, pos);
     // Color Attribute
     attributeDescriptions[1].binding = 0;
     attributeDescriptions[1].location = 1;
     attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attributeDescriptions[1].offset = offsetof(Box, col);
+    attributeDescriptions[1].offset = offsetof(TriangleVertex, col);
     // -- VERTEX INPUT ---
     VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo = {};
     vertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -682,8 +682,8 @@ void GraphicsPipeline::createBoxPipeline(Utils::MainDevice mainDevice, VkExtent2
 
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
     pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutCreateInfo.setLayoutCount = 0;      // Number of descriptor set layouts
-    pipelineLayoutCreateInfo.pSetLayouts = nullptr;                             // Descriptor set layout to bind
+    pipelineLayoutCreateInfo.setLayoutCount = 1;                        // Number of descriptor set layouts
+    pipelineLayoutCreateInfo.pSetLayouts = &descriptorLayout;           // Descriptor set layout to bind
     pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
     pipelineLayoutCreateInfo.pPushConstantRanges = nullptr;
 
@@ -769,3 +769,5 @@ void GraphicsPipeline::createAnotherRenderPass(Utils::MainDevice mainDevice, VkF
     }
 
 }
+
+
