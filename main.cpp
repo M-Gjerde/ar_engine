@@ -17,11 +17,17 @@ static void keyCallback(GLFWwindow *window, int key, int scancode, int action, i
     myApp->keyCallback(window, key, scancode, action, mods);
 }
 
+static void cursor_position_callback(GLFWwindow* window, double xPos, double yPos)
+{
+    auto* myApp = (AppExtension*)app;
+    app->cursorPosCallback(window, xPos, yPos);
+}
+
 int main() {
     app = getApplication();
     glfwSetKeyCallback(app->window, keyCallback);
+    glfwSetCursorPosCallback(app->window, cursor_position_callback);
     app->gameLoop();
-
 
     return 0;
 }

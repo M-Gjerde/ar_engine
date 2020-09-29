@@ -72,6 +72,10 @@ public:
         }
     }
 
+    virtual void cursorPosCallback(GLFWwindow* window, double xPos, double yPos) {
+
+    }
+
     // must be overridden in derived class
     virtual void update() = 0;
 
@@ -104,11 +108,13 @@ public:
 
 
     void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) override;
+    void cursorPosCallback(GLFWwindow* window, double xPos, double yPos);
+
     void update() override;
 
 private:
     // Scene settings
-    int helicopter = vulkanRenderer.createMeshModel("../objects/uh60.obj");
+    int helicopter = 0;//vulkanRenderer.createMeshModel("../objects/uh60.obj");
 
     double motion = 0.0f;
     [[maybe_unused]] double deltaTime = 0.0f;

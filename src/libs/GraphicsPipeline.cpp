@@ -646,7 +646,7 @@ void GraphicsPipeline::createBoxPipeline(Utils::MainDevice mainDevice, VkExtent2
     rasterizerCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;                //How we want our polygons to be filled in color between vertices.
     rasterizerCreateInfo.lineWidth = 1.0f;                                  //How thick lines should be when drawn
     rasterizerCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;                  //Which face of a tri to cull
-    rasterizerCreateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;               //Winding to dertermine which side is front
+    rasterizerCreateInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;               //Winding to dertermine which side is front
     rasterizerCreateInfo.depthBiasEnable = VK_FALSE;                        //Wether to add depth bias to fragments (Good for stopping "shadow acne")
 
     //  -- MULTISAMPLING --

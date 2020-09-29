@@ -19,6 +19,7 @@ int VulkanRenderer::init(GLFWwindow *newWindow) {
     try {
         // Static init
         vfd.init(window);
+
         getVulkanInstance();
         getSurface();
         getPhysicalDevice();
@@ -31,13 +32,17 @@ int VulkanRenderer::init(GLFWwindow *newWindow) {
         getPushConstantRange();
         getGraphicsPipeline();
 
+        // Get descriptors
+        descriptors = new Descriptors(mainDevice);
+
+
         createColorBufferImage();
         createDepthBufferImage();
         createTriangle();
 
         createFramebuffer();
-        createCommandPool();
-        createCommandBuffers();
+        getCommandPool();
+        getCommandBuffers();
 
         getTextureSampler();
         //allocateDynamicBufferTransferSpace();
@@ -48,7 +53,11 @@ int VulkanRenderer::init(GLFWwindow *newWindow) {
         createSynchronisation();
 
 
+        triangleModel.projection = glm::perspective(glm::radians(45.0f), (float)swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 100.0f);
+        triangleModel.view = glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         triangleModel.model = glm::mat4(1.0f);
+
+        triangleModel.projection[1][1] *= -1;
 
         // Create a mesh
         // Vertex Data
@@ -81,6 +90,12 @@ void VulkanRenderer::cleanup() {
 
     for (auto &i : modelList) {
         i.destroyMeshModel();
+    }
+
+    descriptors->clean(triangle);
+
+    for (int i = 0; i < meshList.size(); ++i) {
+        meshList[i].destroyBuffers();
     }
 
     vkDestroyDescriptorPool(mainDevice.logicalDevice, inputDescriptorPool, nullptr);
@@ -149,8 +164,6 @@ void VulkanRenderer::cleanup() {
     vfd.cleanUp();
 }
 
-
-
 void VulkanRenderer::getVulkanInstance() {
     vfd.getInstance(&instance);
 }
@@ -184,65 +197,32 @@ void VulkanRenderer::getSwapchain() {
     vfd.getSwapchainFramebuffers(&swapChainFramebuffers);
 }
 
-void VulkanRenderer::draw() {
-    // 1. Get next available image to draw to and set something to signal when we're finished with the image (a semaphore)
-    // 2. Submit command buffer to queue for execution, making sure it waits for the image to be signalled as available before drawing
-    // and signals when it has finished rendering
-    // 3. Present image to screen when it has signaled finished rendering
-
-    // Wait for fences before we continue submitting to the GPU
-    vkWaitForFences(mainDevice.logicalDevice, 1, &drawFences[currentFrame], VK_TRUE,
-                    std::numeric_limits<uint64_t>::max());
-    // Manually reset (close) fences
-    vkResetFences(mainDevice.logicalDevice, 1, &drawFences[currentFrame]);
-
-    // -- GET NEXT IMAGE --
-    // Get index of next image to be drawn to, and signal semaphore when ready to be drawn to
-    uint32_t imageIndex;
-    vkAcquireNextImageKHR(mainDevice.logicalDevice, swapchain, std::numeric_limits<uint64_t>::max(),
-                          imageAvailable[currentFrame], VK_NULL_HANDLE, &imageIndex);
-
-    // Update vpUniformBuffer
-    recordCommands(imageIndex);
-    updateUniformBuffers(imageIndex);
-
-    // -- SUBMIT COMMAND BUFFER TO RENDER --
-    // Queue submission information
-    VkSubmitInfo submitInfo = {};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.waitSemaphoreCount = 1;                          // Number of semaphores to wait on
-    submitInfo.pWaitSemaphores = &imageAvailable[currentFrame];               // List of semaphores to wait on
-    VkPipelineStageFlags waitStages[]{VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    submitInfo.pWaitDstStageMask = waitStages;                  // Stages to check semaphores at
-    submitInfo.commandBufferCount = 1;                          // Number of command buffers to submit
-    submitInfo.pCommandBuffers = &commandBuffers[imageIndex];   // Command buffer to submit
-    submitInfo.signalSemaphoreCount = 1;                        // Number of semaphore to signal
-    submitInfo.pSignalSemaphores = &renderFinished[currentFrame];             // Semaphores to signal when cmd buffer finishes
-
-    // Submit command buffer to queue
-    VkResult result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, drawFences[currentFrame]);
-    if (result != VK_SUCCESS)
-        throw std::runtime_error("Failed to submit command buffer to Queue");
-    // Now our images has been drawn, it actually has data
-
-    // -- PRESENT RENDERED IMAGE TO SCREEN/SURFACE --
-    VkPresentInfoKHR presentInfo = {};
-    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    presentInfo.waitSemaphoreCount = 1;                         // Number of semaphores to wait on
-    presentInfo.pWaitSemaphores = &renderFinished[currentFrame];              // Semaphores to wait on
-    presentInfo.swapchainCount = 1;                             // Number of swapchains to present to/from
-    presentInfo.pSwapchains = &swapchain;                       // Swapchain to present images to
-    presentInfo.pImageIndices = &imageIndex;                    // Index of images in swapchain to present
-
-    // Present image
-    result = vkQueuePresentKHR(graphicsQueue, &presentInfo);
-    if (result != VK_SUCCESS)
-        throw std::runtime_error("Failed to present image to screen");
-
-    // Get next frame (use % MAX_FRAME_DRAWS to keep value belo MAX_FRAME_DRAWS)
-    currentFrame = (currentFrame + 1) % Utils::MAX_FRAME_DRAWS;
+void VulkanRenderer::getCommandPool() {
+    vfd.getCommandPool(&graphicsCommandPool);
 }
 
+void VulkanRenderer::getCommandBuffers() {
+    //  Resize command buffer count to have one for each framebuffer
+    commandBuffers.resize(swapChainFramebuffers.size());
+    for (int i = 0; i < swapChainFramebuffers.size(); ++i) {
+        vfd.getCommandBuffer(&commandBuffers[i], graphicsCommandPool);
+    }
+
+}
+
+void VulkanRenderer::getRenderPass() {
+    myPipe.createRenderPass(mainDevice, swapChainImageFormat, &modelPipeline);
+
+}
+
+void VulkanRenderer::getGraphicsPipeline() {
+    myPipe.createGraphicsPipeline(mainDevice, swapChainExtent, &modelPipeline, &secondPipeline);
+
+}
+
+void VulkanRenderer::setCamera(Camera newCamera) {
+    camera = newCamera;
+}
 
 void VulkanRenderer::createFramebuffer() {
     //Resize framebuffer count to equal swap chain image count
@@ -271,147 +251,7 @@ void VulkanRenderer::createFramebuffer() {
     }
 }
 
-void VulkanRenderer::createCommandPool() {
-    //  Get indices of queue families from device
-    Utils::QueueFamilyIndices queueFamilyIndices = getQueueFamilies(mainDevice.physicalDevice);
 
-    VkCommandPoolCreateInfo poolInfo = {};
-    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily;      //  Queue Family type that buffers from this command pool will use
-
-    //  Create a Graphics queue family command pool
-    VkResult result = vkCreateCommandPool(mainDevice.logicalDevice, &poolInfo, nullptr, &graphicsCommandPool);
-    if (result != VK_SUCCESS)
-        throw std::runtime_error("Failed to create command pool");
-}
-
-void VulkanRenderer::createCommandBuffers() {
-    //  Resize command buffer count to have one for each framebuffer
-    commandBuffers.resize(swapChainFramebuffers.size());
-    //  This is called allocated because we have already "created" it in the pool when we reserved memory
-    VkCommandBufferAllocateInfo cbAllocInfo = {};
-    cbAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    cbAllocInfo.commandPool = graphicsCommandPool;
-    cbAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;                                // vkCmdExecuteCommands(buffer) executing a command buffer from a command buffer. Primary means that it is executed by queue, and secondary means it is executed by a commandbuffer
-    cbAllocInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());      // Amount of command buffers that we are going to create
-
-    //  Allocate command buffers and place handles in arraay of buffers
-    VkResult result = vkAllocateCommandBuffers(mainDevice.logicalDevice, &cbAllocInfo, commandBuffers.data());
-    if (result != VK_SUCCESS)
-        throw std::runtime_error("Failed to allocate command buffers");
-}
-
-void VulkanRenderer::recordCommands(uint32_t currentImage) {
-    // Information about how to begin each command buffer
-    VkCommandBufferBeginInfo bufferBeginInfo = {};
-    bufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    //bufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;     // The command buffer can be submitted while it is awaiting execution Yes it can
-
-
-    // Start recording commands to command buffer
-    VkResult result = vkBeginCommandBuffer(commandBuffers[currentImage], &bufferBeginInfo);
-    if (result != VK_SUCCESS)
-        throw std::runtime_error("Failed to start recording a Command Buffer");
-
-
-    VkRenderPassBeginInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = modelPipeline.renderPass;
-    renderPassInfo.framebuffer = swapChainFramebuffers[currentImage];
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = swapChainExtent;
-
-    std::array<VkClearValue, 3> clearValues = {};
-    clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
-    clearValues[1].color = {0.6f, 0.65f, 0.4f, 1.0f};
-    clearValues[2].depthStencil.depth = 1.0f;
-    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-    renderPassInfo.pClearValues = clearValues.data();
-
-    vkCmdBeginRenderPass(commandBuffers[currentImage], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-    vkCmdBindPipeline(commandBuffers[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, boxPipeline.pipeline);
-
-    for (int i = 0; i < meshList.size(); ++i) {
-
-        VkBuffer vertexBuffer[] = {meshList[i].getVertexBuffer()};
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(commandBuffers[currentImage], 0, 1, vertexBuffer, offsets);
-
-
-        vkCmdBindDescriptorSets(commandBuffers[currentImage],
-                                VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                boxPipeline.pipelineLayout,
-                                0,
-                                1,
-                                &triangle.descriptorSets[currentImage],
-                                0,
-                                nullptr);
-
-
-        vkCmdDraw(commandBuffers[currentImage], static_cast<uint32_t>(meshList[i].getVertexCount()), 1, 0, 0);
-
-    }
-
-    // Bind Pipeline to be used in render pass
-    vkCmdBindPipeline(commandBuffers[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, modelPipeline.pipeline);
-
-    for (size_t j = 0; j < modelList.size(); j++) {
-        // Pushing PushConstants
-        MeshModel thisModel = modelList[j];
-        glm::mat4 tempModel = thisModel.getModel();
-        vkCmdPushConstants(commandBuffers[currentImage], modelPipeline.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
-                           sizeof(Model),                          // Size of data being pushed
-                           &tempModel                               // Actual data being pushed
-        );
-
-        for (size_t k = 0; k < thisModel.getMeshCount(); k++) {
-
-            // Bind our vertex buffer
-            VkBuffer vertexBuffers[] = {thisModel.getMesh(k)->getVertexBuffer()};   // Buffers to bind
-            VkDeviceSize offsets[] = {0};                                           // Offsets into buffers being bound
-            vkCmdBindVertexBuffers(commandBuffers[currentImage], 0, 1, vertexBuffers,
-                                   offsets);     // Command to bind vertex buffer before drawing
-
-            // Bind our mesh Index buffer using the uint32 type ONLY ONE CAN BE BINDED
-            vkCmdBindIndexBuffer(commandBuffers[currentImage], thisModel.getMesh(k)->getIndexBuffer(), 0,
-                                 VK_INDEX_TYPE_UINT32);
-            // Dynamic offset amount
-            // uint32_t dynamicOffset = static_cast<uint32_t>(modelUniformAlignment) * j;
-
-            std::array<VkDescriptorSet, 2> descriptorSetGroup = {descriptorSets[currentImage],
-                                                                 samplerDescriptorSets[thisModel.getMesh(
-                                                                         k)->getTexId()]};
-            // Bind descriptor sets
-            vkCmdBindDescriptorSets(commandBuffers[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, modelPipeline.pipelineLayout, 0,
-                                    static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0,
-                                    nullptr);
-
-            // Execute pipeline
-            vkCmdDrawIndexed(commandBuffers[currentImage], thisModel.getMesh(k)->getIndexCount(), 1, 0, 0, 0);
-        }
-    }
-
-    // Subpass 2
-    vkCmdNextSubpass(commandBuffers[currentImage], VK_SUBPASS_CONTENTS_INLINE);
-
-    vkCmdBindPipeline(commandBuffers[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, secondPipeline.pipeline);
-    vkCmdBindDescriptorSets(commandBuffers[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, secondPipeline.pipelineLayout, 0, 1,
-                            &inputDescriptorSets[currentImage], 0, nullptr);
-
-    vkCmdDraw(commandBuffers[currentImage], 3, 1, 0, 0);
-
-
-
-    vkCmdEndRenderPass(commandBuffers[currentImage]);
-
-    // Stop recording to command buffer
-    result = vkEndCommandBuffer(commandBuffers[currentImage]);
-    if (result != VK_SUCCESS)
-        throw std::runtime_error("Failed to end recording a Command Buffer");
-
-}
 
 void VulkanRenderer::createSynchronisation() {
     imageAvailable.resize(Utils::MAX_FRAME_DRAWS);
@@ -438,42 +278,12 @@ void VulkanRenderer::createSynchronisation() {
     }
 }
 
-void VulkanRenderer::createUniformBuffers() {
-    // ViewProjection buffer size (Will offset access)
-    VkDeviceSize vpBufferSize = sizeof(Camera::UboViewProjection);
+void VulkanRenderer::getDescriptorSetLayout() {
+    myPipe.getDescriptorSetLayout(mainDevice, &descriptorSetLayout, &samplerSetLayout, &inputSetLayout);
 
-    // Model buffer size
-    //VkDeviceSize modelBufferSize = modelUniformAlignment * MAX_OBJECTS;
-
-    // One uniform buffer for each image (and by extension, command buffer)
-    vpUniformBuffer.resize(swapChainImages.size());
-    vpUniformBufferMemory.resize(swapChainImages.size());
-    modelDynamicUniformBuffer.resize(swapChainImages.size());
-    modelDynamicUniformBufferMemory.resize(swapChainImages.size());
-
-    // Create uniform buffers
-    for (size_t i = 0; i < swapChainImages.size(); i++) {
-        Utils::createBuffer(mainDevice, vpBufferSize,
-                            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                            &vpUniformBuffer[i], &vpUniformBufferMemory[i]);
-
-        /*
-        createBuffer(mainDevice.physicalDevice,
-                     mainDevice.logicalDevice,
-                     modelBufferSize,
-                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                     &modelDynamicUniformBuffer[i],
-                     &modelDynamicUniformBufferMemory[i]);
-
-*/
-    }
 }
 
 void VulkanRenderer::createDescriptorPool() {
-
-
     // CREATE UNIFORM DESCRIPTOR POOL
     // Type of descriptors + how many DESCRIPTORS, not Descriptor sets (combined makes the pool size)
     VkDescriptorPoolSize vpPoolSize = {};
@@ -607,6 +417,99 @@ void VulkanRenderer::createDescriptorSets() {
     }
 }
 
+void VulkanRenderer::createInputDescriptorSets() {
+    // Resize array to hold descriptor set for each swap chain image
+    inputDescriptorSets.resize(swapChainImages.size());
+
+    // fill array of layouts ready for set creation
+    std::vector <VkDescriptorSetLayout> setLayouts(swapChainImages.size(), inputSetLayout);
+
+    // Input Attachment descriptor set allocation info
+    VkDescriptorSetAllocateInfo setAllocInfo = {};
+    setAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    setAllocInfo.descriptorPool = inputDescriptorPool;
+    setAllocInfo.descriptorSetCount = static_cast<uint32_t>(swapChainImages.size());
+    setAllocInfo.pSetLayouts = setLayouts.data();
+
+    // Allocate Descriptor sets
+    VkResult result = vkAllocateDescriptorSets(mainDevice.logicalDevice, &setAllocInfo, inputDescriptorSets.data());
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to allocate input attachment descriptor sets");
+
+    // Update each descriptor set with input attachment
+    for (size_t i = 0; i < swapChainImages.size(); i++) {
+        // Color attachment descriptor
+        VkDescriptorImageInfo colorAttachmentDescriptor = {};
+        colorAttachmentDescriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        colorAttachmentDescriptor.imageView = colorBufferImageView[i];
+        colorAttachmentDescriptor.sampler = VK_NULL_HANDLE;
+
+        // Color attachment descriptor write
+        VkWriteDescriptorSet colorWrite = {};
+        colorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        colorWrite.dstSet = inputDescriptorSets[i];
+        colorWrite.dstBinding = 0;
+        colorWrite.dstArrayElement = 0;
+        colorWrite.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+        colorWrite.descriptorCount = 1;
+        colorWrite.pImageInfo = &colorAttachmentDescriptor;
+
+        // Depth attachment descriptor
+        VkDescriptorImageInfo depthAttachmentDescriptor = {};
+        depthAttachmentDescriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        depthAttachmentDescriptor.imageView = depthBufferImageView[i];
+        depthAttachmentDescriptor.sampler = VK_NULL_HANDLE;
+
+        // Depth attachment descriptor write
+        VkWriteDescriptorSet depthWrite = {};
+        depthWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        depthWrite.dstSet = inputDescriptorSets[i];
+        depthWrite.dstBinding = 1;
+        depthWrite.dstArrayElement = 0;
+        depthWrite.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+        depthWrite.descriptorCount = 1;
+        depthWrite.pImageInfo = &depthAttachmentDescriptor;
+
+        // List of input descriptor set writes
+        std::vector <VkWriteDescriptorSet> setWrites = {colorWrite, depthWrite};
+        vkUpdateDescriptorSets(mainDevice.logicalDevice, static_cast<uint32_t>(setWrites.size()), setWrites.data(), 0,
+                               nullptr);
+    }
+}
+
+void VulkanRenderer::createUniformBuffers() {
+    // ViewProjection buffer size (Will offset access)
+    VkDeviceSize vpBufferSize = sizeof(Camera::UboViewProjection);
+
+    // Model buffer size
+    //VkDeviceSize modelBufferSize = modelUniformAlignment * MAX_OBJECTS;
+
+    // One uniform buffer for each image (and by extension, command buffer)
+    vpUniformBuffer.resize(swapChainImages.size());
+    vpUniformBufferMemory.resize(swapChainImages.size());
+    modelDynamicUniformBuffer.resize(swapChainImages.size());
+    modelDynamicUniformBufferMemory.resize(swapChainImages.size());
+
+    // Create uniform buffers
+    for (size_t i = 0; i < swapChainImages.size(); i++) {
+        Utils::createBuffer(mainDevice, vpBufferSize,
+                            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                            &vpUniformBuffer[i], &vpUniformBufferMemory[i]);
+
+        /*
+        createBuffer(mainDevice.physicalDevice,
+                     mainDevice.logicalDevice,
+                     modelBufferSize,
+                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                     &modelDynamicUniformBuffer[i],
+                     &modelDynamicUniformBufferMemory[i]);
+
+*/
+    }
+}
+
 void VulkanRenderer::updateUniformBuffers(uint32_t imageIndex) {
     // Copy VP data
     void *data;
@@ -652,48 +555,12 @@ void VulkanRenderer::updateModel(int modelId, glm::mat4 newModel) {
 
 }
 
-void VulkanRenderer::allocateDynamicBufferTransferSpace() {
-
-    /*
-// Calculate alignment of model data
-    modelUniformAlignment = (sizeof(Model) + minUniformBufferOffset - 1)
-                            & ~(minUniformBufferOffset - 1);
-
-    // Create space in memory to hold dynamic buffer that is aligned to our required alignment and holds MAX_OBJECTS
-    modelTransferSpace = (Model *) aligned_alloc(modelUniformAlignment, modelUniformAlignment * MAX_OBJECTS);
-*/
-}
 
 void VulkanRenderer::getPushConstantRange() {
     myPipe.getPushConstantRange(&pushConstantRange);
 }
 
-void VulkanRenderer::createDepthBufferImage() {
-    depthBufferImage.resize(swapChainImages.size());
-    depthBufferImageMemory.resize(swapChainImages.size());
-    depthBufferImageView.resize(swapChainImages.size());
 
-    // Get supported format for depth buffer
-    VkFormat depthFormat = chooseSupportedFormat(
-            {VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT}, VK_IMAGE_TILING_OPTIMAL,
-            VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
-
-    for (size_t i = 0; i < swapChainImages.size(); i++) {
-
-
-        // Create depth Buffer Image
-        depthBufferImage[i] = Utils::createImage(mainDevice, swapChainExtent.width, swapChainExtent.height, depthFormat,
-                                                 VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
-                                                                          VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
-                                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &depthBufferImageMemory[i]);
-
-        // Create depth buffer image view
-        depthBufferImageView[i] = Utils::createImageView(mainDevice, depthBufferImage[i], depthFormat,
-                                                         VK_IMAGE_ASPECT_DEPTH_BIT);
-
-    }
-
-}
 
 VkFormat VulkanRenderer::chooseSupportedFormat(const std::vector<VkFormat> &formats, VkImageTiling tiling,
                                                VkFormatFeatureFlags featureFlags) const {
@@ -798,84 +665,34 @@ void VulkanRenderer::createColorBufferImage() {
     }
 }
 
-void VulkanRenderer::createInputDescriptorSets() {
-    // Resize array to hold descriptor set for each swap chain image
-    inputDescriptorSets.resize(swapChainImages.size());
+void VulkanRenderer::createDepthBufferImage() {
+    depthBufferImage.resize(swapChainImages.size());
+    depthBufferImageMemory.resize(swapChainImages.size());
+    depthBufferImageView.resize(swapChainImages.size());
 
-    // fill array of layouts ready for set creation
-    std::vector <VkDescriptorSetLayout> setLayouts(swapChainImages.size(), inputSetLayout);
+    // Get supported format for depth buffer
+    VkFormat depthFormat = chooseSupportedFormat(
+            {VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT}, VK_IMAGE_TILING_OPTIMAL,
+            VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
-    // Input Attachment descriptor set allocation info
-    VkDescriptorSetAllocateInfo setAllocInfo = {};
-    setAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    setAllocInfo.descriptorPool = inputDescriptorPool;
-    setAllocInfo.descriptorSetCount = static_cast<uint32_t>(swapChainImages.size());
-    setAllocInfo.pSetLayouts = setLayouts.data();
-
-    // Allocate Descriptor sets
-    VkResult result = vkAllocateDescriptorSets(mainDevice.logicalDevice, &setAllocInfo, inputDescriptorSets.data());
-    if (result != VK_SUCCESS)
-        throw std::runtime_error("Failed to allocate input attachment descriptor sets");
-
-    // Update each descriptor set with input attachment
     for (size_t i = 0; i < swapChainImages.size(); i++) {
-        // Color attachment descriptor
-        VkDescriptorImageInfo colorAttachmentDescriptor = {};
-        colorAttachmentDescriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        colorAttachmentDescriptor.imageView = colorBufferImageView[i];
-        colorAttachmentDescriptor.sampler = VK_NULL_HANDLE;
 
-        // Color attachment descriptor write
-        VkWriteDescriptorSet colorWrite = {};
-        colorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        colorWrite.dstSet = inputDescriptorSets[i];
-        colorWrite.dstBinding = 0;
-        colorWrite.dstArrayElement = 0;
-        colorWrite.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-        colorWrite.descriptorCount = 1;
-        colorWrite.pImageInfo = &colorAttachmentDescriptor;
 
-        // Depth attachment descriptor
-        VkDescriptorImageInfo depthAttachmentDescriptor = {};
-        depthAttachmentDescriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        depthAttachmentDescriptor.imageView = depthBufferImageView[i];
-        depthAttachmentDescriptor.sampler = VK_NULL_HANDLE;
+        // Create depth Buffer Image
+        depthBufferImage[i] = Utils::createImage(mainDevice, swapChainExtent.width, swapChainExtent.height, depthFormat,
+                                                 VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
+                                                                          VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
+                                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &depthBufferImageMemory[i]);
 
-        // Depth attachment descriptor write
-        VkWriteDescriptorSet depthWrite = {};
-        depthWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        depthWrite.dstSet = inputDescriptorSets[i];
-        depthWrite.dstBinding = 1;
-        depthWrite.dstArrayElement = 0;
-        depthWrite.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-        depthWrite.descriptorCount = 1;
-        depthWrite.pImageInfo = &depthAttachmentDescriptor;
+        // Create depth buffer image view
+        depthBufferImageView[i] = Utils::createImageView(mainDevice, depthBufferImage[i], depthFormat,
+                                                         VK_IMAGE_ASPECT_DEPTH_BIT);
 
-        // List of input descriptor set writes
-        std::vector <VkWriteDescriptorSet> setWrites = {colorWrite, depthWrite};
-        vkUpdateDescriptorSets(mainDevice.logicalDevice, static_cast<uint32_t>(setWrites.size()), setWrites.data(), 0,
-                               nullptr);
     }
-}
-
-void VulkanRenderer::getRenderPass() {
-    myPipe.createRenderPass(mainDevice, swapChainImageFormat, &modelPipeline);
 
 }
 
-void VulkanRenderer::getDescriptorSetLayout() {
-    myPipe.getDescriptorSetLayout(mainDevice, &descriptorSetLayout, &samplerSetLayout, &inputSetLayout);
 
-}
-
-void VulkanRenderer::getGraphicsPipeline() {
-    myPipe.createGraphicsPipeline(mainDevice, swapChainExtent, &modelPipeline, &secondPipeline);
-
-}
-
-void VulkanRenderer::setCamera(Camera newCamera) {
-    camera = newCamera;
-}
 
 void VulkanRenderer::createTriangle() {
 
@@ -895,9 +712,9 @@ void VulkanRenderer::createTriangle() {
     }
 
     // Create Descriptor sets
-    Descriptors descriptors(mainDevice);
+    Descriptors triangleDescriptors(mainDevice);
 
-    descriptors.createDescriptorSetLayout(&triangle.descriptorSetLayout);
+    triangleDescriptors.createDescriptorSetLayout(&triangle.descriptorSetLayout);
 
     //myPipe.createAnotherRenderPass(mainDevice, swapChainImageFormat, &boxPipeline);
     // retrieve render pass
@@ -907,51 +724,192 @@ void VulkanRenderer::createTriangle() {
 
 
     // Get descriptor pool
-    descriptors.createDescriptorSetPool(&triangle.descriptorPool, swapChainImages.size());
+    triangleDescriptors.createDescriptorSetPool(&triangle.descriptorPool, swapChainImages.size());
 
     // Get descriptor sets
     for (int i = 0; i < swapChainImages.size(); ++i) {
-        descriptors.createDescriptorSet(triangle.descriptorSetLayout, triangle.descriptorPool, triangle.buffer[i], &triangle.descriptorSets[i], sizeof(TriangleModel));
+        triangleDescriptors.createDescriptorSet(triangle.descriptorSetLayout, triangle.descriptorPool, triangle.buffer[i], &triangle.descriptorSets[i], sizeof(TriangleModel));
     }
-
-
-}
-
-
-Utils::QueueFamilyIndices VulkanRenderer::getQueueFamilies(VkPhysicalDevice device) {
-    Utils::QueueFamilyIndices indices;
-    //Get all queue family property info for the given device
-    uint32_t queueFamilyCount = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-
-    std::vector <VkQueueFamilyProperties> queueFamilyList(queueFamilyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilyList.data());
-    int i = 0;
-    //Go through each queue family and check if it has at least one of the required types of queue.
-    for (const auto &queueFamily : queueFamilyList) {
-        //Check if queue family has at least 1 queue in that family
-        //Queue can be multiple types defined thourgh bitfield. Need to & VK_QUEUEU_*_BIT if has required flags
-        if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            indices.graphicsFamily = i;
-        }
-
-        //Check if Queue Family supports presentation
-        VkBool32 presentationSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentationSupport);
-        //  Check if Queue is presentation type (Can also be graphics queue)
-        if (queueFamily.queueCount > 0 && presentationSupport)
-            indices.presentationFamily = 1;
-
-        if (indices.isValid())                                          //If we found a valid queue.. dont waste time searching for more.
-            break;
-        i++;
-    }
-    return indices;
 }
 
 void VulkanRenderer::updateTriangle(glm::mat4 newModel) {
         triangleModel.model = newModel;
 }
 
+void VulkanRenderer::updateViewTriangle(glm::mat4 newModel) {
+    triangleModel.view = newModel;
+}
+
+
+
+void VulkanRenderer::draw() {
+    // 1. Get next available image to draw to and set something to signal when we're finished with the image (a semaphore)
+    // 2. Submit command buffer to queue for execution, making sure it waits for the image to be signalled as available before drawing
+    // and signals when it has finished rendering
+    // 3. Present image to screen when it has signaled finished rendering
+
+    // Wait for fences before we continue submitting to the GPU
+    vkWaitForFences(mainDevice.logicalDevice, 1, &drawFences[currentFrame], VK_TRUE,
+                    std::numeric_limits<uint64_t>::max());
+    // Manually reset (close) fences
+    vkResetFences(mainDevice.logicalDevice, 1, &drawFences[currentFrame]);
+
+    // -- GET NEXT IMAGE --
+    // Get index of next image to be drawn to, and signal semaphore when ready to be drawn to
+    uint32_t imageIndex;
+    vkAcquireNextImageKHR(mainDevice.logicalDevice, swapchain, std::numeric_limits<uint64_t>::max(),
+                          imageAvailable[currentFrame], VK_NULL_HANDLE, &imageIndex);
+
+    // Update vpUniformBuffer
+    recordCommands(imageIndex);
+    updateUniformBuffers(imageIndex);
+
+    // -- SUBMIT COMMAND BUFFER TO RENDER --
+    // Queue submission information
+    VkSubmitInfo submitInfo = {};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.waitSemaphoreCount = 1;                          // Number of semaphores to wait on
+    submitInfo.pWaitSemaphores = &imageAvailable[currentFrame];               // List of semaphores to wait on
+    VkPipelineStageFlags waitStages[]{VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    submitInfo.pWaitDstStageMask = waitStages;                  // Stages to check semaphores at
+    submitInfo.commandBufferCount = 1;                          // Number of command buffers to submit
+    submitInfo.pCommandBuffers = &commandBuffers[imageIndex];   // Command buffer to submit
+    submitInfo.signalSemaphoreCount = 1;                        // Number of semaphore to signal
+    submitInfo.pSignalSemaphores = &renderFinished[currentFrame];             // Semaphores to signal when cmd buffer finishes
+
+    // Submit command buffer to queue
+    VkResult result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, drawFences[currentFrame]);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to submit command buffer to Queue");
+    // Now our images has been drawn, it actually has data
+
+    // -- PRESENT RENDERED IMAGE TO SCREEN/SURFACE --
+    VkPresentInfoKHR presentInfo = {};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.waitSemaphoreCount = 1;                         // Number of semaphores to wait on
+    presentInfo.pWaitSemaphores = &renderFinished[currentFrame];              // Semaphores to wait on
+    presentInfo.swapchainCount = 1;                             // Number of swapchains to present to/from
+    presentInfo.pSwapchains = &swapchain;                       // Swapchain to present images to
+    presentInfo.pImageIndices = &imageIndex;                    // Index of images in swapchain to present
+
+    // Present image
+    result = vkQueuePresentKHR(graphicsQueue, &presentInfo);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to present image to screen");
+
+    // Get next frame (use % MAX_FRAME_DRAWS to keep value belo MAX_FRAME_DRAWS)
+    currentFrame = (currentFrame + 1) % Utils::MAX_FRAME_DRAWS;
+}
+
+void VulkanRenderer::recordCommands(uint32_t currentImage) {
+    // Information about how to begin each command buffer
+    VkCommandBufferBeginInfo bufferBeginInfo = {};
+    bufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    //bufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;     // The command buffer can be submitted while it is awaiting execution Yes it can
+
+
+    // Start recording commands to command buffer
+    VkResult result = vkBeginCommandBuffer(commandBuffers[currentImage], &bufferBeginInfo);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to start recording a Command Buffer");
+
+
+    VkRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = modelPipeline.renderPass;
+    renderPassInfo.framebuffer = swapChainFramebuffers[currentImage];
+    renderPassInfo.renderArea.offset = {0, 0};
+    renderPassInfo.renderArea.extent = swapChainExtent;
+
+    std::array<VkClearValue, 3> clearValues = {};
+    clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
+    clearValues[1].color = {0.6f, 0.65f, 0.4f, 1.0f};
+    clearValues[2].depthStencil.depth = 1.0f;
+    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    renderPassInfo.pClearValues = clearValues.data();
+
+    vkCmdBeginRenderPass(commandBuffers[currentImage], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    vkCmdBindPipeline(commandBuffers[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, boxPipeline.pipeline);
+
+    for (int i = 0; i < meshList.size(); ++i) {
+
+        VkBuffer vertexBuffer[] = {meshList[i].getVertexBuffer()};
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(commandBuffers[currentImage], 0, 1, vertexBuffer, offsets);
+
+
+        vkCmdBindDescriptorSets(commandBuffers[currentImage],
+                                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                boxPipeline.pipelineLayout,
+                                0,
+                                1,
+                                &triangle.descriptorSets[currentImage],
+                                0,
+                                nullptr);
+
+
+        vkCmdDraw(commandBuffers[currentImage], static_cast<uint32_t>(meshList[i].getVertexCount()), 1, 0, 0);
+
+    }
+
+    // Bind Pipeline to be used in render pass
+    vkCmdBindPipeline(commandBuffers[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, modelPipeline.pipeline);
+
+    for (size_t j = 0; j < modelList.size(); j++) {
+        // Pushing PushConstants
+        MeshModel thisModel = modelList[j];
+        glm::mat4 tempModel = thisModel.getModel();
+        vkCmdPushConstants(commandBuffers[currentImage], modelPipeline.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0,
+                           sizeof(Model),                          // Size of data being pushed
+                           &tempModel                               // Actual data being pushed
+        );
+
+        for (size_t k = 0; k < thisModel.getMeshCount(); k++) {
+
+            // Bind our vertex buffer
+            VkBuffer vertexBuffers[] = {thisModel.getMesh(k)->getVertexBuffer()};   // Buffers to bind
+            VkDeviceSize offsets[] = {0};                                           // Offsets into buffers being bound
+            vkCmdBindVertexBuffers(commandBuffers[currentImage], 0, 1, vertexBuffers,
+                                   offsets);     // Command to bind vertex buffer before drawing
+
+            // Bind our mesh Index buffer using the uint32 type ONLY ONE CAN BE BINDED
+            vkCmdBindIndexBuffer(commandBuffers[currentImage], thisModel.getMesh(k)->getIndexBuffer(), 0,
+                                 VK_INDEX_TYPE_UINT32);
+            // Dynamic offset amount
+            // uint32_t dynamicOffset = static_cast<uint32_t>(modelUniformAlignment) * j;
+
+            std::array<VkDescriptorSet, 2> descriptorSetGroup = {descriptorSets[currentImage],
+                                                                 samplerDescriptorSets[thisModel.getMesh(
+                                                                         k)->getTexId()]};
+            // Bind descriptor sets
+            vkCmdBindDescriptorSets(commandBuffers[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, modelPipeline.pipelineLayout, 0,
+                                    static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0,
+                                    nullptr);
+
+            // Execute pipeline
+            vkCmdDrawIndexed(commandBuffers[currentImage], thisModel.getMesh(k)->getIndexCount(), 1, 0, 0, 0);
+        }
+    }
+
+    // Subpass 2
+    vkCmdNextSubpass(commandBuffers[currentImage], VK_SUBPASS_CONTENTS_INLINE);
+
+    vkCmdBindPipeline(commandBuffers[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, secondPipeline.pipeline);
+    vkCmdBindDescriptorSets(commandBuffers[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, secondPipeline.pipelineLayout, 0, 1,
+                            &inputDescriptorSets[currentImage], 0, nullptr);
+
+    vkCmdDraw(commandBuffers[currentImage], 3, 1, 0, 0);
+
+
+
+    vkCmdEndRenderPass(commandBuffers[currentImage]);
+
+    // Stop recording to command buffer
+    result = vkEndCommandBuffer(commandBuffers[currentImage]);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to end recording a Command Buffer");
+
+}
 
 #pragma clang diagnostic pop

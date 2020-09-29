@@ -9,17 +9,17 @@ Descriptors::Descriptors(Utils::MainDevice newMainDevice) {
     mainDevice = newMainDevice;
 }
 
-void Descriptors::createDescriptorSetLayout(VkDescriptorSetLayout *descriptorSetLayout) {
+void Descriptors::createDescriptorSetLayout(VkDescriptorSetLayout *descriptorSetLayout) const {
 
     // Model binding info
-    VkDescriptorSetLayoutBinding modelLayoutBinding = {};
-    modelLayoutBinding.binding = 0;
-    modelLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    modelLayoutBinding.descriptorCount = 1;
-    modelLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    modelLayoutBinding.pImmutableSamplers = nullptr;
+    VkDescriptorSetLayoutBinding vpLayoutBinding = {};
+    vpLayoutBinding.binding = 0;
+    vpLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    vpLayoutBinding.descriptorCount = 1;
+    vpLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    vpLayoutBinding.pImmutableSamplers = nullptr;
 
-    std::vector<VkDescriptorSetLayoutBinding> layoutBindings = {modelLayoutBinding};
+    std::vector<VkDescriptorSetLayoutBinding> layoutBindings = {vpLayoutBinding};
     // Create descriptor set layout with given bindings
     VkDescriptorSetLayoutCreateInfo layoutCreateInfo = {};
     layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -31,17 +31,15 @@ void Descriptors::createDescriptorSetLayout(VkDescriptorSetLayout *descriptorSet
     if (result != VK_SUCCESS) throw std::runtime_error("Could not create Descriptor set layout");
 }
 
-void Descriptors::createDescriptorSetPool(VkDescriptorPool *descriptorPool, uint32_t maxSets) {
-
-
+void Descriptors::createDescriptorSetPool(VkDescriptorPool *descriptorPool, uint32_t descriptorCount) const {
     // CREATE UNIFORM DESCRIPTOR POOL FOR TRIANGLE
     VkDescriptorPoolSize  poolSize = {};
     poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSize.descriptorCount = maxSets;
+    poolSize.descriptorCount = descriptorCount;
 
     VkDescriptorPoolCreateInfo vkDescriptorPoolCreateInfo = {};
     vkDescriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    vkDescriptorPoolCreateInfo.maxSets = maxSets;
+    vkDescriptorPoolCreateInfo.maxSets = descriptorCount;
     vkDescriptorPoolCreateInfo.poolSizeCount = 1;             // Amount of pool sizes being passed
     vkDescriptorPoolCreateInfo.pPoolSizes = &poolSize;
 
@@ -53,7 +51,7 @@ void Descriptors::createDescriptorSetPool(VkDescriptorPool *descriptorPool, uint
 }
 
 void Descriptors::createDescriptorSet(VkDescriptorSetLayout descriptorSetLayout, VkDescriptorPool descriptorPool,
-                                      VkBuffer bufferBinding, VkDescriptorSet *descriptorSet, size_t bufferInfoRange) {
+                                      VkBuffer bufferBinding, VkDescriptorSet *descriptorSet, size_t bufferInfoRange) const {
 
 
     VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = {};
@@ -83,6 +81,14 @@ void Descriptors::createDescriptorSet(VkDescriptorSetLayout descriptorSetLayout,
     triangleSetWrite.pBufferInfo = &triangleBufferInfo;
 
     vkUpdateDescriptorSets(mainDevice.logicalDevice, 1, &triangleSetWrite, 0, nullptr);
+
+}
+
+void Descriptors::clean(Utils::UniformBuffer uniformBuffer) {
+
+
+    vkDestroyDescriptorPool(mainDevice.logicalDevice, uniformBuffer.descriptorPool, nullptr);
+    vkDestroyDescriptorSetLayout(mainDevice.logicalDevice, uniformBuffer.descriptorSetLayout, nullptr);
 
 }
 

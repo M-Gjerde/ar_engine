@@ -10,15 +10,16 @@
 class Descriptors {
 public:
 
-    Descriptors(Utils::MainDevice newMainDevice);
+    explicit Descriptors(Utils::MainDevice newMainDevice);
     ~Descriptors() = default;
 
-    void createDescriptorSetLayout(VkDescriptorSetLayout * descriptorSetLayout);
-    void createDescriptorSetPool(VkDescriptorPool *descriptorPool, uint32_t maxSets);
+    void createDescriptorSetLayout(VkDescriptorSetLayout * descriptorSetLayout) const;
+    void createDescriptorSetPool(VkDescriptorPool *descriptorPool, uint32_t maxSets) const;
     void createDescriptorSet(VkDescriptorSetLayout descriptorSetLayout, VkDescriptorPool descriptorPool,
-                             VkBuffer bufferBinding, VkDescriptorSet *descriptorSet, size_t bufferInfoRange);
+                             VkBuffer bufferBinding, VkDescriptorSet *descriptorSet, size_t bufferInfoRange) const;
 
 
+    void clean(Utils::UniformBuffer uniformBuffer);
 
 private:
 

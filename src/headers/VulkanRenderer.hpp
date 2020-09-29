@@ -31,6 +31,7 @@
 #include "../libs/GraphicsPipeline.h"
 #include "Camera.h"
 #include "../libs/TextureLoading.h"
+#include "../libs/Descriptors.h"
 
 
 class VulkanRenderer {
@@ -43,6 +44,9 @@ public:
     int createMeshModel(std::string modelFile);
     void updateModel(int modelId, glm::mat4 newModel);
     void updateTriangle(glm::mat4 newModel);
+    void updateViewTriangle(glm::mat4 newModel);
+
+
     void setCamera(Camera newCamera);
 
     void draw();
@@ -56,7 +60,7 @@ private:
     VkAllocationCallbacks vkAllocationCallbacks = Allocator().operator VkAllocationCallbacks();
 
 
-    TriangleModel triangleModel;
+    TriangleModel triangleModel{};
     GLFWwindow *window{};
     int currentFrame = 0;
 
@@ -64,6 +68,7 @@ private:
     Vfd vfd;
     TextureLoading textureLoading;
     GraphicsPipeline myPipe;
+    Descriptors *descriptors{};
 
     // Scene Objects
     std::vector<MeshModel> modelList;
@@ -164,8 +169,8 @@ private:
     void createTriangle();
 
     void createFramebuffer();
-    void createCommandPool();
-    void createCommandBuffers();
+    void getCommandPool();
+    void getCommandBuffers();
     void createSynchronisation();
     void getTextureSampler();
 
@@ -182,14 +187,6 @@ private:
     //  - Get functions
     void getPhysicalDevice();
     void getVulkanInstance();
-
-    // - Allocate functions
-    void allocateDynamicBufferTransferSpace();
-
-    //  - Support functions
-
-    //  -- Getter functions
-    Utils::QueueFamilyIndices getQueueFamilies(VkPhysicalDevice device);
 
     //  -- Choose functions
     VkFormat chooseSupportedFormat(const std::vector<VkFormat> &formats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags) const;

@@ -44,6 +44,9 @@ public:
     void getSwapchainImageFormat(VkFormat* pFormat);
     void getSwapchainExtent(VkExtent2D* pExtent2D);
     void getSwapchainFramebuffers(std::vector<VkFramebuffer>* pFrameBuffers);
+    void getCommandPool(VkCommandPool *commandPool);
+    void getCommandBuffer(VkCommandBuffer *commandBuffer, VkCommandPool commandPool) const;
+
 
     VkAllocationCallbacks getAllocator();
 private:
@@ -80,6 +83,7 @@ private:
     void selectPhysicalDevice();
     void createLogicalDevice();
     void createSwapChain();
+    void getQueueFamilies();
 
     // Helper functions
     bool checkValidationLayerSupport();

@@ -583,6 +583,37 @@ VkAllocationCallbacks Vfd::getAllocator() {
     return vkAllocationCallbacks;
 }
 
+void Vfd::getCommandPool(VkCommandPool *commandPool) {
+    //  Get indices of queue families from device
+    Utils::QueueFamilyIndices queueFamilyIndices = getQueueFamilies(mainDevice.physicalDevice);
+
+    VkCommandPoolCreateInfo poolInfo = {};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily;      //  Queue Family type that buffers from this command pool will use
+
+    //  Create a Graphics queue family command pool
+    VkResult result = vkCreateCommandPool(mainDevice.logicalDevice, &poolInfo, nullptr, commandPool);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to create command pool");
+
+}
+
+void Vfd::getCommandBuffer(VkCommandBuffer *commandBuffer, VkCommandPool commandPool) const {
+    //  This is called allocated because we have already "created" it in the pool when we reserved memory
+    VkCommandBufferAllocateInfo cbAllocInfo = {};
+    cbAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    cbAllocInfo.commandPool = commandPool;
+    cbAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;     // vkCmdExecuteCommands(buffer) executing a command buffer from a command buffer. Primary means that it is executed by queue, and secondary means it is executed by a commandbuffer
+    cbAllocInfo.commandBufferCount = 1;                      // Amount of command buffers that we are going to create
+
+    //  Allocate command buffers and place handles in array of buffers
+    VkResult result = vkAllocateCommandBuffers(mainDevice.logicalDevice, &cbAllocInfo, commandBuffer);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to allocate command buffers");
+
+}
+
 
 
 
