@@ -53,24 +53,28 @@ int VulkanRenderer::init(GLFWwindow *newWindow) {
         createSynchronisation();
 
 
-        triangleModel.projection = glm::perspective(glm::radians(45.0f), (float)swapChainExtent.width / (float)swapChainExtent.height, 0.1f, 100.0f);
-        triangleModel.view = glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        triangleModel.projection = glm::perspective(glm::radians(45.0f),
+                                                    (float) swapChainExtent.width / (float) swapChainExtent.height,
+                                                    0.1f, 100.0f);
+        helicopterVP.projection = glm::perspective(glm::radians(45.0f),
+                                                   (float) swapChainExtent.width / (float) swapChainExtent.height, 0.1f,
+                                                   100.0f);
         triangleModel.model = glm::mat4(1.0f);
 
+
         triangleModel.projection[1][1] *= -1;
+        helicopterVP.projection[1][1] *= -1;
 
         // Create a mesh
         // Vertex Data
-        std::vector<TriangleVertex> triangleVertices = {
-                { { -0.1, -0.4, 0.0 },{ 1.0f, 0.0f, 0.0f } },	// 0
-                { { -0.1, 0.4, 0.0 },{ 0.0f, 1.0f, 0.0f } },	    // 1
-                { { -0.9, 0.4, 0.0 },{ 0.0f, 0.0f, 1.0f } },    // 2
+        std::vector<TriangleVertex> triangleVertices = {{{-0.1, -0.4, 0.0}, {1.0f, 0.0f, 0.0f}},    // 0
+                                                        {{-0.1, 0.4,  0.0}, {0.0f, 1.0f, 0.0f}},    // 1
+                                                        {{-0.9, 0.4,  0.0}, {0.0f, 0.0f, 1.0f}},    // 2
         };
 
         Mesh triangleMesh = Mesh(mainDevice, graphicsQueue, graphicsCommandPool, &triangleVertices);
 
         meshList.push_back(triangleMesh);
-
 
 
         createTexture("../textures/landscape.jpg");
@@ -220,9 +224,6 @@ void VulkanRenderer::getGraphicsPipeline() {
 
 }
 
-void VulkanRenderer::setCamera(Camera newCamera) {
-    camera = newCamera;
-}
 
 void VulkanRenderer::createFramebuffer() {
     //Resize framebuffer count to equal swap chain image count
@@ -250,7 +251,6 @@ void VulkanRenderer::createFramebuffer() {
             throw std::runtime_error("Failed to create Framebuffer");
     }
 }
-
 
 
 void VulkanRenderer::createSynchronisation() {
@@ -295,7 +295,7 @@ void VulkanRenderer::createDescriptorPool() {
     modelPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     modelPoolSize.descriptorCount = static_cast<uint32_t>(modelDynamicUniformBuffer.size());
 */
-    std::vector <VkDescriptorPoolSize> poolList = {vpPoolSize};
+    std::vector<VkDescriptorPoolSize> poolList = {vpPoolSize};
 
     // Data to create descriptor pool
     VkDescriptorPoolCreateInfo poolCreateInfo = {};
@@ -337,7 +337,7 @@ void VulkanRenderer::createDescriptorPool() {
     depthInputPoolSize.type = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
     depthInputPoolSize.descriptorCount = static_cast<uint32_t>(depthBufferImageView.size());
 
-    std::vector <VkDescriptorPoolSize> inputPoolSizes = {colorInputPoolSize, depthInputPoolSize};
+    std::vector<VkDescriptorPoolSize> inputPoolSizes = {colorInputPoolSize, depthInputPoolSize};
 
     // Create input attachment pool
     VkDescriptorPoolCreateInfo inputPoolCreateInfo = {};
@@ -379,7 +379,7 @@ void VulkanRenderer::createDescriptorSets() {
         VkDescriptorBufferInfo vpBufferInfo = {};
         vpBufferInfo.buffer = vpUniformBuffer[i];                // Buffer to get data from
         vpBufferInfo.offset = 0;                               // Offset into the data
-        vpBufferInfo.range = sizeof(Camera::UboViewProjection);       // Size of the data that is going to be bound to the descriptor set
+        vpBufferInfo.range = sizeof(UboViewProjection);       // Size of the data that is going to be bound to the descriptor set
 
 
         // Data about connection between binding and buffer
@@ -422,7 +422,7 @@ void VulkanRenderer::createInputDescriptorSets() {
     inputDescriptorSets.resize(swapChainImages.size());
 
     // fill array of layouts ready for set creation
-    std::vector <VkDescriptorSetLayout> setLayouts(swapChainImages.size(), inputSetLayout);
+    std::vector<VkDescriptorSetLayout> setLayouts(swapChainImages.size(), inputSetLayout);
 
     // Input Attachment descriptor set allocation info
     VkDescriptorSetAllocateInfo setAllocInfo = {};
@@ -471,7 +471,7 @@ void VulkanRenderer::createInputDescriptorSets() {
         depthWrite.pImageInfo = &depthAttachmentDescriptor;
 
         // List of input descriptor set writes
-        std::vector <VkWriteDescriptorSet> setWrites = {colorWrite, depthWrite};
+        std::vector<VkWriteDescriptorSet> setWrites = {colorWrite, depthWrite};
         vkUpdateDescriptorSets(mainDevice.logicalDevice, static_cast<uint32_t>(setWrites.size()), setWrites.data(), 0,
                                nullptr);
     }
@@ -479,7 +479,7 @@ void VulkanRenderer::createInputDescriptorSets() {
 
 void VulkanRenderer::createUniformBuffers() {
     // ViewProjection buffer size (Will offset access)
-    VkDeviceSize vpBufferSize = sizeof(Camera::UboViewProjection);
+    VkDeviceSize vpBufferSize = sizeof(UboViewProjection);
 
     // Model buffer size
     //VkDeviceSize modelBufferSize = modelUniformAlignment * MAX_OBJECTS;
@@ -492,8 +492,7 @@ void VulkanRenderer::createUniformBuffers() {
 
     // Create uniform buffers
     for (size_t i = 0; i < swapChainImages.size(); i++) {
-        Utils::createBuffer(mainDevice, vpBufferSize,
-                            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        Utils::createBuffer(mainDevice, vpBufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                             &vpUniformBuffer[i], &vpUniformBufferMemory[i]);
 
@@ -513,16 +512,14 @@ void VulkanRenderer::createUniformBuffers() {
 void VulkanRenderer::updateUniformBuffers(uint32_t imageIndex) {
     // Copy VP data
     void *data;
-    if (camera.viewProjectionEnable) {
-        vkMapMemory(mainDevice.logicalDevice, vpUniformBufferMemory[imageIndex], 0, sizeof(Camera::UboViewProjection),
-                    0, &data);
-        memcpy(data, &camera.uboViewProjection, sizeof(Camera::UboViewProjection));
-        vkUnmapMemory(mainDevice.logicalDevice, vpUniformBufferMemory[imageIndex]);
-    }
+    vkMapMemory(mainDevice.logicalDevice, vpUniformBufferMemory[imageIndex], 0, sizeof(UboViewProjection), 0, &data);
+    memcpy(data, &helicopterVP, sizeof(UboViewProjection));
+    vkUnmapMemory(mainDevice.logicalDevice, vpUniformBufferMemory[imageIndex]);
+
 
     uint32_t size = sizeof(TriangleModel);
 
-    void* data2;
+    void *data2;
     vkMapMemory(mainDevice.logicalDevice, triangle.bufferMemory[imageIndex], 0, size, 0, &data2);
     memcpy(data2, &triangleModel, (size_t) size);
     vkUnmapMemory(mainDevice.logicalDevice, triangle.bufferMemory[imageIndex]);
@@ -559,7 +556,6 @@ void VulkanRenderer::updateModel(int modelId, glm::mat4 newModel) {
 void VulkanRenderer::getPushConstantRange() {
     myPipe.getPushConstantRange(&pushConstantRange);
 }
-
 
 
 VkFormat VulkanRenderer::chooseSupportedFormat(const std::vector<VkFormat> &formats, VkImageTiling tiling,
@@ -612,7 +608,7 @@ int VulkanRenderer::createMeshModel(std::string modelFile) {
 
 
     // Get vector of all materials with 1:1 ID placement
-    std::vector <std::string> textureNames = MeshModel::LoadMaterials(scene);
+    std::vector<std::string> textureNames = MeshModel::LoadMaterials(scene);
 
 
     // Conversion from the materials list ID's to our Descriptor Array IDs
@@ -631,9 +627,8 @@ int VulkanRenderer::createMeshModel(std::string modelFile) {
 
 
     // Load in all our meshes
-    std::vector <Mesh> modelMeshes = MeshModel::LoadNode(mainDevice,
-                                                         graphicsQueue, graphicsCommandPool, scene->mRootNode, scene,
-                                                         matToTex);
+    std::vector<Mesh> modelMeshes = MeshModel::LoadNode(mainDevice, graphicsQueue, graphicsCommandPool,
+                                                        scene->mRootNode, scene, matToTex);
 
     // Create mesh model and add to list
     MeshModel meshModel = MeshModel(modelMeshes);
@@ -693,7 +688,6 @@ void VulkanRenderer::createDepthBufferImage() {
 }
 
 
-
 void VulkanRenderer::createTriangle() {
 
     triangle.buffer.resize(swapChainImages.size());
@@ -707,8 +701,8 @@ void VulkanRenderer::createTriangle() {
 
 
         Utils::createBuffer(mainDevice, size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &triangle.buffer[i],
-                            &triangle.bufferMemory[i]);
+                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                            &triangle.buffer[i], &triangle.bufferMemory[i]);
     }
 
     // Create Descriptor sets
@@ -728,18 +722,24 @@ void VulkanRenderer::createTriangle() {
 
     // Get descriptor sets
     for (int i = 0; i < swapChainImages.size(); ++i) {
-        triangleDescriptors.createDescriptorSet(triangle.descriptorSetLayout, triangle.descriptorPool, triangle.buffer[i], &triangle.descriptorSets[i], sizeof(TriangleModel));
+        triangleDescriptors.createDescriptorSet(triangle.descriptorSetLayout, triangle.descriptorPool,
+                                                triangle.buffer[i], &triangle.descriptorSets[i], sizeof(TriangleModel));
     }
 }
 
+
+glm::mat4 VulkanRenderer::getTrianglePosition() {
+    return triangleModel.model;
+}
+
 void VulkanRenderer::updateTriangle(glm::mat4 newModel) {
-        triangleModel.model = newModel;
+    triangleModel.model = newModel;
 }
 
-void VulkanRenderer::updateViewTriangle(glm::mat4 newModel) {
+void VulkanRenderer::updateViewPosition(glm::mat4 newModel) {
     triangleModel.view = newModel;
+    helicopterVP.view = newModel;
 }
-
 
 
 void VulkanRenderer::draw() {
@@ -839,14 +839,8 @@ void VulkanRenderer::recordCommands(uint32_t currentImage) {
         vkCmdBindVertexBuffers(commandBuffers[currentImage], 0, 1, vertexBuffer, offsets);
 
 
-        vkCmdBindDescriptorSets(commandBuffers[currentImage],
-                                VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                boxPipeline.pipelineLayout,
-                                0,
-                                1,
-                                &triangle.descriptorSets[currentImage],
-                                0,
-                                nullptr);
+        vkCmdBindDescriptorSets(commandBuffers[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                boxPipeline.pipelineLayout, 0, 1, &triangle.descriptorSets[currentImage], 0, nullptr);
 
 
         vkCmdDraw(commandBuffers[currentImage], static_cast<uint32_t>(meshList[i].getVertexCount()), 1, 0, 0);
@@ -883,9 +877,9 @@ void VulkanRenderer::recordCommands(uint32_t currentImage) {
                                                                  samplerDescriptorSets[thisModel.getMesh(
                                                                          k)->getTexId()]};
             // Bind descriptor sets
-            vkCmdBindDescriptorSets(commandBuffers[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, modelPipeline.pipelineLayout, 0,
-                                    static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0,
-                                    nullptr);
+            vkCmdBindDescriptorSets(commandBuffers[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                    modelPipeline.pipelineLayout, 0, static_cast<uint32_t>(descriptorSetGroup.size()),
+                                    descriptorSetGroup.data(), 0, nullptr);
 
             // Execute pipeline
             vkCmdDrawIndexed(commandBuffers[currentImage], thisModel.getMesh(k)->getIndexCount(), 1, 0, 0, 0);
@@ -896,11 +890,10 @@ void VulkanRenderer::recordCommands(uint32_t currentImage) {
     vkCmdNextSubpass(commandBuffers[currentImage], VK_SUBPASS_CONTENTS_INLINE);
 
     vkCmdBindPipeline(commandBuffers[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, secondPipeline.pipeline);
-    vkCmdBindDescriptorSets(commandBuffers[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS, secondPipeline.pipelineLayout, 0, 1,
-                            &inputDescriptorSets[currentImage], 0, nullptr);
+    vkCmdBindDescriptorSets(commandBuffers[currentImage], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            secondPipeline.pipelineLayout, 0, 1, &inputDescriptorSets[currentImage], 0, nullptr);
 
     vkCmdDraw(commandBuffers[currentImage], 3, 1, 0, 0);
-
 
 
     vkCmdEndRenderPass(commandBuffers[currentImage]);
@@ -911,5 +904,6 @@ void VulkanRenderer::recordCommands(uint32_t currentImage) {
         throw std::runtime_error("Failed to end recording a Command Buffer");
 
 }
+
 
 #pragma clang diagnostic pop

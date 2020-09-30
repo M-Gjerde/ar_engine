@@ -16,7 +16,6 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include "../headers/VulkanRenderer.hpp"
-#include "../headers/Camera.h"
 
 
 class GameApplication {
@@ -24,23 +23,7 @@ class GameApplication {
 public:
     GLFWwindow *window;
     VulkanRenderer vulkanRenderer;
-    Camera camera;
 
-    void initCamera() {
-
-        glm::mat4 projection = glm::perspective(glm::radians(45.0f),
-                                                (float) 1280 /
-                                                (float) 480, 0.1f, 100.0f);
-        glm::mat4 view = glm::lookAt(glm::vec3(5.0f, 0.0f, 20.0f),
-                                     glm::vec3(0.0f, 0.0f, -5.0f),
-                                     glm::vec3(0.0f, 1.0f, 0.0f));
-        projection[1][1] *= -1; // Flip the y-axis because Vulkan and OpenGL are different and glm was initially made for openGL
-
-        camera.setProjection(projection);
-        camera.setView(view);
-        camera.enableCamera(true);
-
-    }
 
     explicit GameApplication(const std::string& title) {
 
@@ -56,10 +39,6 @@ public:
         // my application specific state gets initialized here
         if (vulkanRenderer.init(window) == EXIT_FAILURE)
             throw std::runtime_error("Failed to init");
-
-        // Setup Scene Camera
-        initCamera();
-        vulkanRenderer.setCamera(camera);
 
     }
 
@@ -114,7 +93,7 @@ public:
 
 private:
     // Scene settings
-    int helicopter = 0;//vulkanRenderer.createMeshModel("../objects/uh60.obj");
+    int helicopter = vulkanRenderer.createMeshModel("../objects/Crate/Crate1.obj");
 
     double motion = 0.0f;
     [[maybe_unused]] double deltaTime = 0.0f;

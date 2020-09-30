@@ -29,7 +29,6 @@
 #include "Vfd.h"
 #include "../libs/TextureLoading.h"
 #include "../libs/GraphicsPipeline.h"
-#include "Camera.h"
 #include "../libs/TextureLoading.h"
 #include "../libs/Descriptors.h"
 
@@ -44,10 +43,9 @@ public:
     int createMeshModel(std::string modelFile);
     void updateModel(int modelId, glm::mat4 newModel);
     void updateTriangle(glm::mat4 newModel);
-    void updateViewTriangle(glm::mat4 newModel);
+    glm::mat4 getTrianglePosition();
 
-
-    void setCamera(Camera newCamera);
+    void updateViewPosition(glm::mat4 newModel);
 
     void draw();
     void cleanup();
@@ -75,7 +73,7 @@ private:
     std::vector<Mesh> meshList;
 
     // Scene Settings
-    Camera camera;
+    UboViewProjection helicopterVP;
 
     //  Vulcan Components
     //  - Main

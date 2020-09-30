@@ -14,7 +14,6 @@ add_library(static_vulkan
         src/Mesh/Object.h
         src/source/Vfd.cpp
         src/headers/Vfd.h
-        src/headers/Camera.h
         src/libs/Utils.cpp
         src/libs/Utils.h)
 target_link_libraries(static_vulkan

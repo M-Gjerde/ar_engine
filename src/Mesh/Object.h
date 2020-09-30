@@ -30,5 +30,11 @@ struct TriangleModel {
 };
 
 
+struct UboViewProjection {
+    glm::mat4 projection;
+    glm::mat4 view;
+};
+
+
 
 #endif //AR_ENGINE_OBJECT_H
