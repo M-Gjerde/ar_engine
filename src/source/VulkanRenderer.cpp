@@ -330,6 +330,7 @@ void VulkanRenderer::getDescriptorPool() {
 
 }
 
+
 void VulkanRenderer::createDescriptorSets() {
     // Resize descriptor set list so one for every uniform buffer
     descriptorSets.resize(swapChainImages.size());
