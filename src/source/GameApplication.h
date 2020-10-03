@@ -63,9 +63,10 @@ public:
             glfwPollEvents();
             update();
 
-            vulkanRenderer.draw();
         }
+
         vulkanRenderer.cleanup();
+        glfwDestroyWindow(window);
         glfwTerminate();
     }
 
@@ -85,7 +86,6 @@ public:
 
     }
 
-
     void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) override;
 
     void cursorPosCallback(GLFWwindow *window, double xPos, double yPos);
@@ -93,12 +93,9 @@ public:
     void update() override;
 
 private:
-    // Scene settings
-    int box1 = vulkanRenderer.createMeshModel("../objects/Crate/Crate1.obj");
 
 
-    double motion = 0.0f;
-    [[maybe_unused]] double deltaTime = 0.0f;
+    double deltaTime = 0.0f;
     double lastTime = 0.0f;
 
 };
