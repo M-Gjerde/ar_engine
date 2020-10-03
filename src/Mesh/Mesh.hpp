@@ -26,6 +26,7 @@ public:
          VkCommandPool transferCommandPool, std::vector<TriangleVertex> *vertices);
 
     void setModel(glm::mat4 newModel);
+
     Model getModel();
 
     // Getters
@@ -41,7 +42,7 @@ public:
     ~Mesh();
 
 private:
-    Model model;
+    Model hModel;
 
     int texId;
 

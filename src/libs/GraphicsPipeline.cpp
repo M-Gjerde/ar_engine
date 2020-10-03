@@ -29,14 +29,13 @@ VkShaderModule GraphicsPipeline::createShaderModule(Utils::MainDevice mainDevice
     return shaderModule;
 }
 
-void GraphicsPipeline::createGraphicsPipeline(Utils::MainDevice mainDevice, VkExtent2D swapchainExtent,
-                                              Utils::Pipelines *pipelineObject, Utils::Pipelines *secondPipeline) {
+void GraphicsPipeline::createGraphicsPipeline(Utils::UdemyGraphicsPipeline *pipe) {
     auto vertexShaderCode = Utils::readFile("../shaders/vert.spv");
     auto fragmentShaderCode = Utils::readFile("../shaders/frag.spv");
 
     //  Build shader modules to link to graphics pipeline
-    VkShaderModule vertexShaderModule = createShaderModule(mainDevice, vertexShaderCode);
-    VkShaderModule fragmentShaderModule = createShaderModule(mainDevice, fragmentShaderCode);
+    VkShaderModule vertexShaderModule = createShaderModule(pipe->mainDevice, vertexShaderCode);
+    VkShaderModule fragmentShaderModule = createShaderModule(pipe->mainDevice, fragmentShaderCode);
 
     //  -- SHADER STAGE CREATION INFORMATION --
     //  Vertex Stage creation information
@@ -107,15 +106,15 @@ void GraphicsPipeline::createGraphicsPipeline(Utils::MainDevice mainDevice, VkEx
     VkViewport viewport = {};
     viewport.x = 0.0f;                                  //x start coordinate
     viewport.y = 0.0f;                                  //y start coordinate
-    viewport.width = (float) swapchainExtent.width;     //viewport width
-    viewport.height = (float) swapchainExtent.height;   //viewport height
+    viewport.width = (float) pipe->swapchainExtent.width;     //viewport width
+    viewport.height = (float) pipe->swapchainExtent.height;   //viewport height
     viewport.minDepth = 0.0f;                           //min framebuffer depth
     viewport.maxDepth = 1.0f;                           //max framebuffer depth
 
     //  Create a scissor info struct
     VkRect2D scissor = {};
     scissor.offset = {0, 0};                      //Offset to use region from
-    scissor.extent = swapchainExtent;                   //Extent to describe region to use, starting at offset
+    scissor.extent = pipe->swapchainExtent;                   //Extent to describe region to use, starting at offset
 
     VkPipelineViewportStateCreateInfo viewportStateCreateInfo = {};
     viewportStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -181,17 +180,17 @@ void GraphicsPipeline::createGraphicsPipeline(Utils::MainDevice mainDevice, VkEx
     colorBlendingCreateInfo.pAttachments = &colorStateAttachment;
 
     //  -- PIPELINE LAYOUT --
-    std::array<VkDescriptorSetLayout, 2> descriptorSetLayouts = {descriptorSetLayout, samplerSetLayout};
+    std::array<VkDescriptorSetLayout, 2> descriptorSetLayouts = {pipe->descriptorSetLayout, pipe->samplerSetLayout};
 
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {};
     pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutCreateInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size());         // Number of descriptor set layouts
     pipelineLayoutCreateInfo.pSetLayouts = descriptorSetLayouts.data();                                   // Descriptor set layout to bind
     pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
-    pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
+    pipelineLayoutCreateInfo.pPushConstantRanges = &pipe->pushConstantRange;
 
-    VkResult result = vkCreatePipelineLayout(mainDevice.logicalDevice, &pipelineLayoutCreateInfo, &vkAllocationCallbacks,
-                                             &pipelineObject->pipelineLayout);
+    VkResult result = vkCreatePipelineLayout(pipe->mainDevice.logicalDevice, &pipelineLayoutCreateInfo, &vkAllocationCallbacks,
+                                             &pipe->pipe.pipelineLayout);
     if (result != VK_SUCCESS)
         throw std::runtime_error("Failed to create pipeline");
 
@@ -217,8 +216,8 @@ void GraphicsPipeline::createGraphicsPipeline(Utils::MainDevice mainDevice, VkEx
     pipelineCreateInfo.pRasterizationState = &rasterizerCreateInfo;
     pipelineCreateInfo.pMultisampleState = &multisampleCreateInfo;
     pipelineCreateInfo.pDepthStencilState = &depthStencilCreateInfo;
-    pipelineCreateInfo.layout = pipelineObject->pipelineLayout;                         //Pipeline layout pipeline should use
-    pipelineCreateInfo.renderPass = pipelineObject->renderPass;                         //Render pass description the pipeline is compatible with
+    pipelineCreateInfo.layout = pipe->pipe.pipelineLayout;                         //Pipeline layout pipeline should use
+    pipelineCreateInfo.renderPass = pipe->pipe.renderPass;                         //Render pass description the pipeline is compatible with
     pipelineCreateInfo.subpass = 0;                                     //Subpass of render pass to use with pipeline
 
     //  Pipeline derivatives : Can create multiple pipelines that derive from one another for optimisation
@@ -226,14 +225,14 @@ void GraphicsPipeline::createGraphicsPipeline(Utils::MainDevice mainDevice, VkEx
     pipelineCreateInfo.basePipelineIndex = -1;                          //Or index we want to derive pipeline from
 
     //  Create graphics pipeline
-    result = vkCreateGraphicsPipelines(mainDevice.logicalDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, &vkAllocationCallbacks,
-                                       &pipelineObject->pipeline);
+    result = vkCreateGraphicsPipelines(pipe->mainDevice.logicalDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, &vkAllocationCallbacks,
+                                       &pipe->pipe.pipeline);
 
     if (result != VK_SUCCESS)
         throw std::runtime_error("Failed to create graphics pipeline");
     //  Destroy modules, no longer needed after pipeline created
-    vkDestroyShaderModule(mainDevice.logicalDevice, vertexShaderModule, nullptr);
-    vkDestroyShaderModule(mainDevice.logicalDevice, fragmentShaderModule, nullptr);
+    vkDestroyShaderModule(pipe->mainDevice.logicalDevice, vertexShaderModule, nullptr);
+    vkDestroyShaderModule(pipe->mainDevice.logicalDevice, fragmentShaderModule, nullptr);
 
     // CREATE SECOND PASS PIPELINE
     // Second pass shaders
@@ -241,8 +240,8 @@ void GraphicsPipeline::createGraphicsPipeline(Utils::MainDevice mainDevice, VkEx
     auto secondFragmentShaderCode = Utils::readFile("../shaders/second_frag.spv");
 
     // Build shaders
-    VkShaderModule secondVertexShaderModule = createShaderModule(mainDevice, secondVertexShaderCode);
-    VkShaderModule secondFragmentShaderModule = createShaderModule(mainDevice, secondFragmentShaderCode);
+    VkShaderModule secondVertexShaderModule = createShaderModule(pipe->mainDevice, secondVertexShaderCode);
+    VkShaderModule secondFragmentShaderModule = createShaderModule(pipe->mainDevice, secondFragmentShaderCode);
 
     // Set new shaders
     vertexShaderCreateInfo.module = secondVertexShaderModule;
@@ -264,129 +263,45 @@ void GraphicsPipeline::createGraphicsPipeline(Utils::MainDevice mainDevice, VkEx
     VkPipelineLayoutCreateInfo secondPipelineCreateInfo = {};
     secondPipelineCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     secondPipelineCreateInfo.setLayoutCount = 1;
-    secondPipelineCreateInfo.pSetLayouts = &inputSetLayout;
+    secondPipelineCreateInfo.pSetLayouts = &pipe->inputSetLayout;
     secondPipelineCreateInfo.pushConstantRangeCount = 0;
     secondPipelineCreateInfo.pPushConstantRanges = nullptr;
 
-    result = vkCreatePipelineLayout(mainDevice.logicalDevice, &secondPipelineCreateInfo, &vkAllocationCallbacks,
-                                    &secondPipeline->pipelineLayout);
+    result = vkCreatePipelineLayout(pipe->mainDevice.logicalDevice, &secondPipelineCreateInfo, &vkAllocationCallbacks,
+                                    &pipe->secondPipe.pipelineLayout);
     if (result != VK_SUCCESS)
         throw std::runtime_error("Failed to create second pipeline");
 
     pipelineCreateInfo.pStages = secondShaderStages;    // Update second shader stage list
-    pipelineCreateInfo.layout = secondPipeline->pipelineLayout;   // Change pipeline layout for input attachment descriptor sets
+    pipelineCreateInfo.layout = pipe->secondPipe.pipelineLayout;   // Change pipeline layout for input attachment descriptor sets
     pipelineCreateInfo.subpass = 1;                     // Use second subpass
 
     //  Create graphics pipeline
-    result = vkCreateGraphicsPipelines(mainDevice.logicalDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, &vkAllocationCallbacks,
-                                       &secondPipeline->pipeline);
+    result = vkCreateGraphicsPipelines(pipe->mainDevice.logicalDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, &vkAllocationCallbacks,
+                                       &pipe->secondPipe.pipeline);
 
     if (result != VK_SUCCESS)
         throw std::runtime_error("Failed to create second pipeline");
 
     //  Destroy second shader modules, no longer needed after pipeline created
-    vkDestroyShaderModule(mainDevice.logicalDevice, secondVertexShaderModule, nullptr);
-    vkDestroyShaderModule(mainDevice.logicalDevice, secondFragmentShaderModule, nullptr);
+    vkDestroyShaderModule(pipe->mainDevice.logicalDevice, secondVertexShaderModule, nullptr);
+    vkDestroyShaderModule(pipe->mainDevice.logicalDevice, secondFragmentShaderModule, nullptr);
 
 
 }
 
 
 
-
-void GraphicsPipeline::createDescriptorSetLayout(Utils::MainDevice mainDevice) {
-
-    // UNIFORM VALUES DESCRIPTOR SET LAYOUT
-    // VP binding info Create descriptor layout bindings
-    VkDescriptorSetLayoutBinding vpLayoutBinding = {};
-    vpLayoutBinding.binding = 0;                                           // Binding point in shader (designated by binding number in shader)
-    vpLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;    // Type of descriptor(uniform, dynamic uniform, image sampler, etc..)
-    vpLayoutBinding.descriptorCount = 1;                                   // Number of descriptors for binding
-    vpLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;               // Shader stage to bind to
-    vpLayoutBinding.pImmutableSamplers = nullptr;                          // For texture: can make sampler data unchangeable (immutable) by specyfing layout but the imageView it samples from can still be changed
-
-
-    // Model binding info
-    VkDescriptorSetLayoutBinding modelLayoutBinding = {};
-    modelLayoutBinding.binding = 1;
-    modelLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-    modelLayoutBinding.descriptorCount = 1;
-    modelLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    modelLayoutBinding.pImmutableSamplers = nullptr;
-
-    std::vector<VkDescriptorSetLayoutBinding> layoutBindings = {vpLayoutBinding};
-    // Create descriptor set layout with given bindings
-    VkDescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-    layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutCreateInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());     // Number of binding infos
-    layoutCreateInfo.pBindings = layoutBindings.data();                               // Array of binding infos
-
-    // Create descriptor set layout
-    VkResult result = vkCreateDescriptorSetLayout(mainDevice.logicalDevice, &layoutCreateInfo, nullptr,
-                                                  &descriptorSetLayout);
-    if (result != VK_SUCCESS)
-        throw std::runtime_error("Failed to create Descriptor set layout");
-
-    // CREATE TEXTURE SAMPLER DESCRIPTOR SET LAYOUT
-    // Texture binding info
-    VkDescriptorSetLayoutBinding samplerLayoutBinding = {};
-    samplerLayoutBinding.binding = 0;
-    samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplerLayoutBinding.descriptorCount = 1;
-    samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    // Create a Descriptor Set Layout with given bindings for texture
-    VkDescriptorSetLayoutCreateInfo textureLayoutCreateInfo = {};
-    textureLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    textureLayoutCreateInfo.bindingCount = 1;
-    textureLayoutCreateInfo.pBindings = &samplerLayoutBinding;
-
-    // Create Descriptor set layout
-    result = vkCreateDescriptorSetLayout(mainDevice.logicalDevice, &textureLayoutCreateInfo, nullptr,
-                                         &samplerSetLayout);
-    if (result != VK_SUCCESS)
-        throw std::runtime_error("Failed to create Descriptor Set Layout");
-
-    // CREATE INPUT ATTACHMENT IMAGE DESCRIPTOR SET LAYOUT
-    // Color input binding
-    VkDescriptorSetLayoutBinding colorInputLayoutBinding = {};
-    colorInputLayoutBinding.binding = 0;
-    colorInputLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-    colorInputLayoutBinding.descriptorCount = 1;
-    colorInputLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    // Depth input binding
-    VkDescriptorSetLayoutBinding depthInputLayoutBinding = {};
-    depthInputLayoutBinding.binding = 1;
-    depthInputLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-    depthInputLayoutBinding.descriptorCount = 1;
-    depthInputLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    // Array of input attachment bindings
-    std::vector<VkDescriptorSetLayoutBinding> inputBindings = {colorInputLayoutBinding, depthInputLayoutBinding};
-
-    // Create a Descriptor Set Layout for input attachments
-    VkDescriptorSetLayoutCreateInfo inputLayoutCreateInfo = {};
-    inputLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    inputLayoutCreateInfo.bindingCount = static_cast<uint32_t>(inputBindings.size());
-    inputLayoutCreateInfo.pBindings = inputBindings.data();
-
-    result = vkCreateDescriptorSetLayout(mainDevice.logicalDevice, &inputLayoutCreateInfo, nullptr, &inputSetLayout);
-    if (result != VK_SUCCESS)
-        throw std::runtime_error("Failed to create Descriptor Set Layout");
-
-}
-
-void GraphicsPipeline::createPushConstantRange() {
+void GraphicsPipeline::createPushConstantRange(VkPushConstantRange *pPushConstantRange) {
     // Define push constant values
-    pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;      // Shader stage push constant will go to
-    pushConstantRange.offset = 0;                                   // Offset into given data to pass to push constat
-    pushConstantRange.size = sizeof(Model);                         // Size of data being passed
+    pPushConstantRange->stageFlags = VK_SHADER_STAGE_VERTEX_BIT;      // Shader stage push constant will go to
+    pPushConstantRange->offset = 0;                                   // Offset into given data to pass to push constat
+    pPushConstantRange->size = sizeof(Model);                         // Size of data being passed
 
 }
 
 void GraphicsPipeline::createRenderPass(Utils::MainDevice mainDevice, VkFormat swapChainImageFormat,
-                                        Utils::Pipelines *renderPass) {
+                                        VkRenderPass *renderPass) {
 
     // Array of our subpasses
     std::array<VkSubpassDescription, 2> subpasses{};
@@ -524,24 +439,9 @@ void GraphicsPipeline::createRenderPass(Utils::MainDevice mainDevice, VkFormat s
     renderPassCreateInfo.dependencyCount = static_cast<uint32_t>(subpassDependencies.size());
     renderPassCreateInfo.pDependencies = subpassDependencies.data();
 
-    VkResult result = vkCreateRenderPass(mainDevice.logicalDevice, &renderPassCreateInfo, &vkAllocationCallbacks, &renderPass->renderPass);
+    VkResult result = vkCreateRenderPass(mainDevice.logicalDevice, &renderPassCreateInfo, &vkAllocationCallbacks, renderPass);
     if (result != VK_SUCCESS)
         throw std::runtime_error("Failed to create a Render pass");
-
-}
-
-void GraphicsPipeline::getPushConstantRange(VkPushConstantRange *pPushConstantRange) {
-    createPushConstantRange();
-    *pPushConstantRange = pushConstantRange;
-
-}
-
-void GraphicsPipeline::getDescriptorSetLayout(Utils::MainDevice mainDevice, VkDescriptorSetLayout *pDescriptorSetLayout,
-                                              VkDescriptorSetLayout *pDescriptorSetLayout1,VkDescriptorSetLayout *pDescriptorSetLayout2) {
-    createDescriptorSetLayout(mainDevice);
-    *pDescriptorSetLayout = descriptorSetLayout;
-    *pDescriptorSetLayout1 = samplerSetLayout;
-    *pDescriptorSetLayout2 = inputSetLayout;
 
 }
 

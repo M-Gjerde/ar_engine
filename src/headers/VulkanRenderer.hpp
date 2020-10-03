@@ -43,7 +43,7 @@ public:
     int createMeshModel(std::string modelFile);
     void updateModel(int modelId, glm::mat4 newModel);
     void updateTriangle(glm::mat4 newModel);
-    glm::mat4 getTrianglePosition();
+    glm::mat4 getTrianglePosition() const;
 
     void updateViewPosition(glm::mat4 newModel);
 
@@ -58,7 +58,7 @@ private:
     VkAllocationCallbacks vkAllocationCallbacks = Allocator().operator VkAllocationCallbacks();
 
 
-    TriangleModel triangleModel{};
+    TrianglePVM triangleModel{};
     GLFWwindow *window{};
     int currentFrame = 0;
 
@@ -108,7 +108,6 @@ private:
     VkDescriptorSetLayout descriptorSetLayout{};
     VkDescriptorSetLayout samplerSetLayout{};
     VkDescriptorSetLayout inputSetLayout{};
-    VkPushConstantRange pushConstantRange{};
 
     Utils::UniformBuffer triangle{};
 
@@ -134,8 +133,7 @@ private:
     // - Pipelines
 
     Utils::Pipelines boxPipeline{};
-    Utils::Pipelines modelPipeline{};
-    Utils::Pipelines secondPipeline{};
+    Utils::UdemyGraphicsPipeline udemyGraphicsPipeline;
 
     //  - Pools
     VkCommandPool graphicsCommandPool{};
@@ -159,7 +157,6 @@ private:
     void getSwapchain();
     void getRenderPass();
     void getDescriptorSetLayout();
-    void getPushConstantRange();
     void getGraphicsPipeline();
 
     void createColorBufferImage();
@@ -173,7 +170,7 @@ private:
     void getTextureSampler();
 
     void createUniformBuffers();
-    void createDescriptorPool();
+    void getDescriptorPool();
     void createDescriptorSets();
     void createInputDescriptorSets();
 
@@ -190,8 +187,6 @@ private:
     VkFormat chooseSupportedFormat(const std::vector<VkFormat> &formats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags) const;
 
     //  -- Create functions
-    [[nodiscard]] VkShaderModule createShaderModule(const std::vector<char> &code) const;
-
     int createTexture(std::string fileName);
 
 };

@@ -25,7 +25,7 @@ public:
     VulkanRenderer vulkanRenderer;
 
 
-    explicit GameApplication(const std::string& title) {
+    explicit GameApplication(const std::string &title) {
 
         // boilerplate stuff (ie. basic window setup, initialize OpenGL) occurs in abstract class
         glfwInit();
@@ -51,7 +51,7 @@ public:
         }
     }
 
-    virtual void cursorPosCallback(GLFWwindow* window, double xPos, double yPos) {
+    virtual void cursorPosCallback(GLFWwindow *window, double xPos, double yPos) {
 
     }
 
@@ -81,19 +81,21 @@ private:
 class AppExtension : public GameApplication {
 public:
 
-    explicit AppExtension(const std::string& title) : GameApplication(title) {
+    explicit AppExtension(const std::string &title) : GameApplication(title) {
 
     }
 
 
     void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) override;
-    void cursorPosCallback(GLFWwindow* window, double xPos, double yPos);
+
+    void cursorPosCallback(GLFWwindow *window, double xPos, double yPos);
 
     void update() override;
 
 private:
     // Scene settings
-    int helicopter = vulkanRenderer.createMeshModel("../objects/Crate/Crate1.obj");
+    int box1 = vulkanRenderer.createMeshModel("../objects/Crate/Crate1.obj");
+
 
     double motion = 0.0f;
     [[maybe_unused]] double deltaTime = 0.0f;

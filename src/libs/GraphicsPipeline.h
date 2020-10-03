@@ -18,22 +18,17 @@ public:
     GraphicsPipeline();
     virtual ~GraphicsPipeline();
 
-    void getPushConstantRange(VkPushConstantRange* pPushConstantRange);
-    void getDescriptorSetLayout(Utils::MainDevice mainDevice, VkDescriptorSetLayout *pDescriptorSetLayout,
-                                VkDescriptorSetLayout *pDescriptorSetLayout1,
-                                VkDescriptorSetLayout *pDescriptorSetLayout2);
-
 
     void
-    createGraphicsPipeline(Utils::MainDevice mainDevice, VkExtent2D swapchainExtent, Utils::Pipelines *pipelineObject,
-                           Utils::Pipelines *secondPipeline);
+    createGraphicsPipeline(Utils::UdemyGraphicsPipeline *pipe);
 
     void
     createBoxPipeline(Utils::MainDevice mainDevice, VkExtent2D swapchainExtent, VkDescriptorSetLayout descriptorLayout,
                       Utils::Pipelines *pipelineToBind);
     void createAnotherRenderPass(Utils::MainDevice mainDevice, VkFormat swapchainImageFormat, Utils::Pipelines *pipes);
 
-    void createRenderPass(Utils::MainDevice mainDevice, VkFormat swapChainImageFormat, Utils::Pipelines *renderPass);
+    void createRenderPass(Utils::MainDevice mainDevice, VkFormat swapChainImageFormat, VkRenderPass *renderPass);
+    void createPushConstantRange(VkPushConstantRange *pPushConstantRange);
 
 
 private:
@@ -42,14 +37,7 @@ private:
 
     // Vulkan components
     // - Descriptors
-    VkDescriptorSetLayout descriptorSetLayout{};
-    VkDescriptorSetLayout samplerSetLayout{};
-    VkDescriptorSetLayout inputSetLayout{};
-    VkPushConstantRange pushConstantRange{};
 
-
-    void createPushConstantRange();
-    void createDescriptorSetLayout(Utils::MainDevice mainDevice);
     static VkShaderModule createShaderModule(Utils::MainDevice mainDevice, const std::vector<char> &code) ;
 };
 

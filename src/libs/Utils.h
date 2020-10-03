@@ -50,6 +50,7 @@ public:
         VkRenderPass renderPass{};
     };
 
+
     struct MainDevice {
         VkPhysicalDevice physicalDevice;
         VkDevice logicalDevice;
@@ -64,6 +65,16 @@ public:
     };
 
 
+    struct UdemyGraphicsPipeline {
+        MainDevice mainDevice;
+        VkExtent2D swapchainExtent;
+        Pipelines pipe;
+        Pipelines secondPipe;
+        VkDescriptorSetLayout descriptorSetLayout;
+        VkDescriptorSetLayout samplerSetLayout;
+        VkDescriptorSetLayout inputSetLayout;
+        VkPushConstantRange pushConstantRange;
+    };
 
 
     static VkFormat

@@ -17,7 +17,7 @@ Mesh::Mesh(Utils::MainDevice newMainDevice, VkQueue transferQueue,
     createVertexBuffer(transferQueue, transferCommandPool, vertices);
     createIndexBuffer(transferQueue, transferCommandPool, indices);
 
-    model.model = glm::mat4(1.0f);
+    hModel.model = glm::mat4(1.0f);
     texId = newTexId;
 }
 
@@ -28,7 +28,7 @@ Mesh::Mesh(Utils::MainDevice newMainDevice, VkQueue transferQueue, VkCommandPool
     vertexCount = vertices->size();
     createTriangleVertexBuffer(transferQueue, transferCommandPool, vertices);
 
-    model.model = glm::mat4(1.0f);
+    hModel.model = glm::mat4(1.0f);
 }
 
 [[maybe_unused]] [[maybe_unused]] int Mesh::getVertexCount() const {
@@ -141,12 +141,14 @@ VkBuffer Mesh::getIndexBuffer() {
 }
 
 void Mesh::setModel(glm::mat4 newModel) {
-    model.model = newModel;
+    hModel.model = newModel;
 }
+
+
 
 Model Mesh::getModel()
 {
-    return model;
+    return hModel;
 }
 
 void Mesh::createTriangleVertexBuffer(VkQueue transferQueue, VkCommandPool transferCommandPool,
@@ -154,7 +156,7 @@ void Mesh::createTriangleVertexBuffer(VkQueue transferQueue, VkCommandPool trans
 
 
     //Get size of buffer needed for vertices
-    VkDeviceSize bufferSize = sizeof(TriangleModel) * vertices->size();
+    VkDeviceSize bufferSize = sizeof(TrianglePVM) * vertices->size();
 
     // Temporary buffer to "stage" vertex data before transferring to GPU
     VkBuffer stagingBuffer;
