@@ -7,7 +7,11 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include "validation.h"
+#include "Platform.h"
+#include "../include/structs.h"
+#include <stdexcept>
+#include <vector>
+#include <iostream>
 
 class VulkanRenderer {
 
@@ -27,11 +31,12 @@ private:
     GLFWwindow *glfWwindow{};
 
     // Vulkan components
+    Platform extVk;
     VkInstance instance{};
-    VkDebugUtilsMessengerEXT debugMessenger{};
+    VkSurfaceKHR surface{};
 
-    void createInstance();
-    void setDebugMessenger();
+    // Vulkan Device
+    MainDevice mainDevice{};
 
 
 };

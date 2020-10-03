@@ -10,9 +10,8 @@ find_package(glfw3 REQUIRED)
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -I/home/magnus/libraries/vulkan/1.2.148.0/x86_64/include -L/home/magnus/libraries/vulkan/1.2.148.0/x86_64/lib -lvulkan")
 
 
-add_library(VulkanRenderer src/source/VulkanRenderer.cpp src/headers/VulkanRenderer.hpp src/headers/validation.h)
+add_library(VulkanRenderer src/source/VulkanRenderer.cpp src/headers/VulkanRenderer.hpp src/headers/Platform.cpp src/headers/Platform.h src/headers/Validation.h)
 target_link_libraries(VulkanRenderer
-
         vulkan
         )
 
@@ -21,7 +20,7 @@ target_link_libraries(GameApplication
         VulkanRenderer
         )
 
-add_executable(engine main.cpp)
+add_executable(engine main.cpp src/include/structs.h)
 
 target_link_libraries(engine
         glfw ${GLFW_LIBRARIES}
