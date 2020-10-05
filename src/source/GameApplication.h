@@ -31,7 +31,7 @@ public:
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-        window = glfwCreateWindow(640 * 2, 480, title.c_str(), nullptr, nullptr);
+        window = glfwCreateWindow(viewport.WIDTH, viewport.HEIGHT, title.c_str(), nullptr, nullptr);
         glfwMakeContextCurrent(window);
 
         glfwSetErrorCallback(error_callback);

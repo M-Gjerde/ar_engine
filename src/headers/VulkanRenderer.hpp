@@ -31,7 +31,7 @@ private:
     GLFWwindow *glfWwindow{};
 
     // Vulkan components
-    Platform extVk;
+    Platform platform;
     VkInstance instance{};
     VkSurfaceKHR surface{};
 

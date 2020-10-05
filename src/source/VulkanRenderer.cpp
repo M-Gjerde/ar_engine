@@ -12,7 +12,7 @@ VulkanRenderer::VulkanRenderer() = default;
 
 int VulkanRenderer::init(GLFWwindow *newWindow) {
     try {
-        extVk.setupDevice(newWindow, &instance, &surface, mainDevice);
+        platform.setupDevice(newWindow, &instance, &surface, &mainDevice);
 
 
     } catch (std::runtime_error &err) {
@@ -27,6 +27,6 @@ void VulkanRenderer::draw() {
 }
 
 void VulkanRenderer::cleanup() {
-    extVk.cleanUp();
+    platform.cleanUp();
 
 }

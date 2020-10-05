@@ -9,6 +9,7 @@
 
 
 
+
 GameApplication *app;
 
 
@@ -28,7 +29,6 @@ int main() {
     glfwSetKeyCallback(app->window, keyCallback);
     glfwSetCursorPosCallback(app->window, cursor_position_callback);
     app->gameLoop();
-
     return 0;
 }
 
