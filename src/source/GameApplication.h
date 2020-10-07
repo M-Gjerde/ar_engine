@@ -63,6 +63,8 @@ public:
             glfwPollEvents();
             update();
 
+            vulkanRenderer.draw();
+
         }
 
         vulkanRenderer.cleanup();

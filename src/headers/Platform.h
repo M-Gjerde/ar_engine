@@ -34,11 +34,7 @@ public:
         std::vector<VkPresentModeKHR> presentModes;
     };
 
-
-    Platform();
-
-    void setupDevice(GLFWwindow *window, VkInstance *instance, VkSurfaceKHR *surface, MainDevice *mainDevice);
-
+    Platform(GLFWwindow *window, ArEngine *arEngine);
     ~Platform();
 
     void cleanUp();
@@ -46,13 +42,18 @@ public:
 private:
 
     // Vulkan components
+    /*
     VkInstance instance{};
     VkDebugUtilsMessengerEXT debugMessenger{};
     VkSurfaceKHR surface{};
     MainDevice mainDevice{};
     VkQueue graphicsQueue;
     VkQueue presentQueue;
-    VkSwapchainKHR swapChain;
+    VkSwapchainKHR swapchain;
+    std::vector<VkImage> swapchainImages;
+    std::vector<VkImageView> swapChainImageViews;
+*/
+    ArEngine arEngine;
 
     // - Extensions
     const std::vector<const char*> deviceExtensions = {
@@ -65,15 +66,17 @@ private:
     void setDebugMessenger();
     void createSwapchain();
     void createLogicalDevice();
+    void createSwapchainImageViews();
+    void createCommandPool();
 
     // Helper functions
-    VkPhysicalDevice_T * selectPhysicalDevice();
-    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+    [[nodiscard]] VkPhysicalDevice_T * selectPhysicalDevice() const;
+    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) const;
     bool hasDeviceExtensionsSupport();
     void pickPhysicalDevice();
 
     // - Swapchain support
-    SwapChainSupportDetails querySwapchainSupport(VkPhysicalDevice device);
+    SwapChainSupportDetails querySwapchainSupport(VkPhysicalDevice device) const;
     static VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
     static VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
     static VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);

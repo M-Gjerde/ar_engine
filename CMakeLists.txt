@@ -10,7 +10,17 @@ find_package(glfw3 REQUIRED)
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -I/home/magnus/libraries/vulkan/1.2.148.0/x86_64/include -L/home/magnus/libraries/vulkan/1.2.148.0/x86_64/lib -lvulkan")
 
 
-add_library(VulkanRenderer src/source/VulkanRenderer.cpp src/headers/VulkanRenderer.hpp src/headers/Platform.cpp src/headers/Platform.h src/headers/Validation.h)
+add_library(VulkanRenderer
+        src/source/VulkanRenderer.cpp
+        src/headers/VulkanRenderer.hpp
+        src/headers/Platform.cpp
+        src/headers/Platform.h
+        src/headers/Validation.h
+        src/pipeline/Pipeline.cpp
+        src/pipeline/Pipeline.h
+        src/include/BufferCreation.h
+        src/pipeline/Descriptors.cpp
+        src/pipeline/Descriptors.h)
 target_link_libraries(VulkanRenderer
         vulkan
         )

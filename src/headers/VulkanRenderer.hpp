@@ -9,6 +9,9 @@
 #include <GLFW/glfw3.h>
 #include "Platform.h"
 #include "../include/structs.h"
+#include "../pipeline/Pipeline.h"
+#include "../include/BufferCreation.h"
+#include "../pipeline/Descriptors.h"
 #include <stdexcept>
 #include <vector>
 #include <iostream>
@@ -28,17 +31,47 @@ public:
 
 
 private:
-    GLFWwindow *glfWwindow{};
 
     // Vulkan components
-    Platform platform;
-    VkInstance instance{};
-    VkSurfaceKHR surface{};
+    Platform *platform{};
+    ArEngine arEngine;
 
-    // Vulkan Device
-    MainDevice mainDevice{};
+    // - Pipelines
+    Pipeline pipeline;
+    ArPipeline arPipeline{};
 
+    // Buffer objects
+    Buffer *buffer;
+    ArBuffer arBuffer;
+    std::vector<ArBuffer> uboBuffers;
+    uboModel uboModelVar;
 
+    // - Descriptors
+    Descriptors *descriptors;
+    ArDescriptor arDescriptor;
+
+    // - Drawing
+    std::vector<VkFramebuffer> swapChainFramebuffers;
+    std::vector<VkCommandBuffer> commandBuffers;
+
+    // - Synchronization
+    std::vector<VkSemaphore> imageAvailableSemaphores;
+    std::vector<VkSemaphore> renderFinishedSemaphores;
+    std::vector<VkFence> inFlightFences;
+    std::vector<VkFence> imagesInFlight;
+    size_t currentFrame = 0;
+
+    void createPipeline();
+    void createFrameBuffers();
+    void createCommandBuffers();
+
+    void recordCommand();
+
+    void createSyncObjects();
+
+    void updateBuffer(uint32_t imageIndex) const;
+
+    void createUboBuffer();
 };
 
 
