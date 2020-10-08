@@ -17,7 +17,7 @@
 #include <iostream>
 #include "VulkanRenderer.hpp"
 #include "../include/Camera.h"
-
+#include "../stereo/Disparity.h"
 
 class GameApplication {
 
@@ -25,6 +25,8 @@ public:
     GLFWwindow *window;
     VulkanRenderer vulkanRenderer;
     Camera camera;
+    Disparity disparity;
+
 
     explicit GameApplication(const std::string &title) {
 
@@ -40,7 +42,7 @@ public:
         if (vulkanRenderer.init(window) == EXIT_FAILURE)
             throw std::runtime_error("Failed to init");
 
-
+        disparity.init();
         vulkanRenderer.updateCamera(camera.getView(), camera.getProjection());
 
     }
@@ -60,6 +62,7 @@ public:
         }
 
         vulkanRenderer.cleanup();
+        disparity.cleanUp();
         glfwDestroyWindow(window);
         glfwTerminate();
     }
