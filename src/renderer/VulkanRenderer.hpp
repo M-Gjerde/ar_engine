@@ -13,6 +13,7 @@
 #include "../include/BufferCreation.h"
 #include "../pipeline/Descriptors.h"
 #include "../include/settings.h"
+#include "../pipeline/Mesh.h"
 #include <stdexcept>
 #include <vector>
 #include <iostream>
@@ -44,16 +45,16 @@ private:
     ArPipeline arPipeline{};
 
     // Buffer
-    Buffer *buffer;
-    ArBuffer arBuffer;
+    Buffer *buffer{};
     std::vector<ArBuffer> uboBuffers;
-    uboModel uboModelVar;
+    uboModel uboModelVar{};
 
     // Objects
-    Mesh mesh;
+    Mesh *mesh;
+    StandardModel triangleModel{};
 
     // - Descriptors
-    Descriptors *descriptors;
+    Descriptors *descriptors{};
     ArDescriptor arDescriptor;
 
     // - Drawing
@@ -79,6 +80,7 @@ private:
 
     void createUboBuffer();
 
+    void createVertexBuffer();
 };
 
 

@@ -9,6 +9,22 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <vector>
+#include "triangle.h"
+
+struct StandardModel {
+    VkQueue transferQueue;
+    VkCommandPool transferCommandPool;
+    std::vector<Vertex> vertices;
+    std::vector<uint32_t> indices;
+    int newTexId;
+
+    int vertexCount{};
+    VkBuffer vertexBuffer{};
+    VkDeviceMemory vertexBufferMemory{};
+    int indexCount{};
+    VkBuffer indexBuffer{};
+    VkDeviceMemory indexBufferMemory{};
+};
 
 struct ArDescriptor{
     VkDescriptorSetLayout descriptorSetLayout;

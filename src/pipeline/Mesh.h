@@ -12,10 +12,17 @@ class Mesh : Buffer {
 
 public:
 
-
+    explicit Mesh(ArEngine engine, StandardModel *standardModel, std::vector<ArBuffer> newArBuffer);
+    void cleanUp();
+    ~Mesh();
 private:
+    VkDevice device;
+    ArBuffer vertexBuffer{};
+    ArBuffer indexBuffer{};
 
-    void createVertexBuffer(ArBuffer *arBuffer);
+    StandardModel modelInfo{};
+
+    void createVertexBuffer();
 
     void createIndexBuffer();
 };

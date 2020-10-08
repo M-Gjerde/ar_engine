@@ -24,4 +24,16 @@ const std::vector<Vertex> vertices = {
         {{-0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
 };
 
+const std::vector<Vertex> meshVertices = {
+        {{0.0f, -0.5f, 0.0f}, {1.0f, 0.0f, 1.0f}},        // 0I love
+        {{0.5f, 0.5f, 0.5f,}, {0.0f, 0.0f, 1.0f}},        // 1
+        {{-0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 1.0f}},        // 2
+        {{-0.5f, 0.5f, 0.0f}, {1.0f, 0.0f, 1.0f}},        // 3
+};
+// Index Data
+const std::vector<uint32_t> meshIndices = {
+        0, 1, 2,                   // First triangle
+        2, 3, 0                    // Second triangle
+};
+
 #endif //AR_ENGINE_TRIANGLE_H

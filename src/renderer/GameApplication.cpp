@@ -46,6 +46,6 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
 }
 
 void AppExtension::cursorPosCallback(GLFWwindow *window, double xPos, double yPos) {
-    printf("Cursor position: (%f, %f)\n", xPos, yPos);
+   // printf("Cursor position: (%f, %f)\n", xPos, yPos);
 
 }

@@ -15,13 +15,16 @@ class Buffer {
 
 public:
     Buffer(ArEngine engine);
+
+    Buffer();
+
     ~Buffer();
     void cleanUp(ArBuffer _arBuffer);
     void createArBuffer(ArBuffer *_arBuffer);
 
     void createBuffer(ArBuffer *buffer);
 
-    void copyBuffer();
+    void copyBuffer(StandardModel modelInfo, ArBuffer srcBuffer, ArBuffer dstBuffer);
 
 private:
 
@@ -31,6 +34,9 @@ private:
     uint32_t findMemoryTypeIndex(int32_t typeFilter, VkMemoryPropertyFlags properties);
 
 
+    VkCommandBuffer beginCommandBuffer(VkCommandPool commandPool);
+
+    void endAndSubmitCommandBuffer(StandardModel sModel, VkCommandBuffer transferCommandBuffer);
 };
 
 Buffer::Buffer(ArEngine engine) {
@@ -126,25 +132,72 @@ uint32_t Buffer::findMemoryTypeIndex(int32_t typeFilter, VkMemoryPropertyFlags p
 
 }
 
-void Buffer::copyBuffer() {
+void Buffer::copyBuffer(StandardModel modelInfo, ArBuffer srcBuffer, ArBuffer dstBuffer) {
 
-/*
+
         // Create buffer
-        VkCommandBuffer transferCommandBuffer = beginCommandBuffer(device, transferCommandPool);
+        VkCommandBuffer transferCommandBuffer = beginCommandBuffer(modelInfo.transferCommandPool);
 
         // Region of data to copy from and to
         VkBufferCopy bufferCopyRegion = {};
         bufferCopyRegion.srcOffset = 0;
         bufferCopyRegion.dstOffset = 0;
-        bufferCopyRegion.size = bufferSize;
+        bufferCopyRegion.size = srcBuffer.bufferSize;
 
         // Command to copy src buffer to dst buffer
-        vkCmdCopyBuffer(transferCommandBuffer, srcBuffer, dstBuffer, 1, &bufferCopyRegion);
+        vkCmdCopyBuffer(transferCommandBuffer, srcBuffer.buffer, dstBuffer.buffer, 1, &bufferCopyRegion);
 
-        endAndSubmitCommandBuffer(device, transferCommandPool, transferQueue, transferCommandBuffer);
-*/
+        endAndSubmitCommandBuffer(modelInfo, transferCommandBuffer);
+
 
 }
+
+VkCommandBuffer Buffer::beginCommandBuffer(VkCommandPool commandPool) {
+
+    // Command buffer details
+    VkCommandBufferAllocateInfo allocateInfo = {};
+    allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocateInfo.commandPool = commandPool;
+    allocateInfo.commandBufferCount = 1;
+
+    // Command buffer to hold transfer commands
+    VkCommandBuffer commandBuffer;
+    // Allocate command buffer from pool
+    vkAllocateCommandBuffers(device, &allocateInfo, &commandBuffer);
+
+    // Information to begin the command buffer record
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;      // We're only using the command buffer once, so set up for one time submit
+
+    // Begin recording transfer commands
+    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+    return commandBuffer;
+}
+
+void Buffer::endAndSubmitCommandBuffer(StandardModel modelInfo, VkCommandBuffer transferCommandBuffer) {
+
+    // End commands
+    vkEndCommandBuffer(transferCommandBuffer);
+
+    // Queue submission information
+    VkSubmitInfo submitInfo = {};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &transferCommandBuffer;
+
+    // Submit transfer command to transfer queue and wait until it finishes
+    vkQueueSubmit(modelInfo.transferQueue, 1, &submitInfo, VK_NULL_HANDLE);
+
+    // Wait until this queue is done, then continue Not optimal for thousands of meshes
+    vkQueueWaitIdle(modelInfo.transferQueue);
+    // Free temporary command buffer back to pool
+    vkFreeCommandBuffers(device, modelInfo.transferCommandPool, 1, &transferCommandBuffer);
+}
+
+Buffer::Buffer() = default;
 
 Buffer::~Buffer() = default;
 

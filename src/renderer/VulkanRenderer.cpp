@@ -14,22 +14,17 @@ VulkanRenderer::~VulkanRenderer() = default;
 int VulkanRenderer::init(GLFWwindow *newWindow) {
     try {
         platform = new Platform(newWindow, &arEngine);
-
         buffer = new Buffer(arEngine);
         descriptors = new Descriptors(arEngine);
 
         createUboBuffer();
+        createVertexBuffer();
 
         createPipeline();
         createFrameBuffers();
 
-        // TODO create a queueSubmit and recording class
         createCommandBuffers();
         createSyncObjects();
-
-
-
-
         printf("Initiated vulkan\n");
 
     } catch (std::runtime_error &err) {
@@ -41,8 +36,8 @@ int VulkanRenderer::init(GLFWwindow *newWindow) {
 void VulkanRenderer::cleanup() {
     vkDeviceWaitIdle(arPipeline.device); // wait for GPU to finish rendering before we clean up resources
 
+    mesh->cleanUp();
     descriptors->cleanUp(arDescriptor);
-    buffer->cleanUp(arBuffer);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroySemaphore(arPipeline.device, renderFinishedSemaphores[i], nullptr);
@@ -68,7 +63,8 @@ void VulkanRenderer::draw() {
 
 
     uint32_t imageIndex;
-    vkAcquireNextImageKHR(arPipeline.device, arEngine.swapchain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+    vkAcquireNextImageKHR(arPipeline.device, arEngine.swapchain, UINT64_MAX, imageAvailableSemaphores[currentFrame],
+                          VK_NULL_HANDLE, &imageIndex);
 
     // Check if a previous frame is using this image (i.e. there is its fence to wait on)
     if (imagesInFlight[imageIndex] != VK_NULL_HANDLE) {
@@ -115,7 +111,6 @@ void VulkanRenderer::draw() {
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 
 }
-
 
 
 void VulkanRenderer::createPipeline() {
@@ -189,13 +184,22 @@ void VulkanRenderer::recordCommand() {
 
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, arPipeline.pipeline);
 
-        VkBuffer vertexBuffers[] = {arBuffer.buffer};
+        VkBuffer vertexBuffers[] = {triangleModel.vertexBuffer};
+
         VkDeviceSize offsets[] = {0};
+        //vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+
         vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
 
-        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, arPipeline.pipelineLayout, 0, 1, &arDescriptor.descriptorSets[i], 0, nullptr);
+        vkCmdBindIndexBuffer(commandBuffers[i], triangleModel.indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-        vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, arPipeline.pipelineLayout, 0, 1,
+                                &arDescriptor.descriptorSets[i], 0, nullptr);
+
+        //vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+
+        vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(6), 1, 0, 0, 0);
+
 
         vkCmdEndRenderPass(commandBuffers[i]);
 
@@ -240,14 +244,7 @@ void VulkanRenderer::updateBuffer(uint32_t imageIndex) const {
 }
 
 
-
 void VulkanRenderer::createUboBuffer() {
-// Triangle
-    buffer->createArBuffer(&arBuffer);
-    void *data;
-    vkMapMemory(arEngine.mainDevice.device, arBuffer.bufferMemory, 0, sizeof(vertices[0]) * vertices.size(), 0, &data);
-    memcpy(data, vertices.data(), sizeof(vertices[0]) * vertices.size());
-    vkUnmapMemory(arEngine.mainDevice.device, arBuffer.bufferMemory);
 
     // UBO buffer
     uboBuffers.resize(arEngine.swapchainImages.size());
@@ -271,16 +268,37 @@ void VulkanRenderer::createUboBuffer() {
     descriptors->createDescriptors(&arDescriptor);
 
 
+}
 
+
+void VulkanRenderer::createVertexBuffer() {
+
+    std::vector<ArBuffer> modelBuffers;
+    modelBuffers.resize(2);
+    modelBuffers[0].bufferSize = sizeof(meshVertices[0]) * meshVertices.size();
+    modelBuffers[0].bufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    modelBuffers[0].bufferProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    modelBuffers[1].bufferSize = sizeof(meshIndices[0]) * meshIndices.size();
+    modelBuffers[1].bufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    modelBuffers[1].bufferProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+    triangleModel.indices = meshIndices;
+    triangleModel.vertices = meshVertices;
+
+    triangleModel.transferCommandPool = arEngine.commandPool;
+    triangleModel.transferQueue = arEngine.graphicsQueue;
+    mesh = new Mesh(arEngine, &triangleModel, modelBuffers);
 
 }
+
+
 
 void VulkanRenderer::updateCamera(glm::mat4 newView, glm::mat4 newProjection) {
     uboModelVar.view = newView;
     uboModelVar.projection = newProjection;
 }
 
-void VulkanRenderer::updateModel(glm::mat4 newModel){
+void VulkanRenderer::updateModel(glm::mat4 newModel) {
     uboModelVar.model = newModel;
 
 }
