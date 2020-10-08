@@ -9,23 +9,36 @@ find_package(glfw3 REQUIRED)
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -I/home/magnus/libraries/vulkan/1.2.148.0/x86_64/include -L/home/magnus/libraries/vulkan/1.2.148.0/x86_64/lib -lvulkan")
 
-
-add_library(VulkanRenderer
-        src/source/VulkanRenderer.cpp
-        src/headers/VulkanRenderer.hpp
-        src/headers/Platform.cpp
-        src/headers/Platform.h
-        src/headers/Validation.h
-        src/pipeline/Pipeline.cpp
-        src/pipeline/Pipeline.h
-        src/include/BufferCreation.h
+## Descriptor Library
+add_library(Descriptors
         src/pipeline/Descriptors.cpp
         src/pipeline/Descriptors.h)
+
+## Hardware setup
+add_library(hw_platform src/Platform/Platform.cpp src/Platform/Platform.h)
+
+# Graphics pipeline
+add_library(pipeline src/pipeline/Pipeline.cpp src/pipeline/Pipeline.h)
+
+#Object loading library Meshes
+add_library(mesh src/pipeline/Mesh.cpp src/pipeline/Mesh.h)
+
+# Ties vulkanRenderer with helper classes
+add_library(VulkanRenderer
+        src/renderer/VulkanRenderer.cpp
+        src/renderer/VulkanRenderer.hpp
+        src/include/Validation.h
+        src/include/BufferCreation.h
+        )
 target_link_libraries(VulkanRenderer
         vulkan
+        Descriptors
+        hw_platform
+        pipeline
+        mesh
         )
 
-add_library(GameApplication src/source/GameApplication.cpp src/source/GameApplication.h)
+add_library(GameApplication src/renderer/GameApplication.cpp src/renderer/GameApplication.h src/include/Camera.h)
 target_link_libraries(GameApplication
         VulkanRenderer
         )

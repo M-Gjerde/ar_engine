@@ -25,8 +25,8 @@ public:
 private:
 
     ArPipeline arPipeline{};
-    VkShaderModule createShaderModule(const std::vector<char>&code);
 
+    VkShaderModule createShaderModule(const std::vector<char>&code);
     void createRenderPass();
 
 };

@@ -8,7 +8,7 @@
 #include <GLFW/glfw3.h>
 #include <optional>
 #include "../include/structs.h"
-#include "Validation.h"
+#include "../include/Validation.h"
 
 struct {
     int WIDTH = 1280;
@@ -42,17 +42,6 @@ public:
 private:
 
     // Vulkan components
-    /*
-    VkInstance instance{};
-    VkDebugUtilsMessengerEXT debugMessenger{};
-    VkSurfaceKHR surface{};
-    MainDevice mainDevice{};
-    VkQueue graphicsQueue;
-    VkQueue presentQueue;
-    VkSwapchainKHR swapchain;
-    std::vector<VkImage> swapchainImages;
-    std::vector<VkImageView> swapChainImageViews;
-*/
     ArEngine arEngine;
 
     // - Extensions

@@ -154,7 +154,7 @@ RECENT REVISION HISTORY:
 // *channels_in_file has the number of components that _would_ have been
 // output otherwise. E.g. if you set desired_channels to 4, you will always
 // get RGBA output, but you can check *channels_in_file to see if it's trivially
-// opaque because e.g. there were only 3 channels in the source image.
+// opaque because e.g. there were only 3 channels in the renderer image.
 //
 // An output image with N components has the following components interleaved
 // in this order in each pixel:
@@ -204,7 +204,7 @@ RECENT REVISION HISTORY:
 // provide more explicit reasons why performance can't be emphasized.
 //
 //    - Portable ("ease of use")
-//    - Small source code footprint ("easy to maintain")
+//    - Small renderer code footprint ("easy to maintain")
 //    - No dependencies ("ease of use")
 //
 // ===========================================================================
@@ -212,7 +212,7 @@ RECENT REVISION HISTORY:
 // I/O callbacks
 //
 // I/O callbacks allow you to read from arbitrary sources, like packaged
-// files or some other source. Data read from callbacks are processed
+// files or some other renderer. Data read from callbacks are processed
 // through a small internal buffer (currently 128 bytes) to try to reduce
 // overhead.
 //
@@ -1678,7 +1678,7 @@ static unsigned char *stbi__convert_format(unsigned char *data, int img_n, int r
 
       #define STBI__COMBO(a,b)  ((a)*8+(b))
       #define STBI__CASE(a,b)   case STBI__COMBO(a,b): for(i=x-1; i >= 0; --i, src += a, dest += b)
-      // convert source image with img_n components to one with req_comp components;
+      // convert renderer image with img_n components to one with req_comp components;
       // avoid switch per pixel, so use switch per scanline and massive macros
       switch (STBI__COMBO(img_n, req_comp)) {
          STBI__CASE(1,2) { dest[0]=src[0]; dest[1]=255;                                     } break;
@@ -1735,7 +1735,7 @@ static stbi__uint16 *stbi__convert_format16(stbi__uint16 *data, int img_n, int r
 
       #define STBI__COMBO(a,b)  ((a)*8+(b))
       #define STBI__CASE(a,b)   case STBI__COMBO(a,b): for(i=x-1; i >= 0; --i, src += a, dest += b)
-      // convert source image with img_n components to one with req_comp components;
+      // convert renderer image with img_n components to one with req_comp components;
       // avoid switch per pixel, so use switch per scanline and massive macros
       switch (STBI__COMBO(img_n, req_comp)) {
          STBI__CASE(1,2) { dest[0]=src[0]; dest[1]=0xffff;                                     } break;
@@ -3733,7 +3733,7 @@ static stbi_uc *load_jpeg_image(stbi__jpeg *z, int *out_x, int *out_y, int *comp
    // validate req_comp
    if (req_comp < 0 || req_comp > 4) return stbi__errpuc("bad req_comp", "Internal error");
 
-   // load a jpeg image from whichever source, but leave in YCbCr format
+   // load a jpeg image from whichever renderer, but leave in YCbCr format
    if (!stbi__decode_jpeg_image(z)) { stbi__cleanup_jpeg(z); return NULL; }
 
    // determine actual number of components to generate
@@ -5026,7 +5026,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
                if (!stbi__expand_png_palette(z, palette, pal_len, s->img_out_n))
                   return 0;
             } else if (has_trans) {
-               // non-paletted image with tRNS -> source image has (constant) alpha
+               // non-paletted image with tRNS -> renderer image has (constant) alpha
                ++s->img_n;
             }
             STBI_FREE(z->expanded); z->expanded = NULL;
@@ -5791,7 +5791,7 @@ static void *stbi__tga_load(stbi__context *s, int *x, int *y, int *comp, int req
       }
    }
 
-   // swap RGB - if the source data was RGB16, it already is in the right order
+   // swap RGB - if the renderer data was RGB16, it already is in the right order
    if (tga_comp >= 3 && !tga_rgb16)
    {
       unsigned char* tga_pixel = tga_data;
@@ -5850,7 +5850,7 @@ static int stbi__psd_decode_rle(stbi__context *s, stbi_uc *p, int pixelCount)
          }
       } else if (len > 128) {
          stbi_uc   val;
-         // Next -len+1 bytes in the dest are replicated from next source byte.
+         // Next -len+1 bytes in the dest are replicated from next renderer byte.
          // (Interpret len as a negative 8-bit int.)
          len = 257 - len;
          if (len > nleft) return 0; // corrupt data
@@ -5954,7 +5954,7 @@ static void *stbi__psd_load(stbi__context *s, int *x, int *y, int *comp, int req
    if (compression) {
       // RLE as used by .PSD and .TIFF
       // Loop until you get the number of unpacked bytes you are expecting:
-      //     Read the next source byte into n.
+      //     Read the next renderer byte into n.
       //     If n is between 0 and 127 inclusive, copy the next n+1 bytes literally.
       //     Else if n is between -127 and -1 inclusive, copy the next byte -n+1 times.
       //     Else if n is 128, noop.
@@ -7645,7 +7645,7 @@ SOFTWARE.
 ALTERNATIVE B - Public Domain (www.unlicense.org)
 This is free and unencumbered software released into the public domain.
 Anyone is free to copy, modify, publish, use, compile, sell, or distribute this
-software, either in source code form or as a compiled binary, for any purpose,
+software, either in renderer code form or as a compiled binary, for any purpose,
 commercial or non-commercial, and by any means.
 In jurisdictions that recognize copyright laws, the author or authors of this
 software dedicate any and all copyright interest in the software to the public

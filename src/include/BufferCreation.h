@@ -21,6 +21,8 @@ public:
 
     void createBuffer(ArBuffer *buffer);
 
+    void copyBuffer();
+
 private:
 
     VkDevice device;
@@ -121,6 +123,26 @@ uint32_t Buffer::findMemoryTypeIndex(int32_t typeFilter, VkMemoryPropertyFlags p
     }
 
     throw std::runtime_error("failed to find suitable memory type!");
+
+}
+
+void Buffer::copyBuffer() {
+
+/*
+        // Create buffer
+        VkCommandBuffer transferCommandBuffer = beginCommandBuffer(device, transferCommandPool);
+
+        // Region of data to copy from and to
+        VkBufferCopy bufferCopyRegion = {};
+        bufferCopyRegion.srcOffset = 0;
+        bufferCopyRegion.dstOffset = 0;
+        bufferCopyRegion.size = bufferSize;
+
+        // Command to copy src buffer to dst buffer
+        vkCmdCopyBuffer(transferCommandBuffer, srcBuffer, dstBuffer, 1, &bufferCopyRegion);
+
+        endAndSubmitCommandBuffer(device, transferCommandPool, transferQueue, transferCommandBuffer);
+*/
 
 }
 

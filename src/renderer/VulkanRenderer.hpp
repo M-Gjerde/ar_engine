@@ -7,11 +7,12 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include "Platform.h"
+#include "../Platform/Platform.h"
 #include "../include/structs.h"
 #include "../pipeline/Pipeline.h"
 #include "../include/BufferCreation.h"
 #include "../pipeline/Descriptors.h"
+#include "../include/settings.h"
 #include <stdexcept>
 #include <vector>
 #include <iostream>
@@ -23,6 +24,8 @@ public:
 
     int init(GLFWwindow *newWindow);
 
+    void updateModel(glm::mat4 newModel);
+    void updateCamera(glm::mat4 newView, glm::mat4 newProjection);
 
     void draw();
     void cleanup();
@@ -40,11 +43,14 @@ private:
     Pipeline pipeline;
     ArPipeline arPipeline{};
 
-    // Buffer objects
+    // Buffer
     Buffer *buffer;
     ArBuffer arBuffer;
     std::vector<ArBuffer> uboBuffers;
     uboModel uboModelVar;
+
+    // Objects
+    Mesh mesh;
 
     // - Descriptors
     Descriptors *descriptors;
@@ -72,6 +78,7 @@ private:
     void updateBuffer(uint32_t imageIndex) const;
 
     void createUboBuffer();
+
 };
 
 

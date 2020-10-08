@@ -4,9 +4,7 @@
 
 
 
-#include <glm/gtc/matrix_transform.hpp>
-#include "../headers/VulkanRenderer.hpp"
-#include "../include/settings.h"
+#include "VulkanRenderer.hpp"
 
 VulkanRenderer::VulkanRenderer() = default;
 
@@ -22,22 +20,14 @@ int VulkanRenderer::init(GLFWwindow *newWindow) {
 
         createUboBuffer();
 
-        uboModelVar.projection = glm::perspective(glm::radians(45.0f), (float)viewport.WIDTH/(float)viewport.HEIGHT, 0.1f, 100.0f);
-
-        uboModelVar.projection[1][1] *= -1;
-
-
-        uboModelVar.model = glm::mat4(1.0f);
-        uboModelVar.view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f),glm::vec3(0.0f, 0.0f, 0.0f),glm::vec3(0.0f, 1.0f, 0.0f));
-
-        uboModelVar.model = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-
         createPipeline();
         createFrameBuffers();
 
         // TODO create a queueSubmit and recording class
         createCommandBuffers();
         createSyncObjects();
+
+
 
 
         printf("Initiated vulkan\n");
@@ -247,8 +237,9 @@ void VulkanRenderer::updateBuffer(uint32_t imageIndex) const {
     vkUnmapMemory(arEngine.mainDevice.device, arDescriptor.bufferMemory[imageIndex]);
 
 
-
 }
+
+
 
 void VulkanRenderer::createUboBuffer() {
 // Triangle
@@ -284,3 +275,12 @@ void VulkanRenderer::createUboBuffer() {
 
 }
 
+void VulkanRenderer::updateCamera(glm::mat4 newView, glm::mat4 newProjection) {
+    uboModelVar.view = newView;
+    uboModelVar.projection = newProjection;
+}
+
+void VulkanRenderer::updateModel(glm::mat4 newModel){
+    uboModelVar.model = newModel;
+
+}

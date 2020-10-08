@@ -5,9 +5,7 @@
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 
 #include "GLFW/glfw3.h"
-#include "src/source/GameApplication.h"
-
-
+#include "src/renderer//GameApplication.h"
 
 
 GameApplication *app;
@@ -28,6 +26,7 @@ int main() {
     app = getApplication();
     glfwSetKeyCallback(app->window, keyCallback);
     glfwSetCursorPosCallback(app->window, cursor_position_callback);
+
     app->gameLoop();
     return 0;
 }

@@ -15,7 +15,8 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <GLFW/glfw3.h>
 #include <iostream>
-#include "../headers/VulkanRenderer.hpp"
+#include "VulkanRenderer.hpp"
+#include "../include/Camera.h"
 
 
 class GameApplication {
@@ -23,7 +24,7 @@ class GameApplication {
 public:
     GLFWwindow *window;
     VulkanRenderer vulkanRenderer;
-
+    Camera camera;
 
     explicit GameApplication(const std::string &title) {
 
@@ -36,35 +37,26 @@ public:
 
         glfwSetErrorCallback(error_callback);
 
-        // my application specific state gets initialized here
         if (vulkanRenderer.init(window) == EXIT_FAILURE)
             throw std::runtime_error("Failed to init");
 
-    }
 
-    virtual void keyCallback(GLFWwindow *glfWwindow, int key, int scancode, int action, int mods) {
-        // basic glfWwindow handling
-        if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-
-            std::cout << "exiting..." << std::endl;
-            glfwSetWindowShouldClose(glfWwindow, GL_TRUE);
-        }
-    }
-
-    virtual void cursorPosCallback(GLFWwindow *window, double xPos, double yPos) {
+        vulkanRenderer.updateCamera(camera.getView(), camera.getProjection());
 
     }
+
+    virtual void keyCallback(GLFWwindow *glfWwindow, int key, int scancode, int action, int mods) {};
+
+    virtual void cursorPosCallback(GLFWwindow *newWindow, double xPos, double yPos) {};
 
     // must be overridden in derived class
-    virtual void update() = 0;
+    virtual void update(){};
 
     void gameLoop() {
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
             update();
-
             vulkanRenderer.draw();
-
         }
 
         vulkanRenderer.cleanup();
@@ -81,6 +73,7 @@ private:
 };
 
 
+
 class AppExtension : public GameApplication {
 public:
 
@@ -90,13 +83,11 @@ public:
 
     void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) override;
 
-    void cursorPosCallback(GLFWwindow *window, double xPos, double yPos);
+    void cursorPosCallback(GLFWwindow *window, double xPos, double yPos) override;
 
     void update() override;
 
 private:
-
-
     double deltaTime = 0.0f;
     double lastTime = 0.0f;
 
@@ -105,6 +96,8 @@ private:
 GameApplication *getApplication() {
     return new AppExtension("AppExtension");
 }
+
+
 
 
 #endif //AR_ENGINE_GAMEAPPLICATION_H
