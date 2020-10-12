@@ -18,39 +18,41 @@ int Disparity::init() {
 
 void Disparity::checkForActions() {
     std::cout << "New thread started\n";
+    std::cout
+            << "\nInput new integer:\n 1 = stop \n 2 = Get disparity OpenCL GPU device\n 3 = Get video disparity GPU device\n"
+            << std::endl;
+
+    std::cout << input << " <-- input" << std::endl;
+
+
     while (run_status) {
-        std::cout
-                << "\nInput new integer:\n 1 = stop \n 2 = Get disparity OpenCL GPU device\n 3 = Get video disparity GPU device\n"
-                << std::endl;
-
-        std::cin >> input;
-        std::cout << input << " <-- input" << std::endl;
-
         switch (input) {
             case 1:
                 run_status = false;
+                input = 0;
                 break;
             case 2:
                 getDisparityFromImage();
+                input = 0;
                 break;
             case 3:
                 getDisparityFromVideo();
+                input = 0;
                 break;
         }
-        input = 0;
+
     }
 }
 
 void Disparity::cleanUp() {
     check_for_actions_thread.join();
-    std::cout << "Disparity thread joined, program cleaned. Goodbye!" << std::endl;
+    std::cout << "Disparity thread joined. Goodbye!" << std::endl;
 }
 
 cl::Device Disparity::getGPUDevice() {
     // Get a vector of available platforms
     std::vector<cl::Platform> platforms;
     cl::Platform::get(&platforms);
-
     // Get platform names
     for (const auto &i : platforms) {
         printf("Platform: %s\n", i.getInfo<CL_PLATFORM_NAME>().c_str());
@@ -59,7 +61,7 @@ cl::Device Disparity::getGPUDevice() {
 
     // Display devices
     std::vector<cl::Device> devices;
-    platform.getDevices(CL_DEVICE_TYPE_DEFAULT, &devices);
+    platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
 
     // Print some info about our devices
     for (const auto &i : devices) {
@@ -179,6 +181,8 @@ void Disparity::getDisparityFromVideo() {
 
         cv::Mat outputImage(cv::Size(width, height), CV_8U);
         memcpy(outputImage.data, imageResult, imgSize);
+
+
 
         auto endTime = (double) (clock() - Start) / CLOCKS_PER_SEC;
         printf("Time taken: %.7fs\n", endTime);
@@ -341,10 +345,9 @@ std::string Disparity::loadProgram(std::string strInput) {
 
 }
 
-
-
-
-
+void Disparity::stopProgram() {
+    run_status = false;
+}
 
 
 #pragma clang diagnostic pop

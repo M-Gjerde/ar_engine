@@ -21,6 +21,7 @@ public:
     ~Pipeline();
 
     void createGraphicsPipeline(ArPipeline *pipeline, VkDescriptorSetLayout descriptorSetLayout);
+    void createRayTracingPipeline(ArPipeline *pipeline);
     void cleanUp() const;
 private:
 

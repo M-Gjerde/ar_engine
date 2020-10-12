@@ -231,3 +231,30 @@ void Pipeline::cleanUp() const {
     vkDestroyPipelineLayout(arPipeline.device, arPipeline.pipelineLayout, nullptr);
 
 }
+
+void Pipeline::createRayTracingPipeline(ArPipeline *pipeline) {
+
+    // CREATE PIPELINE LAYOUT
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.setLayoutCount = 0;        // Number of descriptor set layouts
+    pipelineLayoutInfo.pSetLayouts = nullptr;
+
+
+    if (vkCreatePipelineLayout(arPipeline.device, &pipelineLayoutInfo, nullptr, &arPipeline.pipelineLayout) !=
+        VK_SUCCESS) {
+        throw std::runtime_error("failed to create pipeline layout!");
+    }
+
+/*
+    VkRayTracingPipelineCreateInfoNV pipelineCreateInfoNv;
+
+    VkResult result = vkCreateRayTracingPipelinesNV(
+            pipeline->device,
+            VK_NULL_HANDLE,
+            1,
+            &pipelineCreateInfoNv,
+        nullptr,
+            &pipeline->pipeline);
+*/
+}

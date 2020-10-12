@@ -5,12 +5,14 @@
 #ifndef UDEMY_VULCAN_VULKANRENDERER_HPP
 #define UDEMY_VULCAN_VULKANRENDERER_HPP
 
+#define VK_ENABLE_BETA_EXTENSIONS
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+
+#include "../pipeline/Buffer.h"
 #include "../Platform/Platform.h"
 #include "../include/structs.h"
 #include "../pipeline/Pipeline.h"
-#include "../include/BufferCreation.h"
 #include "../pipeline/Descriptors.h"
 #include "../include/settings.h"
 #include "../pipeline/Mesh.h"

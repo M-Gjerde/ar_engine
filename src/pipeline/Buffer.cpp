@@ -1,43 +1,9 @@
 //
-// Created by magnus on 10/7/20.
+// Created by magnus on 10/12/20.
 //
 
-#ifndef AR_ENGINE_BUFFERCREATION_H
-#define AR_ENGINE_BUFFERCREATION_H
+#include "Buffer.h"
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-#include <stdexcept>
-#include "structs.h"
-#include "../pipeline/Pipeline.h"
-
-class Buffer {
-
-public:
-    Buffer(ArEngine engine);
-
-    Buffer();
-
-    ~Buffer();
-    void cleanUp(ArBuffer _arBuffer);
-    void createArBuffer(ArBuffer *_arBuffer);
-
-    void createBuffer(ArBuffer *buffer);
-
-    void copyBuffer(StandardModel modelInfo, ArBuffer srcBuffer, ArBuffer dstBuffer);
-
-private:
-
-    VkDevice device;
-    VkPhysicalDevice physicalDevice;
-
-    uint32_t findMemoryTypeIndex(int32_t typeFilter, VkMemoryPropertyFlags properties);
-
-
-    VkCommandBuffer beginCommandBuffer(VkCommandPool commandPool);
-
-    void endAndSubmitCommandBuffer(StandardModel sModel, VkCommandBuffer transferCommandBuffer);
-};
 
 Buffer::Buffer(ArEngine engine) {
     physicalDevice = engine.mainDevice.physicalDevice;
@@ -49,39 +15,7 @@ void Buffer::cleanUp(ArBuffer _arBuffer) {
     vkDestroyBuffer(device, _arBuffer.buffer, nullptr);
 }
 
-void Buffer::createArBuffer(ArBuffer *_arBuffer) {
-
-        VkBufferCreateInfo bufferInfo{};
-        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferInfo.size = sizeof(vertices[0]) * vertices.size();
-        bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-        if (vkCreateBuffer(device, &bufferInfo, nullptr, &_arBuffer->buffer) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create vertex buffer!");
-        }
-
-    VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(device, _arBuffer->buffer, &memRequirements);
-
-    VkMemoryAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryTypeIndex(memRequirements.memoryTypeBits,
-                                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                                    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-    if (vkAllocateMemory(device, &allocInfo, nullptr, &_arBuffer->bufferMemory) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate vertex buffer memory!");
-    }
-
-    vkBindBufferMemory(device, _arBuffer->buffer, _arBuffer->bufferMemory, 0);
-
-
-}
-
 void Buffer::createBuffer(ArBuffer *buffer) {
-
 
     // Information to create a buffer (doesn't include assigning memory)
     VkBufferCreateInfo bufferInfo = {};
@@ -118,7 +52,7 @@ void Buffer::createBuffer(ArBuffer *buffer) {
 
 }
 
-uint32_t Buffer::findMemoryTypeIndex(int32_t typeFilter, VkMemoryPropertyFlags properties) {
+inline uint32_t Buffer::findMemoryTypeIndex(int32_t typeFilter, VkMemoryPropertyFlags properties) {
     VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
 
@@ -135,19 +69,19 @@ uint32_t Buffer::findMemoryTypeIndex(int32_t typeFilter, VkMemoryPropertyFlags p
 void Buffer::copyBuffer(StandardModel modelInfo, ArBuffer srcBuffer, ArBuffer dstBuffer) {
 
 
-        // Create buffer
-        VkCommandBuffer transferCommandBuffer = beginCommandBuffer(modelInfo.transferCommandPool);
+    // Create buffer
+    VkCommandBuffer transferCommandBuffer = beginCommandBuffer(modelInfo.transferCommandPool);
 
-        // Region of data to copy from and to
-        VkBufferCopy bufferCopyRegion = {};
-        bufferCopyRegion.srcOffset = 0;
-        bufferCopyRegion.dstOffset = 0;
-        bufferCopyRegion.size = srcBuffer.bufferSize;
+    // Region of data to copy from and to
+    VkBufferCopy bufferCopyRegion = {};
+    bufferCopyRegion.srcOffset = 0;
+    bufferCopyRegion.dstOffset = 0;
+    bufferCopyRegion.size = srcBuffer.bufferSize;
 
-        // Command to copy src buffer to dst buffer
-        vkCmdCopyBuffer(transferCommandBuffer, srcBuffer.buffer, dstBuffer.buffer, 1, &bufferCopyRegion);
+    // Command to copy src buffer to dst buffer
+    vkCmdCopyBuffer(transferCommandBuffer, srcBuffer.buffer, dstBuffer.buffer, 1, &bufferCopyRegion);
 
-        endAndSubmitCommandBuffer(modelInfo, transferCommandBuffer);
+    endAndSubmitCommandBuffer(modelInfo, transferCommandBuffer);
 
 
 }
@@ -200,6 +134,3 @@ void Buffer::endAndSubmitCommandBuffer(StandardModel modelInfo, VkCommandBuffer 
 Buffer::Buffer() = default;
 
 Buffer::~Buffer() = default;
-
-
-#endif //AR_ENGINE_BUFFERCREATION_H

@@ -13,17 +13,21 @@ Mesh::Mesh(ArEngine engine, StandardModel *standardModel, std::vector<ArBuffer> 
     device = engine.mainDevice.device;
     modelInfo = *standardModel;
 
+    // Use ArBuffer struct to use less memory than by just using standard Model struct
     vertexBuffer = newArBuffer[0];
     indexBuffer = newArBuffer[1];
 
+    // Populate ArBuffers
     createVertexBuffer();
     createIndexBuffer();
 
+    // Copy ArBuffers back to standard model.
     modelInfo.vertexBuffer = vertexBuffer.buffer;
     modelInfo.indexBuffer = indexBuffer.buffer;
     modelInfo.indexCount = 6; // TODO getter method
 
-    *standardModel = modelInfo;
+    standardModel->vertexBuffer = vertexBuffer.buffer;
+    standardModel->indexBuffer = indexBuffer.buffer;
 }
 
 

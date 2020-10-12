@@ -1,39 +1,9 @@
 //
-// Created by magnus on 10/8/20.
+// Created by magnus on 10/12/20.
 //
 
-#ifndef AR_ENGINE_CAMERA_H
-#define AR_ENGINE_CAMERA_H
+#include "Camera.h"
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include "../Platform//Platform.h"
-
-class Camera {
-public:
-    float cameraSpeed = 0.25f;
-    glm::vec3 cameraPos;
-    glm::vec3 cameraFront;
-    glm::vec3 cameraUp;
-
-    Camera();
-    void setProjection(glm::mat4 newProjection);
-    void setView(glm::mat4 setView);
-    glm::mat4 getProjection();
-    glm::mat4 getView();
-
-    void moveLeft();
-    void moveRight();
-    void forward();
-    void backward();
-    void rotateRight();
-    void rotateLeft();
-
-private:
-    float yaw = -90;
-    glm::mat4 projection{};
-    glm::mat4 view{};
-};
 
 void Camera::setProjection(glm::mat4 newProjection) {
     projection = newProjection;
@@ -101,5 +71,3 @@ void Camera::rotateRight() {
     direction.z = sin(glm::radians(yaw));
     cameraFront = glm::normalize(direction);
 }
-
-#endif //AR_ENGINE_CAMERA_H

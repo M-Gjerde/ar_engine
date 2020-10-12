@@ -16,7 +16,7 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include "VulkanRenderer.hpp"
-#include "../include/Camera.h"
+#include "../pipeline/Camera.h"
 #include "../stereo/Disparity.h"
 
 class GameApplication {
@@ -47,10 +47,12 @@ public:
 
     }
 
+
+
     virtual void keyCallback(GLFWwindow *glfWwindow, int key, int scancode, int action, int mods) {};
 
     virtual void cursorPosCallback(GLFWwindow *newWindow, double xPos, double yPos) {};
-
+    virtual void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods){};
     // must be overridden in derived class
     virtual void update(){};
 
@@ -62,7 +64,7 @@ public:
         }
 
         vulkanRenderer.cleanup();
-        disparity.cleanUp();
+        //disparity.cleanUp();
         glfwDestroyWindow(window);
         glfwTerminate();
     }
@@ -85,7 +87,7 @@ public:
     }
 
     void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) override;
-
+    void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) override;
     void cursorPosCallback(GLFWwindow *window, double xPos, double yPos) override;
 
     void update() override;
@@ -96,9 +98,7 @@ private:
 
 };
 
-GameApplication *getApplication() {
-    return new AppExtension("AppExtension");
-}
+
 
 
 

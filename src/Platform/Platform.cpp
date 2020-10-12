@@ -257,6 +257,11 @@ bool Platform::hasDeviceExtensionsSupport() {
     vkEnumerateDeviceExtensionProperties(arEngine.mainDevice.physicalDevice, nullptr, &extensionCount,
                                          availableExtensions.data());
 
+    // TODO REMOVE IF NEEDED
+    for (auto & availableExtension : availableExtensions) {
+        //printf("Name: %s\n", availableExtension.extensionName);
+    }
+
     std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
 
     for (const auto &extension : availableExtensions) {

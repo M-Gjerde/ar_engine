@@ -22,6 +22,8 @@ public:
 
     void cleanUp();
     ~Disparity() = default;
+    int input = 0;
+    void stopProgram();
 
 private:
 
@@ -30,7 +32,6 @@ private:
     std::thread check_for_actions_thread{};
 
     // Runtime things
-    int input = 3;
 
     // Functions
     void checkForActions();
