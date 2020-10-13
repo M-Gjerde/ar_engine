@@ -5,9 +5,9 @@
 #include "Buffer.h"
 
 
-Buffer::Buffer(ArEngine engine) {
-    physicalDevice = engine.mainDevice.physicalDevice;
-    device = engine.mainDevice.device;
+Buffer::Buffer(MainDevice mainDevice) {
+    physicalDevice = mainDevice.physicalDevice;
+    device = mainDevice.device;
 }
 
 void Buffer::cleanUp(ArBuffer _arBuffer) {

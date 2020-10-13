@@ -8,9 +8,10 @@
 #include <cstring>
 
 
-Mesh::Mesh(ArEngine engine, StandardModel *standardModel, std::vector<ArBuffer> newArBuffer) : Buffer(
-        std::move(engine)) {
-    device = engine.mainDevice.device;
+Mesh::Mesh(MainDevice mainDevice, StandardModel *standardModel, std::vector<ArBuffer> newArBuffer) : Buffer(
+        mainDevice) {
+
+    device = mainDevice.device;
     modelInfo = *standardModel;
 
     // Use ArBuffer struct to use less memory than by just using standard Model struct
@@ -21,13 +22,10 @@ Mesh::Mesh(ArEngine engine, StandardModel *standardModel, std::vector<ArBuffer> 
     createVertexBuffer();
     createIndexBuffer();
 
-    // Copy ArBuffers back to standard model.
-    modelInfo.vertexBuffer = vertexBuffer.buffer;
-    modelInfo.indexBuffer = indexBuffer.buffer;
-    modelInfo.indexCount = 6; // TODO getter method
-
+    // Copy data back to standard model.
     standardModel->vertexBuffer = vertexBuffer.buffer;
     standardModel->indexBuffer = indexBuffer.buffer;
+    standardModel->indexCount = meshIndices.size();
 }
 
 
@@ -104,5 +102,12 @@ void Mesh::createIndexBuffer() {
 
 }
 
+const glm::mat4 & Mesh::getModel() const {
+    return model1.model;
+}
+
+void Mesh::setModel(const glm::mat4 &_model) {
+    model1.model = _model;
+}
 
 Mesh::~Mesh() = default;

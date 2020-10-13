@@ -14,7 +14,7 @@
 class Buffer {
 
 public:
-    Buffer(ArEngine engine);
+    explicit Buffer(MainDevice mainDevice);
 
     Buffer();
 
@@ -25,16 +25,15 @@ public:
 
     void copyBuffer(StandardModel modelInfo, ArBuffer srcBuffer, ArBuffer dstBuffer);
 
+    uint32_t findMemoryTypeIndex(int32_t typeFilter, VkMemoryPropertyFlags properties);
+
+
 private:
 
     VkDevice device;
     VkPhysicalDevice physicalDevice;
 
-    uint32_t findMemoryTypeIndex(int32_t typeFilter, VkMemoryPropertyFlags properties);
-
-
     VkCommandBuffer beginCommandBuffer(VkCommandPool commandPool);
-
     void endAndSubmitCommandBuffer(StandardModel sModel, VkCommandBuffer transferCommandBuffer);
 };
 

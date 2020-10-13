@@ -18,7 +18,7 @@ void AppExtension::update() {
         usleep(timeToSleep);
     }
 
-    vulkanRenderer.updateModel(glm::mat4(1.0f));
+
 }
 
 
@@ -35,6 +35,24 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
         std::cout << "disparity input: " << disparity.input << std::endl;
 
     }
+
+    if (key == GLFW_KEY_UP) {
+        glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f));
+        vulkanRenderer.updateModel(trans, 1);
+    }
+    if (key == GLFW_KEY_DOWN) {
+        glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.0f, 0.0f));
+        vulkanRenderer.updateModel(trans, 0);
+    }
+
+    if (key == GLFW_KEY_LEFT_SHIFT) {
+        glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.0f, 0.0f));
+        vulkanRenderer.updateModel(trans, 0);
+        trans = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f));
+        vulkanRenderer.updateModel(trans, 1);
+
+    }
+
 
     if (key == GLFW_KEY_RIGHT)
         camera.rotateRight();
@@ -56,14 +74,20 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
 double xPos, yPos;
 
 void AppExtension::cursorPosCallback(GLFWwindow *window, double _xPos, double _yPos) {
-   xPos = _xPos;
-   yPos = _yPos;
+    xPos = _xPos;
+    yPos = _yPos;
 
 }
 
 void AppExtension::mouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
         printf("Mouse click at pos: %f, %f\n", xPos, yPos);
+
+        printf("____________________________________________\n "
+               "Camera data: yaw = %f\n", camera.yaw);
+
+        printf("cameraFront (x,y,z): %f, %f, %f\n", camera.cameraFront.x, camera.cameraFront.y, camera.cameraFront.z);
+    }
 
 }
 

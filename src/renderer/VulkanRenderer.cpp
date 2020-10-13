@@ -4,6 +4,7 @@
 
 
 
+#include <array>
 #include "VulkanRenderer.hpp"
 
 VulkanRenderer::VulkanRenderer() = default;
@@ -14,11 +15,13 @@ VulkanRenderer::~VulkanRenderer() = default;
 int VulkanRenderer::init(GLFWwindow *newWindow) {
     try {
         platform = new Platform(newWindow, &arEngine);
-        buffer = new Buffer(arEngine);
+        buffer = new Buffer(arEngine.mainDevice);
         descriptors = new Descriptors(arEngine);
+        images = new Images(arEngine.mainDevice, arEngine.swapchainExtent);
 
-        createUboBuffer();
         createVertexBuffer();
+        createUboBuffer();
+
 
         createPipeline();
         createFrameBuffers();
@@ -36,7 +39,12 @@ int VulkanRenderer::init(GLFWwindow *newWindow) {
 void VulkanRenderer::cleanup() {
     vkDeviceWaitIdle(arPipeline.device); // wait for GPU to finish rendering before we clean up resources
 
-    mesh->cleanUp();
+    images->cleanUp();
+
+    for (auto &mesh : meshes) {
+        mesh.cleanUp();
+    }
+
     descriptors->cleanUp(arDescriptor);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
@@ -117,6 +125,9 @@ void VulkanRenderer::createPipeline() {
     arPipeline.device = arEngine.mainDevice.device;
     arPipeline.swapchainImageFormat = arEngine.swapchainFormat;
     arPipeline.swapchainExtent = arEngine.swapchainExtent;
+    arPipeline.depthFormat = images->findDepthFormat();
+    images->createDepthImageView(&arDepthResource.depthImageView);       // Create depth image view
+
     pipeline.createGraphicsPipeline(&arPipeline, arDescriptor.descriptorSetLayout);
 
 }
@@ -124,13 +135,13 @@ void VulkanRenderer::createPipeline() {
 void VulkanRenderer::createFrameBuffers() {
     swapChainFramebuffers.resize(arEngine.swapchainImages.size());
     for (size_t i = 0; i < arEngine.swapChainImageViews.size(); i++) {
-        VkImageView attachments[] = {arEngine.swapChainImageViews[i]};
+        std::array<VkImageView, 2> attachments = {arEngine.swapChainImageViews[i], arDepthResource.depthImageView};
 
         VkFramebufferCreateInfo framebufferInfo{};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebufferInfo.renderPass = arPipeline.renderPass;
-        framebufferInfo.attachmentCount = 1;
-        framebufferInfo.pAttachments = attachments;
+        framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+        framebufferInfo.pAttachments = attachments.data();
         framebufferInfo.width = arEngine.swapchainExtent.width;
         framebufferInfo.height = arEngine.swapchainExtent.height;
         framebufferInfo.layers = 1;
@@ -176,30 +187,33 @@ void VulkanRenderer::recordCommand() {
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = arPipeline.swapchainExtent;
 
+        std::array<VkClearValue, 2> clearValues{};
+        clearValues[0].color = {0.05f, 0.25f, 0.05f, 1.0f};
+        clearValues[1].depthStencil = {1.0f, 0};
+
         VkClearValue clearColor = {0.05f, 0.25f, 0.05f, 1.0f};
-        renderPassInfo.clearValueCount = 1;
-        renderPassInfo.pClearValues = &clearColor;
+
+        renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+        renderPassInfo.pClearValues = clearValues.data();
 
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, arPipeline.pipeline);
 
-        VkBuffer vertexBuffers[] = {triangleModel.vertexBuffer};
+        for (int j = 0; j < triangleModels.size(); ++j) {
+            VkBuffer vertexBuffers[] = {triangleModels[j].vertexBuffer};
+            VkDeviceSize offsets[] = {0};
+            vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
 
-        VkDeviceSize offsets[] = {0};
-        //vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
 
-        vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+            vkCmdBindIndexBuffer(commandBuffers[i], triangleModels[j].indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-        vkCmdBindIndexBuffer(commandBuffers[i], triangleModel.indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+            vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, arPipeline.pipelineLayout, 0, 1,
+                                    &arDescriptor.descriptorSets[j], 0, nullptr);
 
-        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, arPipeline.pipelineLayout, 0, 1,
-                                &arDescriptor.descriptorSets[i], 0, nullptr);
+            vkCmdDrawIndexed(commandBuffers[i], triangleModels[j].indexCount, 1, 0, 0, 0);
 
-        //vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
-
-        vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(6), 1, 0, 0, 0);
-
+        }
 
         vkCmdEndRenderPass(commandBuffers[i]);
 
@@ -232,13 +246,22 @@ void VulkanRenderer::createSyncObjects() {
     }
 }
 
-void VulkanRenderer::updateBuffer(uint32_t imageIndex) const {
+void VulkanRenderer::updateBuffer(uint32_t imageIndex) {
 
-    // Copy VP data
+
+    uboModelVar.model = meshes[0].getModel();
+
     void *data2;
-    vkMapMemory(arEngine.mainDevice.device, arDescriptor.bufferMemory[imageIndex], 0, sizeof(uboModel), 0, &data2);
+    vkMapMemory(arEngine.mainDevice.device, arDescriptor.bufferMemory[0], 0, sizeof(uboModel), 0, &data2);
     memcpy(data2, &uboModelVar, sizeof(uboModel));
-    vkUnmapMemory(arEngine.mainDevice.device, arDescriptor.bufferMemory[imageIndex]);
+    vkUnmapMemory(arEngine.mainDevice.device, arDescriptor.bufferMemory[0]);
+
+    uboModelVar.model = meshes[1].getModel();
+    // Copy VP data
+    void *data;
+    vkMapMemory(arEngine.mainDevice.device, arDescriptor.bufferMemory[1], 0, sizeof(uboModel), 0, &data);
+    memcpy(data, &uboModelVar, sizeof(uboModel));
+    vkUnmapMemory(arEngine.mainDevice.device, arDescriptor.bufferMemory[1]);
 
 
 }
@@ -247,14 +270,14 @@ void VulkanRenderer::updateBuffer(uint32_t imageIndex) const {
 void VulkanRenderer::createUboBuffer() {
 
     // UBO buffer
-    uboBuffers.resize(arEngine.swapchainImages.size());
-    arDescriptor.descriptorSets.resize(arEngine.swapchainImages.size());
-    arDescriptor.buffer.resize(arEngine.swapchainImages.size());
-    arDescriptor.bufferMemory.resize(arEngine.swapchainImages.size());
+    arDescriptor.descriptorSets.resize(meshes.size());
+    uboBuffers.resize(arDescriptor.descriptorSets.size());
+    arDescriptor.buffer.resize(arDescriptor.descriptorSets.size());
+    arDescriptor.bufferMemory.resize(arDescriptor.descriptorSets.size());
 
     VkDeviceSize vpBufferSize = sizeof(uboModel);
 
-    for (int i = 0; i < arEngine.swapchainImages.size(); ++i) {
+    for (int i = 0; i < arDescriptor.descriptorSets.size(); ++i) {
         uboBuffers[i].bufferSize = vpBufferSize;
         uboBuffers[i].bufferUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         uboBuffers[i].bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -264,10 +287,7 @@ void VulkanRenderer::createUboBuffer() {
         arDescriptor.buffer[i] = uboBuffers[i].buffer;
         arDescriptor.bufferMemory[i] = uboBuffers[i].bufferMemory;
     }
-
     descriptors->createDescriptors(&arDescriptor);
-
-
 }
 
 
@@ -282,23 +302,30 @@ void VulkanRenderer::createVertexBuffer() {
     modelBuffers[1].bufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     modelBuffers[1].bufferProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-    triangleModel.indices = meshIndices;
-    triangleModel.vertices = meshVertices;
+    triangleModels.resize(2);
 
-    triangleModel.transferCommandPool = arEngine.commandPool;
-    triangleModel.transferQueue = arEngine.graphicsQueue;
-    mesh = new Mesh(arEngine, &triangleModel, modelBuffers);
+    for (int i = 0; i < triangleModels.size(); ++i) {
+        triangleModels[i].indices = meshIndices;
+        triangleModels[i].vertices = meshVertices;
+        triangleModels[i].transferCommandPool = arEngine.commandPool;
+        triangleModels[i].transferQueue = arEngine.graphicsQueue;
+        meshes.emplace_back(Mesh(arEngine.mainDevice, &triangleModels[i], modelBuffers));
+
+    }
+
+
 
 }
 
 
-
 void VulkanRenderer::updateCamera(glm::mat4 newView, glm::mat4 newProjection) {
+
     uboModelVar.view = newView;
     uboModelVar.projection = newProjection;
 }
 
-void VulkanRenderer::updateModel(glm::mat4 newModel) {
-    uboModelVar.model = newModel;
+void VulkanRenderer::updateModel(glm::mat4 newModel, int index) {
+
+    meshes[index].setModel(newModel);
 
 }

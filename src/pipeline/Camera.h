@@ -14,9 +14,9 @@
 class Camera {
 public:
     float cameraSpeed = 0.25f;
-    glm::vec3 cameraPos;
-    glm::vec3 cameraFront;
-    glm::vec3 cameraUp;
+    glm::vec3 cameraPos{};
+    glm::vec3 cameraFront{};
+    glm::vec3 cameraUp{};
 
     Camera();
     void setProjection(glm::mat4 newProjection);
@@ -31,8 +31,9 @@ public:
     void rotateRight();
     void rotateLeft();
 
-private:
     float yaw = -90;
+private:
+
     glm::mat4 projection{};
     glm::mat4 view{};
 };

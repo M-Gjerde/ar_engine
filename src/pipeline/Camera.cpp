@@ -69,5 +69,6 @@ void Camera::rotateRight() {
     glm::vec3 direction;
     direction.x = cos(glm::radians(yaw));
     direction.z = sin(glm::radians(yaw));
+    direction.y = 0.0f;
     cameraFront = glm::normalize(direction);
 }

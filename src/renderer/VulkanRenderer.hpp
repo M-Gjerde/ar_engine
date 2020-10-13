@@ -5,7 +5,7 @@
 #ifndef UDEMY_VULCAN_VULKANRENDERER_HPP
 #define UDEMY_VULCAN_VULKANRENDERER_HPP
 
-#define VK_ENABLE_BETA_EXTENSIONS
+
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
@@ -16,6 +16,7 @@
 #include "../pipeline/Descriptors.h"
 #include "../include/settings.h"
 #include "../pipeline/Mesh.h"
+#include "../pipeline/Images.h"
 #include <stdexcept>
 #include <vector>
 #include <iostream>
@@ -27,7 +28,7 @@ public:
 
     int init(GLFWwindow *newWindow);
 
-    void updateModel(glm::mat4 newModel);
+    void updateModel(glm::mat4 newModel, int index);
     void updateCamera(glm::mat4 newView, glm::mat4 newProjection);
 
     void draw();
@@ -45,6 +46,8 @@ private:
     // - Pipelines
     Pipeline pipeline;
     ArPipeline arPipeline{};
+    Images *images;
+    ArDepthResource arDepthResource;
 
     // Buffer
     Buffer *buffer{};
@@ -52,8 +55,8 @@ private:
     uboModel uboModelVar{};
 
     // Objects
-    Mesh *mesh;
-    StandardModel triangleModel{};
+    std::vector<Mesh> meshes;
+    std::vector<StandardModel> triangleModels{};
 
     // - Descriptors
     Descriptors *descriptors{};
@@ -73,16 +76,13 @@ private:
     void createPipeline();
     void createFrameBuffers();
     void createCommandBuffers();
-
     void recordCommand();
-
     void createSyncObjects();
 
-    void updateBuffer(uint32_t imageIndex) const;
-
     void createUboBuffer();
-
     void createVertexBuffer();
+
+    void updateBuffer(uint32_t imageIndex);
 };
 
 

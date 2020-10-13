@@ -3,6 +3,7 @@ project(ar_engine)
 
 set(CMAKE_CXX_STANDARD 17)
 
+# Include Vulkan and OpenCL from AMD drivers
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17  -L/opt/amdgpu-pro/lib/x86_64-linux-gnu -lamdocl-orca64")
 
 
@@ -39,7 +40,7 @@ add_library(VulkanRenderer
         src/renderer/GameApplication.h
         src/include/structs.h
         src/pipeline/Camera.cpp
-        src/pipeline/Camera.h)
+        src/pipeline/Camera.h src/pipeline/Images.cpp src/pipeline/Images.h src/pipeline/Textures.cpp src/pipeline/Textures.h)
 
 target_link_libraries(VulkanRenderer
         stereoVision

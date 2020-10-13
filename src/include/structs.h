@@ -18,10 +18,10 @@ struct StandardModel {
     std::vector<uint32_t> indices;
     int newTexId;
 
-    int vertexCount{};
+    uint32_t vertexCount{};
     VkBuffer vertexBuffer{};
     VkDeviceMemory vertexBufferMemory{};
-    int indexCount{};
+    uint32_t indexCount{};
     VkBuffer indexBuffer{};
     VkDeviceMemory indexBufferMemory{};
 };
@@ -67,10 +67,18 @@ struct ArEngine {
 struct ArPipeline {
     VkDevice device;
     VkFormat swapchainImageFormat;
+    VkFormat depthFormat;
     VkExtent2D swapchainExtent;
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline;
     VkRenderPass renderPass;
+};
+
+struct ArDepthResource {
+    VkImage depthImage;
+    VkDeviceMemory depthImageMemory;
+    VkImageView depthImageView;
+    VkExtent2D swapChainExtent;
 };
 
 
