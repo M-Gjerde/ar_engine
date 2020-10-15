@@ -14,23 +14,33 @@
 class Images : Buffer{
 
 public:
-    Images(MainDevice newMainDevice, VkExtent2D swapchainExtent);
+    MainDevice mainDevice{};
 
+
+    Images(MainDevice newMainDevice, VkExtent2D swapchainExtent);
+    explicit Images(Images* pImages);
     void createDepthImageView(VkImageView *depthImageView);
     VkFormat findDepthFormat();
 
-    void cleanUp();
-
-private:
-    MainDevice mainDevice;
-    ArDepthResource arDepthResource;
-
-    VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+    virtual void cleanUp();
+    void createBuffer(ArBuffer* pArBuffer) override;
 
     void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
                      VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory);
 
     VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+
+    void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout,
+                               VkCommandPool commandPool, VkQueue transferQueue);
+
+    void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, VkCommandPool commandPool, VkQueue transferQueue);
+
+private:
+    ArDepthResource arDepthResource{};
+
+    VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+
+
 };
 
 

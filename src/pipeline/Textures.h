@@ -6,8 +6,27 @@
 #define AR_ENGINE_TEXTURES_H
 
 
-class Textures {
+#include "Images.h"
+#include <vulkan/vulkan.h>
+#include <stdexcept>
+#include <cstring>
 
+class Textures : Images {
+public:
+    explicit Textures(Images *pImages);
+    void createTexture(ArTextureSampler* pArTextureSampler);
+
+    void cleanUp();
+
+private:
+
+    ArBuffer imageBuffer;
+    ArTextureSampler arTextureSampler;
+    Images *images;
+
+    void createTextureImage();
+    void createTextureSampler();
+    void createTextureImageView();
 };
 
 

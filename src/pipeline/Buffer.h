@@ -21,20 +21,21 @@ public:
     ~Buffer();
     void cleanUp(ArBuffer _arBuffer);
 
-    void createBuffer(ArBuffer *buffer);
+    virtual void createBuffer(ArBuffer *buffer);
 
     void copyBuffer(StandardModel modelInfo, ArBuffer srcBuffer, ArBuffer dstBuffer);
 
     uint32_t findMemoryTypeIndex(int32_t typeFilter, VkMemoryPropertyFlags properties);
 
+    VkCommandBuffer beginCommandBuffer(VkCommandPool commandPool);
+    void endAndSubmitCommandBuffer(VkCommandBuffer transferCommandBuffer, VkQueue queue, VkCommandPool commandPool);
 
 private:
 
     VkDevice device;
     VkPhysicalDevice physicalDevice;
 
-    VkCommandBuffer beginCommandBuffer(VkCommandPool commandPool);
-    void endAndSubmitCommandBuffer(StandardModel sModel, VkCommandBuffer transferCommandBuffer);
+
 };
 
 

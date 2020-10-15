@@ -42,7 +42,7 @@ void Pipeline::createGraphicsPipeline(ArPipeline *pipeline, VkDescriptorSetLayou
     bindingDescription.stride = sizeof(Vertex);                 // Size of a single vertex object
     bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-    std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+    std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
     // Position attribute
     attributeDescriptions[0].location = 0;
     attributeDescriptions[0].binding = 0;
@@ -55,7 +55,10 @@ void Pipeline::createGraphicsPipeline(ArPipeline *pipeline, VkDescriptorSetLayou
     attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;       // Vec 3 size
     attributeDescriptions[1].offset = offsetof(Vertex, color);
 
-
+    attributeDescriptions[2].binding = 0;
+    attributeDescriptions[2].location = 2;
+    attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+    attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
 
     // Vertex input into pipeline
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};

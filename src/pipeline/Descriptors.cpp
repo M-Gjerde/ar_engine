@@ -3,6 +3,7 @@
 //
 
 
+#include <array>
 #include "Descriptors.h"
 #include "../include/triangle.h"
 
@@ -19,6 +20,18 @@ void Descriptors::createDescriptors(ArDescriptor *pDescriptor) {
     *pDescriptor = mArDescriptor;
 }
 
+
+void Descriptors::createDescriptorsSampler(ArDescriptor *pDescriptor, ArTextureSampler pTextureSampler) {
+    arTextureSampler = pTextureSampler;
+    mArDescriptor = *pDescriptor;
+    createSetLayout();
+    createSetPool();
+    createDescriptorSets();
+    createTextureSamplerDescriptor();
+    // Return descriptors
+    *pDescriptor = mArDescriptor;
+}
+
 void Descriptors::createSetLayout() {
 
     // UNIFORM VALUES DESCRIPTOR SET LAYOUT
@@ -30,8 +43,15 @@ void Descriptors::createSetLayout() {
     uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;               // Shader stage to bind to
     uboLayoutBinding.pImmutableSamplers = nullptr;                          // For texture: can make sampler data unchangeable (immutable) by specyfing layout but the imageView it samples from can still be changed
 
+    // Texture layout binidng
+    VkDescriptorSetLayoutBinding samplerLayoutBinding{};
+    samplerLayoutBinding.binding = 1;
+    samplerLayoutBinding.descriptorCount = 1;
+    samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    samplerLayoutBinding.pImmutableSamplers = nullptr;
+    samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    std::vector<VkDescriptorSetLayoutBinding> layoutBindings = {uboLayoutBinding};
+    std::vector<VkDescriptorSetLayoutBinding> layoutBindings = {uboLayoutBinding, samplerLayoutBinding};
     // Create descriptor set layout with given bindings
     VkDescriptorSetLayoutCreateInfo layoutCreateInfo = {};
     layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -53,12 +73,16 @@ void Descriptors::createSetPool() {
     vpPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     vpPoolSize.descriptorCount = static_cast<uint32_t>(mArDescriptor.descriptorSets.size());
 
+    VkDescriptorPoolSize samplerPoolSize = {};
+    samplerPoolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    samplerPoolSize.descriptorCount = static_cast<uint32_t>(mArDescriptor.descriptorSets.size());
+
     /*
     VkDescriptorPoolSize modelPoolSize = {};
     modelPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     modelPoolSize.descriptorCount = static_cast<uint32_t>(modelDynamicUniformBuffer.size());
 */
-    std::vector<VkDescriptorPoolSize> poolList = {vpPoolSize,};
+    std::vector<VkDescriptorPoolSize> poolList = {vpPoolSize, samplerPoolSize};
 
     // Data to create descriptor pool
     VkDescriptorPoolCreateInfo poolCreateInfo = {};
@@ -132,4 +156,36 @@ void Descriptors::cleanUp(ArDescriptor arDescriptor) {
 
     }
 
+}
+
+void Descriptors::createTextureSamplerDescriptor() {
+
+    std::vector<VkDescriptorSetLayout> setLayouts(mArDescriptor.descriptorSets.size(),
+                                                  mArDescriptor.descriptorSetLayout);
+
+    // Update all of descriptor set buffer bindings
+    for (size_t i = 0; i < mArDescriptor.descriptorSets.size(); i++) {
+        // Buffer info and data offset info
+        // VIEW PROJECTION DESCRIPTOR
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = arTextureSampler.textureImageView;
+        imageInfo.sampler = arTextureSampler.textureSampler;
+
+        // Data about connection between binding and buffer
+        VkWriteDescriptorSet samplerSetWrite = {};
+        samplerSetWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        samplerSetWrite.dstSet = mArDescriptor.descriptorSets[i];                         // Descriptor set to update
+        samplerSetWrite.dstBinding = 1;                                     // Binding to update (matches with binding on layout/shader
+        samplerSetWrite.dstArrayElement = 0;                                // Index in the array we want to update
+        samplerSetWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER; // Type of descriptor we are updating
+        samplerSetWrite.descriptorCount = 1;                                // Amount to update
+        samplerSetWrite.pImageInfo = &imageInfo;                        // Information about buffer data to bind
+
+
+        std::vector<VkWriteDescriptorSet> writeDescriptorSetlist = {samplerSetWrite};
+        // Update the descriptor sets with new buffer/binding info
+        vkUpdateDescriptorSets(device, static_cast<uint32_t>(writeDescriptorSetlist.size()),
+                               writeDescriptorSetlist.data(), 0, nullptr);
+    }
 }

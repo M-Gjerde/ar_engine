@@ -6,9 +6,6 @@
 #define UDEMY_VULCAN_VULKANRENDERER_HPP
 
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
 #include "../pipeline/Buffer.h"
 #include "../Platform/Platform.h"
 #include "../include/structs.h"
@@ -17,6 +14,7 @@
 #include "../include/settings.h"
 #include "../pipeline/Mesh.h"
 #include "../pipeline/Images.h"
+#include "../pipeline/Textures.h"
 #include <stdexcept>
 #include <vector>
 #include <iostream>
@@ -62,6 +60,8 @@ private:
     Descriptors *descriptors{};
     ArDescriptor arDescriptor;
 
+    Textures *textures;
+
     // - Drawing
     std::vector<VkFramebuffer> swapChainFramebuffers;
     std::vector<VkCommandBuffer> commandBuffers;
@@ -79,8 +79,7 @@ private:
     void recordCommand();
     void createSyncObjects();
 
-    void createUboBuffer();
-    void createVertexBuffer();
+    void createSimpleMesh();
 
     void updateBuffer(uint32_t imageIndex);
 };

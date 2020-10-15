@@ -81,7 +81,7 @@ void Buffer::copyBuffer(StandardModel modelInfo, ArBuffer srcBuffer, ArBuffer ds
     // Command to copy src buffer to dst buffer
     vkCmdCopyBuffer(transferCommandBuffer, srcBuffer.buffer, dstBuffer.buffer, 1, &bufferCopyRegion);
 
-    endAndSubmitCommandBuffer(modelInfo, transferCommandBuffer);
+    endAndSubmitCommandBuffer(transferCommandBuffer, modelInfo.transferQueue, modelInfo.transferCommandPool);
 
 
 }
@@ -111,7 +111,8 @@ VkCommandBuffer Buffer::beginCommandBuffer(VkCommandPool commandPool) {
     return commandBuffer;
 }
 
-void Buffer::endAndSubmitCommandBuffer(StandardModel modelInfo, VkCommandBuffer transferCommandBuffer) {
+void
+Buffer::endAndSubmitCommandBuffer(VkCommandBuffer transferCommandBuffer, VkQueue queue, VkCommandPool commandPool) {
 
     // End commands
     vkEndCommandBuffer(transferCommandBuffer);
@@ -123,12 +124,12 @@ void Buffer::endAndSubmitCommandBuffer(StandardModel modelInfo, VkCommandBuffer 
     submitInfo.pCommandBuffers = &transferCommandBuffer;
 
     // Submit transfer command to transfer queue and wait until it finishes
-    vkQueueSubmit(modelInfo.transferQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
 
     // Wait until this queue is done, then continue Not optimal for thousands of meshes
-    vkQueueWaitIdle(modelInfo.transferQueue);
+    vkQueueWaitIdle(queue);
     // Free temporary command buffer back to pool
-    vkFreeCommandBuffers(device, modelInfo.transferCommandPool, 1, &transferCommandBuffer);
+    vkFreeCommandBuffers(device, commandPool, 1, &transferCommandBuffer);
 }
 
 Buffer::Buffer() = default;

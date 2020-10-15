@@ -34,6 +34,15 @@ struct ArDescriptor{
     std::vector<VkDeviceMemory> bufferMemory;
 };
 
+struct ArTextureSampler {
+    VkImageView textureImageView;
+    VkImage textureImage;
+    VkSampler textureSampler;
+    VkDeviceMemory textureImageMemory;
+    VkCommandPool transferCommandPool;
+    VkQueue transferQueue;
+};
+
 struct ArBuffer {
     VkDeviceSize bufferSize;
     VkBufferUsageFlags bufferUsage;

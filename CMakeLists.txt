@@ -11,10 +11,7 @@ find_package(glm REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(OpenCV REQUIRED)
-
 find_package(OpenCL REQUIRED)
-
-MESSAGE("Vulkan lib ${Vulkan_LIBS}")
 
 ## Stereovision extension
 add_library(stereoVision src/stereo/Disparity.cpp src/stereo/Disparity.h)
@@ -40,13 +37,18 @@ add_library(VulkanRenderer
         src/renderer/GameApplication.h
         src/include/structs.h
         src/pipeline/Camera.cpp
-        src/pipeline/Camera.h src/pipeline/Images.cpp src/pipeline/Images.h src/pipeline/Textures.cpp src/pipeline/Textures.h)
+        src/pipeline/Camera.h
+        src/pipeline/Images.cpp
+        src/pipeline/Images.h
+        src/pipeline/Textures.cpp
+        src/pipeline/Textures.h
+        src/include/stb_image.h
+        )
 
 target_link_libraries(VulkanRenderer
         stereoVision
         vulkan
         )
-
 
 add_executable(engine main.cpp)
 
@@ -55,8 +57,6 @@ target_link_libraries(engine
         VulkanRenderer
         )
 
-
 add_executable(test test.cpp)
-#target_link_libraries(test )
 
 

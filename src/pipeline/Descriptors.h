@@ -15,17 +15,22 @@ public:
     explicit Descriptors(const ArEngine& engine);
 
     void createDescriptors(ArDescriptor *pDescriptor);
+    void createDescriptorsSampler(ArDescriptor *pDescriptor, ArTextureSampler pTextureSampler);
+
     void cleanUp(ArDescriptor arDescriptor);
 
 private:
     VkDevice device;
     ArDescriptor mArDescriptor;
+    ArTextureSampler arTextureSampler;
 
     void createSetLayout();
-
     void createSetPool();
-
     void createDescriptorSets();
+
+    void createTextureSamplerDescriptor();
+
+
 };
 
 

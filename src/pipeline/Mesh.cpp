@@ -53,11 +53,11 @@ void Mesh::createVertexBuffer() {
     // MAP MEMORY TO STAGING BUFFER
     void *data;                                                                                         // 1. Create pointer to a point in normal memory
     vkMapMemory(device, stagingBuffer.bufferMemory, 0, vertexBuffer.bufferSize, 0,
-                &data);     // 2. "Map" the vertex buffer memory to that point
+                &data);                                                                                 // 2. "Map" the vertex buffer memory to that point
     memcpy(data, modelInfo.vertices.data(),
-           vertexBuffer.bufferSize);                                                   // 3. Copy memory from vertices vector to the point
+           vertexBuffer.bufferSize);                                                                    // 3. Copy memory from vertices vector to the point
     vkUnmapMemory(device,
-                  stagingBuffer.bufferMemory);                                                  // 4. Unmap the vertex buffer memory
+                  stagingBuffer.bufferMemory);                                                          // 4. Unmap the vertex buffer memory
 
     // Create buffer with TRANSFER_DST_BIT to mark as recipient of transfer data (also VERTEX_BUFFER)
     // Buffer memory is to be DEVICE_LOCAL_BIT meaning memory is on the GPU and only accessible by it and not the CPU
@@ -85,9 +85,12 @@ void Mesh::createIndexBuffer() {
 
     // MAP MEMORY TO STAGING BUFFER
     void *data;                                                                                         // 1. Create pointer to a point in normal memory
-    vkMapMemory(device, stagingBuffer.bufferMemory, 0, indexBuffer.bufferSize, 0, &data);     // 2. "Map" the vertex buffer memory to that point
-    memcpy(data, modelInfo.indices.data(), indexBuffer.bufferSize);                                                   // 3. Copy memory from vertices vector to the point
-    vkUnmapMemory(device, stagingBuffer.bufferMemory);                                                  // 4. Unmap the vertex buffer memory
+    vkMapMemory(device, stagingBuffer.bufferMemory, 0, indexBuffer.bufferSize, 0,
+                &data);     // 2. "Map" the vertex buffer memory to that point
+    memcpy(data, modelInfo.indices.data(),
+           indexBuffer.bufferSize);                                                   // 3. Copy memory from vertices vector to the point
+    vkUnmapMemory(device,
+                  stagingBuffer.bufferMemory);                                                  // 4. Unmap the vertex buffer memory
 
     // Create buffer with TRANSFER_DST_BIT to mark as recipient of transfer data (also VERTEX_BUFFER)
     // Buffer memory is to be DEVICE_LOCAL_BIT meaning memory is on the GPU and only accessible by it and not the CPU
@@ -102,7 +105,7 @@ void Mesh::createIndexBuffer() {
 
 }
 
-const glm::mat4 & Mesh::getModel() const {
+const glm::mat4 &Mesh::getModel() const {
     return model1.model;
 }
 

@@ -19,9 +19,9 @@ int VulkanRenderer::init(GLFWwindow *newWindow) {
         descriptors = new Descriptors(arEngine);
         images = new Images(arEngine.mainDevice, arEngine.swapchainExtent);
 
-        createVertexBuffer();
-        createUboBuffer();
+        textures = new Textures(images);
 
+        createSimpleMesh();
 
         createPipeline();
         createFrameBuffers();
@@ -32,6 +32,7 @@ int VulkanRenderer::init(GLFWwindow *newWindow) {
 
     } catch (std::runtime_error &err) {
         printf("Error: %s\n", err.what());
+        return -1;
     }
     return 0;
 }
@@ -39,6 +40,7 @@ int VulkanRenderer::init(GLFWwindow *newWindow) {
 void VulkanRenderer::cleanup() {
     vkDeviceWaitIdle(arPipeline.device); // wait for GPU to finish rendering before we clean up resources
 
+    textures->cleanUp();
     images->cleanUp();
 
     for (auto &mesh : meshes) {
@@ -267,32 +269,9 @@ void VulkanRenderer::updateBuffer(uint32_t imageIndex) {
 }
 
 
-void VulkanRenderer::createUboBuffer() {
+void VulkanRenderer::createSimpleMesh() {
 
-    // UBO buffer
-    arDescriptor.descriptorSets.resize(meshes.size());
-    uboBuffers.resize(arDescriptor.descriptorSets.size());
-    arDescriptor.buffer.resize(arDescriptor.descriptorSets.size());
-    arDescriptor.bufferMemory.resize(arDescriptor.descriptorSets.size());
-
-    VkDeviceSize vpBufferSize = sizeof(uboModel);
-
-    for (int i = 0; i < arDescriptor.descriptorSets.size(); ++i) {
-        uboBuffers[i].bufferSize = vpBufferSize;
-        uboBuffers[i].bufferUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        uboBuffers[i].bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-
-        buffer->createBuffer(&uboBuffers[i]);
-
-        arDescriptor.buffer[i] = uboBuffers[i].buffer;
-        arDescriptor.bufferMemory[i] = uboBuffers[i].bufferMemory;
-    }
-    descriptors->createDescriptors(&arDescriptor);
-}
-
-
-void VulkanRenderer::createVertexBuffer() {
-
+    // Create memory and buffers for vertices
     std::vector<ArBuffer> modelBuffers;
     modelBuffers.resize(2);
     modelBuffers[0].bufferSize = sizeof(meshVertices[0]) * meshVertices.size();
@@ -313,7 +292,32 @@ void VulkanRenderer::createVertexBuffer() {
 
     }
 
+    // Create UBO
+    arDescriptor.descriptorSets.resize(meshes.size());
+    uboBuffers.resize(arDescriptor.descriptorSets.size());
+    arDescriptor.buffer.resize(arDescriptor.descriptorSets.size());
+    arDescriptor.bufferMemory.resize(arDescriptor.descriptorSets.size());
 
+    VkDeviceSize vpBufferSize = sizeof(uboModel);
+
+    for (int i = 0; i < arDescriptor.descriptorSets.size(); ++i) {
+        uboBuffers[i].bufferSize = vpBufferSize;
+        uboBuffers[i].bufferUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        uboBuffers[i].bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+        buffer->createBuffer(&uboBuffers[i]);
+
+        arDescriptor.buffer[i] = uboBuffers[i].buffer;
+        arDescriptor.bufferMemory[i] = uboBuffers[i].bufferMemory;
+    }
+    // Create descriptors
+
+    ArTextureSampler arTextureSampler{};
+    arTextureSampler.transferQueue = arEngine.graphicsQueue;
+    arTextureSampler.transferCommandPool = arEngine.commandPool;
+    textures->createTexture(&arTextureSampler);
+
+    descriptors->createDescriptorsSampler(&arDescriptor, arTextureSampler);
 
 }
 

@@ -38,6 +38,7 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
 
     if (key == GLFW_KEY_UP) {
         glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f));
+        trans = glm::rotate(trans, glm::radians(180.0f), glm::vec3(0, 0, 1));
         vulkanRenderer.updateModel(trans, 1);
     }
     if (key == GLFW_KEY_DOWN) {
