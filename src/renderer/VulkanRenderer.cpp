@@ -333,3 +333,8 @@ void VulkanRenderer::updateModel(glm::mat4 newModel, int index) {
     meshes[index].setModel(newModel);
 
 }
+
+void VulkanRenderer::updateTexture(std::string fileName) {
+
+    textures->updateTexture(fileName);
+}

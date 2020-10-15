@@ -41,10 +41,12 @@ void Textures::createTextureSampler(){
 
 
 }
-void Textures::createTextureImage() {
+void Textures::createTextureImage(std::string fileName) {
+
+    std::string filePath = "../textures/" + fileName + ".jpg";
 
     int texWidth, texHeight, texChannels;
-    stbi_uc *pixels = stbi_load("../textures/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha); //TODO METHOD
+    stbi_uc *pixels = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha); //TODO METHOD
     VkDeviceSize imageSize = texWidth * texHeight * 4;
 
     if (!pixels) {
@@ -57,36 +59,38 @@ void Textures::createTextureImage() {
 
     images->createBuffer(&imageBuffer);
 
+    // Create image to bind memory
+    images->createImage(texWidth, texHeight, VK_FORMAT_B8G8R8A8_SRGB,
+                        VK_IMAGE_TILING_LINEAR,
+                        VK_IMAGE_USAGE_SAMPLED_BIT,
+                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                        arTextureSampler.textureImage,
+                        arTextureSampler.textureImageMemory,
+                        VK_IMAGE_LAYOUT_PREINITIALIZED);
+
     // Copy pixel data to image memory
     void* data;
-    vkMapMemory(images->mainDevice.device, imageBuffer.bufferMemory, 0, imageSize, 0, &data);
+    vkMapMemory(images->mainDevice.device, arTextureSampler.textureImageMemory, 0, imageSize, 0, &data);
     memcpy(data, pixels, static_cast<size_t>(imageSize));
-    vkUnmapMemory(images->mainDevice.device, imageBuffer.bufferMemory);
+    vkUnmapMemory(images->mainDevice.device, arTextureSampler.textureImageMemory);
     stbi_image_free(pixels);
 
-    // Create image to bind memory
-    images->createImage(texWidth, texHeight,
-                        VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-                        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                        arTextureSampler.textureImage,
-                        arTextureSampler.textureImageMemory);
 
-
-    transitionImageLayout(arTextureSampler.textureImage,
-                          VK_FORMAT_B8G8R8A8_SRGB,
-                          VK_IMAGE_LAYOUT_UNDEFINED,
-                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                          arTextureSampler.transferCommandPool,
-                          arTextureSampler.transferQueue
-                          );
-    copyBufferToImage(imageBuffer.buffer, arTextureSampler.textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight),
-                      arTextureSampler.transferCommandPool,
-                      arTextureSampler.transferQueue);
-    transitionImageLayout(arTextureSampler.textureImage, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                          arTextureSampler.transferCommandPool,
-                          arTextureSampler.transferQueue);
-
+       transitionImageLayout(arTextureSampler.textureImage,
+                             VK_FORMAT_B8G8R8A8_SRGB,
+                             VK_IMAGE_LAYOUT_PREINITIALIZED,
+                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                             arTextureSampler.transferCommandPool,
+                             arTextureSampler.transferQueue
+                             );
+/*
+       copyBufferToImage(imageBuffer.buffer, arTextureSampler.textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight),
+                         arTextureSampler.transferCommandPool,
+                         arTextureSampler.transferQueue);
+       transitionImageLayout(arTextureSampler.textureImage, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                             arTextureSampler.transferCommandPool,
+                             arTextureSampler.transferQueue);
+   */
     vkFreeMemory(images->mainDevice.device, imageBuffer.bufferMemory, nullptr);
     vkDestroyBuffer(images->mainDevice.device, imageBuffer.buffer, nullptr);
 
@@ -110,10 +114,31 @@ void Textures::cleanUp() {
 
 void Textures::createTexture(ArTextureSampler *pArTextureSampler) {
     arTextureSampler = *pArTextureSampler ;
-    createTextureImage();
+    createTextureImage("landscape");
     createTextureImageView();
     createTextureSampler();
 
 
     *pArTextureSampler = arTextureSampler;
+}
+
+void Textures::updateTexture(std::string fileName){
+    std::string filePath = "../textures/" + fileName + ".jpg";
+
+    int texWidth, texHeight, texChannels;
+    stbi_uc *pixels = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha); //TODO METHOD
+    VkDeviceSize imageSize = texWidth * texHeight * 4;
+
+    if (!pixels) {
+        throw std::runtime_error("failed to load texture image!");
+    }
+
+    // Copy pixel data to image memory
+    void* data;
+    vkMapMemory(images->mainDevice.device, arTextureSampler.textureImageMemory, 0, imageSize, 0, &data);
+    memcpy(data, pixels, static_cast<size_t>(imageSize));
+    vkUnmapMemory(images->mainDevice.device, arTextureSampler.textureImageMemory);
+    stbi_image_free(pixels);
+
+
 }

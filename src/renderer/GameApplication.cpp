@@ -54,6 +54,10 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
 
     }
 
+    if (key == GLFW_KEY_LEFT_CONTROL) {
+        vulkanRenderer.updateTexture("texture2");
+    }
+
 
     if (key == GLFW_KEY_RIGHT)
         camera.rotateRight();

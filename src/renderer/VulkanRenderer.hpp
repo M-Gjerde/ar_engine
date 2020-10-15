@@ -28,6 +28,7 @@ public:
 
     void updateModel(glm::mat4 newModel, int index);
     void updateCamera(glm::mat4 newView, glm::mat4 newProjection);
+    void updateTexture(std::string fileName); // TODO TEST METHOD
 
     void draw();
     void cleanup();
@@ -82,6 +83,7 @@ private:
     void createSimpleMesh();
 
     void updateBuffer(uint32_t imageIndex);
+
 };
 
 

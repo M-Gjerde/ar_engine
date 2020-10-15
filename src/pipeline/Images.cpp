@@ -20,7 +20,8 @@ void Images::createDepthImageView(VkImageView *depthImageView) {
     VkFormat depthFormat = findDepthFormat();
     createImage(arDepthResource.swapChainExtent.width, arDepthResource.swapChainExtent.height, depthFormat,
                 VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, arDepthResource.depthImage, arDepthResource.depthImageMemory);
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, arDepthResource.depthImage, arDepthResource.depthImageMemory,
+                VK_IMAGE_LAYOUT_UNDEFINED);
     arDepthResource.depthImageView = createImageView(arDepthResource.depthImage, depthFormat,
                                                      VK_IMAGE_ASPECT_DEPTH_BIT);
 
@@ -71,7 +72,8 @@ VkImageView Images::createImageView(VkImage image, VkFormat format, VkImageAspec
 
 void
 Images::createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
-                    VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory) {
+                    VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory,
+                    VkImageLayout initialLayout) {
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -82,7 +84,7 @@ Images::createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTil
     imageInfo.arrayLayers = 1;
     imageInfo.format = format;
     imageInfo.tiling = tiling;
-    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.initialLayout = initialLayout;
     imageInfo.usage = usage;
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -150,6 +152,12 @@ void Images::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout
         barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
         sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    } else if (oldLayout == VK_IMAGE_LAYOUT_PREINITIALIZED && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL){
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
         destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
     } else {
         throw std::invalid_argument("unsupported layout transition!");

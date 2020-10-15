@@ -18,15 +18,19 @@ public:
 
     void cleanUp();
 
+    // TODO Test method
+    void updateTexture(std::string fileName);
+
 private:
 
     ArBuffer imageBuffer;
     ArTextureSampler arTextureSampler;
     Images *images;
 
-    void createTextureImage();
+    void createTextureImage(std::string fileName);
     void createTextureSampler();
     void createTextureImageView();
+
 };
 
 
