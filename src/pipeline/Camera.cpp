@@ -27,7 +27,7 @@ Camera::Camera() {
 
     cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
     cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-    cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+    cameraUp = glm::vec3(0.0f, -1.0f, 0.0f);
 
 
     view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
@@ -57,18 +57,27 @@ void Camera::backward() {
 }
 
 void Camera::rotateLeft() {
-    yaw -= 1;
-    glm::vec3 direction;
-    direction.x = cos(glm::radians(yaw));
-    direction.z = sin(glm::radians(yaw));
-    cameraFront = glm::normalize(direction);
-}
-
-void Camera::rotateRight() {
     yaw += 1;
     glm::vec3 direction;
     direction.x = cos(glm::radians(yaw));
     direction.z = sin(glm::radians(yaw));
     direction.y = 0.0f;
+
+    cameraFront = glm::normalize(direction);
+}
+
+void Camera::rotateRight() {
+    yaw -= 1;
+    glm::vec3 direction;
+    direction.x = cos(glm::radians(yaw));
+    direction.z = sin(glm::radians(yaw));
+    direction.y = 0.0f;
+    cameraFront = glm::normalize(direction);
+}
+
+void Camera::roll(){
+    roll_value++;
+    glm::vec3 direction;
+    direction.z = sin(glm::radians(roll_value));
     cameraFront = glm::normalize(direction);
 }

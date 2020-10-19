@@ -28,7 +28,7 @@ public:
 
     void updateModel(glm::mat4 newModel, int index);
     void updateCamera(glm::mat4 newView, glm::mat4 newProjection);
-    void updateTexture(std::string fileName); // TODO TEST METHOD
+    void createTexture(std::string fileName); // TODO TEST METHOD
 
     void draw();
     void cleanup();
@@ -62,7 +62,7 @@ private:
     ArDescriptor arDescriptor;
 
     Textures *textures;
-
+    ArTextureSampler arTextureSampler{};
     // - Drawing
     std::vector<VkFramebuffer> swapChainFramebuffers;
     std::vector<VkCommandBuffer> commandBuffers;

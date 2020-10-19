@@ -5,6 +5,7 @@
 
 
 #include <array>
+#include <utility>
 #include "VulkanRenderer.hpp"
 
 VulkanRenderer::VulkanRenderer() = default;
@@ -188,7 +189,6 @@ void VulkanRenderer::recordCommand() {
         renderPassInfo.framebuffer = swapChainFramebuffers[i];
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = arPipeline.swapchainExtent;
-
         std::array<VkClearValue, 2> clearValues{};
         clearValues[0].color = {0.05f, 0.25f, 0.05f, 1.0f};
         clearValues[1].depthStencil = {1.0f, 0};
@@ -251,19 +251,17 @@ void VulkanRenderer::createSyncObjects() {
 void VulkanRenderer::updateBuffer(uint32_t imageIndex) {
 
 
-    uboModelVar.model = meshes[0].getModel();
+    for (int i = 0; i < meshes.size(); ++i) {
 
-    void *data2;
-    vkMapMemory(arEngine.mainDevice.device, arDescriptor.bufferMemory[0], 0, sizeof(uboModel), 0, &data2);
-    memcpy(data2, &uboModelVar, sizeof(uboModel));
-    vkUnmapMemory(arEngine.mainDevice.device, arDescriptor.bufferMemory[0]);
+        uboModelVar.model = meshes[i].getModel();
+        // Copy VP data
+        void *data;
+        vkMapMemory(arEngine.mainDevice.device, arDescriptor.bufferMemory[i], 0, sizeof(uboModel), 0, &data);
+        memcpy(data, &uboModelVar, sizeof(uboModel));
+        vkUnmapMemory(arEngine.mainDevice.device, arDescriptor.bufferMemory[i]);
 
-    uboModelVar.model = meshes[1].getModel();
-    // Copy VP data
-    void *data;
-    vkMapMemory(arEngine.mainDevice.device, arDescriptor.bufferMemory[1], 0, sizeof(uboModel), 0, &data);
-    memcpy(data, &uboModelVar, sizeof(uboModel));
-    vkUnmapMemory(arEngine.mainDevice.device, arDescriptor.bufferMemory[1]);
+    }
+
 
 
 }
@@ -312,10 +310,9 @@ void VulkanRenderer::createSimpleMesh() {
     }
     // Create descriptors
 
-    ArTextureSampler arTextureSampler{};
     arTextureSampler.transferQueue = arEngine.graphicsQueue;
     arTextureSampler.transferCommandPool = arEngine.commandPool;
-    textures->createTexture(&arTextureSampler);
+    textures->createTexture(&arTextureSampler, "landscape.jpg");
 
     descriptors->createDescriptorsSampler(&arDescriptor, arTextureSampler);
 
@@ -334,7 +331,11 @@ void VulkanRenderer::updateModel(glm::mat4 newModel, int index) {
 
 }
 
-void VulkanRenderer::updateTexture(std::string fileName) {
+void VulkanRenderer::createTexture(std::string fileName) {
 
-    textures->updateTexture(fileName);
+    textures->createTexture(&arTextureSampler, std::move(fileName));
+    descriptors->createDescriptorsSampler(&arDescriptor, arTextureSampler);
+
+    createCommandBuffers();
+
 }

@@ -9,5 +9,11 @@ layout(binding = 1) uniform sampler2D texSampler;
 layout(location = 0) out vec4 outColor;
 
 void main() {
-    outColor = texture(texSampler, fragTexCoord);
+
+    vec3 color = texture(texSampler, fragTexCoord).rgb;
+    float avg = (color.r + color.g + color.b) / 3.0;
+    color.rgb = vec3(avg);
+
+    outColor = vec4(color, 1.0f);;
+    //outColor = texture(texSampler, fragTexCoord);
 }

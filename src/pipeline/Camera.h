@@ -30,12 +30,15 @@ public:
     void backward();
     void rotateRight();
     void rotateLeft();
+    void roll();
 
     float yaw = -90;
+    float roll_value = 0;
 private:
 
     glm::mat4 projection{};
     glm::mat4 view{};
+
 };
 
 

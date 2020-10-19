@@ -117,6 +117,7 @@ void Descriptors::createDescriptorSets() {
     if (result != VK_SUCCESS)
         throw std::runtime_error("Failed to allocate descriptor sets");
 
+
     // Update all of descriptor set buffer bindings
     for (size_t i = 0; i < mArDescriptor.descriptorSets.size(); i++) {
         // Buffer info and data offset info
@@ -143,6 +144,7 @@ void Descriptors::createDescriptorSets() {
         vkUpdateDescriptorSets(device, static_cast<uint32_t>(writeDescriptorSetlist.size()),
                                writeDescriptorSetlist.data(), 0, nullptr);
     }
+
 }
 
 void Descriptors::cleanUp(ArDescriptor arDescriptor) {

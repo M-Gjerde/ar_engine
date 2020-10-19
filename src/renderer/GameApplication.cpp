@@ -37,8 +37,8 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
     }
 
     if (key == GLFW_KEY_UP) {
-        glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f));
-        trans = glm::rotate(trans, glm::radians(180.0f), glm::vec3(0, 0, 1));
+        glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 1.0f));
+        trans = glm::scale(trans, glm::vec3(10.0f, 10.0f, 1.0f));
         vulkanRenderer.updateModel(trans, 1);
     }
     if (key == GLFW_KEY_DOWN) {
@@ -54,8 +54,29 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
 
     }
 
-    if (key == GLFW_KEY_LEFT_CONTROL) {
-        vulkanRenderer.updateTexture("texture2");
+    if (key == GLFW_KEY_LEFT_CONTROL  && action == GLFW_PRESS) {
+        for (int i = 0; i < 10; ++i) {
+            std::string name = "stereo/image_00/data/000000000" + std::to_string(i) + ".png";
+            vulkanRenderer.createTexture(name);
+            printf("Updating texture\n");
+
+        }
+
+        vulkanRenderer.createTexture("stereo/image_01/data/0000000001.png");
+    }
+
+    if (key == GLFW_KEY_LEFT_ALT  && action == GLFW_PRESS) {
+        vulkanRenderer.createTexture("landscape.jpg");
+        printf("Updating texture\n");
+    }
+
+    if (key == GLFW_KEY_X && action == GLFW_PRESS) {
+        vulkanRenderer.createTexture("wallpaper.png");
+        printf("Updating texture\n");
+    }
+    if (key == GLFW_KEY_C && action == GLFW_PRESS) {
+        vulkanRenderer.createTexture("crate_1.jpg");
+        printf("Updating texture\n");
     }
 
 
@@ -71,6 +92,8 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
         camera.moveLeft();
     if (key == GLFW_KEY_D)
         camera.moveRight();
+    if (key == GLFW_KEY_E)
+        camera.roll();
 
     vulkanRenderer.updateCamera(camera.getView(), camera.getProjection());
 

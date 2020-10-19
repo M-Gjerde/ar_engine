@@ -14,18 +14,16 @@
 class Textures : Images {
 public:
     explicit Textures(Images *pImages);
-    void createTexture(ArTextureSampler* pArTextureSampler);
+    void createTexture(ArTextureSampler *pArTextureSampler, std::string fileName);
 
     void cleanUp();
-
-    // TODO Test method
-    void updateTexture(std::string fileName);
 
 private:
 
     ArBuffer imageBuffer;
     ArTextureSampler arTextureSampler;
     Images *images;
+    VkFormat format;
 
     void createTextureImage(std::string fileName);
     void createTextureSampler();

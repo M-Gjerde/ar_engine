@@ -5,6 +5,7 @@
     <excludeRoots>
       <file path="$PROJECT_DIR$/external" />
       <file path="$PROJECT_DIR$/objects" />
+      <file path="$PROJECT_DIR$/textures/stereo/image_00/data" />
     </excludeRoots>
   </component>
   <component name="JavaScriptSettings">

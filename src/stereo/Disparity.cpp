@@ -71,6 +71,7 @@ cl::Device Disparity::getGPUDevice() {
         printf("Device max image height: %lu\n", i.getInfo<CL_DEVICE_IMAGE2D_MAX_HEIGHT>());
         printf("Device max image width: %lu\n", i.getInfo<CL_DEVICE_IMAGE2D_MAX_WIDTH>());
         printf("Device max compute units: %u\n", i.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>());
+        printf("Device max compute units: %lu\n", i.getInfo<CL_DEVICE_LOCAL_MEM_SIZE>());
 
 
     }
@@ -170,8 +171,7 @@ void Disparity::getDisparityFromVideo() {
         kernel.setArg(1, rightImage);
         kernel.setArg(2, outImage);
 
-        cl_int result = queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(width, height),
-                                                   cl::NDRange(256, 1));
+        cl_int result = queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(width, height),cl::NDRange(256, 1));
         if (result != CL_SUCCESS)
             std::cerr << "util::getErrorString(result) "<< std::endl;
 
