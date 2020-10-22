@@ -15,6 +15,7 @@
 #include "../pipeline/Mesh.h"
 #include "../pipeline/Images.h"
 #include "../pipeline/Textures.h"
+#include "../stereo/Disparity.h"
 #include <stdexcept>
 #include <vector>
 #include <iostream>
@@ -34,10 +35,11 @@ public:
     void cleanup();
 
     ~VulkanRenderer();
+    // TODO REMOVE
+    Disparity *disparity;
 
 
 private:
-
     // Vulkan components
     Platform *platform{};
     ArEngine arEngine;

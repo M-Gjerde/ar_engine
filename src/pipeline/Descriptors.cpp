@@ -177,12 +177,12 @@ void Descriptors::createTextureSamplerDescriptor() {
         // Data about connection between binding and buffer
         VkWriteDescriptorSet samplerSetWrite = {};
         samplerSetWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        samplerSetWrite.dstSet = mArDescriptor.descriptorSets[i];                         // Descriptor set to update
-        samplerSetWrite.dstBinding = 1;                                     // Binding to update (matches with binding on layout/shader
-        samplerSetWrite.dstArrayElement = 0;                                // Index in the array we want to update
+        samplerSetWrite.dstSet = mArDescriptor.descriptorSets[i];                   // Descriptor set to update
+        samplerSetWrite.dstBinding = 1;                                             // Binding to update (matches with binding on layout/shader
+        samplerSetWrite.dstArrayElement = 0;                                        // Index in the array we want to update
         samplerSetWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER; // Type of descriptor we are updating
-        samplerSetWrite.descriptorCount = 1;                                // Amount to update
-        samplerSetWrite.pImageInfo = &imageInfo;                        // Information about buffer data to bind
+        samplerSetWrite.descriptorCount = 1;                                        // Amount to update
+        samplerSetWrite.pImageInfo = &imageInfo;                                    // Information about buffer data to bind
 
 
         std::vector<VkWriteDescriptorSet> writeDescriptorSetlist = {samplerSetWrite};

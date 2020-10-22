@@ -29,7 +29,7 @@ public:
                      VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory,
                      VkImageLayout initialLayout);
 
-    VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+    VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) const;
 
     void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout,
                                VkCommandPool commandPool, VkQueue transferQueue);

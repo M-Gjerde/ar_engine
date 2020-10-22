@@ -39,12 +39,14 @@ public:
 
         glfwSetErrorCallback(error_callback);
 
+        disparity.init();
+        vulkanRenderer.disparity = &disparity; // TODO REMOVE
+
         if (vulkanRenderer.init(window) == EXIT_FAILURE)
             throw std::runtime_error("Failed to init");
 
-        disparity.init();
-        vulkanRenderer.updateCamera(camera.getView(), camera.getProjection());
 
+        vulkanRenderer.updateCamera(camera.getView(), camera.getProjection());
     }
 
 

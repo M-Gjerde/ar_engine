@@ -32,7 +32,7 @@ void Disparity::checkForActions() {
                 input = 0;
                 break;
             case 2:
-                getDisparityFromImage();
+                getDisparityFromImage(nullptr);
                 input = 0;
                 break;
             case 3:
@@ -124,7 +124,11 @@ void Disparity::getDisparityFromVideo() {
         cv::Mat imageLeft = cv::imread(imageLeftPath + imageNoPath, cv::IMREAD_GRAYSCALE);
         cv::Mat imageRight = cv::imread(imageRightPath + imageNoPath, cv::IMREAD_GRAYSCALE);
 
-
+        if (imageLoop == 1) {
+            cv::Mat stupidImage;
+            cv::cvtColor(imageRight, stupidImage, cv::COLOR_GRAY2RGB);
+            cv::imwrite("../textures/cvtThreeChannel.png", stupidImage);
+        }
         // Create vectors of the images
         //std::vector<uchar> inputImgRightData(imgSize);
         cv::Mat flat = imageLeft.reshape(1, imageLeft.total() * imageLeft.channels());
@@ -178,11 +182,8 @@ void Disparity::getDisparityFromVideo() {
         queue.finish();
         queue.enqueueReadImage(outImage, CL_TRUE, origin, region, width, 0, imageResult, nullptr, nullptr);
 
-
         cv::Mat outputImage(cv::Size(width, height), CV_8U);
         memcpy(outputImage.data, imageResult, imgSize);
-
-
 
         auto endTime = (double) (clock() - Start) / CLOCKS_PER_SEC;
         printf("Time taken: %.7fs\n", endTime);
@@ -204,7 +205,7 @@ void Disparity::getDisparityFromVideo() {
     }
 }
 
-void Disparity::getDisparityFromImage() {
+void Disparity::getDisparityFromImage(unsigned char *data) {
     // ----- Image loading -----
     // Specify images
     // TODO: Temporary method
@@ -312,23 +313,32 @@ void Disparity::getDisparityFromImage() {
 
     printf("Time taken: %.7fs\n", (double) (clock() - Start) / CLOCKS_PER_SEC);
 
+    imageSize = imgSize;
+    imageHeight = height;
+    imageWidth = width;
+    memcpy(data, imageResult, imageSize);
+
     cv::Mat outputImage(cv::Size(width, height), CV_8U);
     memcpy(outputImage.data, imageResult, imgSize);
 
-    cv::normalize(outputImage, outputImage, 0, 255, cv::NORM_MINMAX, CV_8U);
 
-    cv::namedWindow("Disparity image", cv::WINDOW_NORMAL);
-    cv::imshow("Disparity image", outputImage);
-    cv::imwrite("../../GPUResult.png", outputImage);
+   cv::normalize(outputImage, outputImage, 0, 255, cv::NORM_MINMAX, CV_8U);
 
-    while (true) {
-        int key = cv::waitKey(27);
-        if (key == 27) {
-            cv::destroyWindow("Disparity image");
-            break;
-        }
-    }
+    /*
+      cv::namedWindow("Disparity image", cv::WINDOW_NORMAL);
+      cv::imshow("Disparity image", outputImage);
+      cv::imwrite("../../GPUResult.png", outputImage);
 
+
+
+      while (true) {
+          int key = cv::waitKey(27);
+          if (key == 27) {
+              cv::destroyWindow("Disparity image");
+              break;
+          }
+      }
+   */
     //clock_t Start = clock();
     //printf("Time taken: %.7fs\n", (double) (clock() - Start) / CLOCKS_PER_SEC);
 }

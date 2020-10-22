@@ -7,6 +7,7 @@
 
 
 #include "Images.h"
+#include "../stereo/Disparity.h"
 #include <vulkan/vulkan.h>
 #include <stdexcept>
 #include <cstring>
@@ -14,7 +15,7 @@
 class Textures : Images {
 public:
     explicit Textures(Images *pImages);
-    void createTexture(ArTextureSampler *pArTextureSampler, std::string fileName);
+    void createTexture(ArTextureSampler *pArTextureSampler, std::string fileName, Disparity *disparity);
 
     void cleanUp();
 
@@ -25,7 +26,7 @@ private:
     Images *images;
     VkFormat format;
 
-    void createTextureImage(std::string fileName);
+    void createTextureImage(std::string fileName, Disparity *disparity);
     void createTextureSampler();
     void createTextureImageView();
 

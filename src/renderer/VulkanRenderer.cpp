@@ -312,7 +312,7 @@ void VulkanRenderer::createSimpleMesh() {
 
     arTextureSampler.transferQueue = arEngine.graphicsQueue;
     arTextureSampler.transferCommandPool = arEngine.commandPool;
-    textures->createTexture(&arTextureSampler, "landscape.jpg");
+    textures->createTexture(&arTextureSampler, "squaredStereo.png", disparity);
 
     descriptors->createDescriptorsSampler(&arDescriptor, arTextureSampler);
 
@@ -333,7 +333,7 @@ void VulkanRenderer::updateModel(glm::mat4 newModel, int index) {
 
 void VulkanRenderer::createTexture(std::string fileName) {
 
-    textures->createTexture(&arTextureSampler, std::move(fileName));
+    textures->createTexture(&arTextureSampler, std::move(fileName), disparity);
     descriptors->createDescriptorsSampler(&arDescriptor, arTextureSampler);
 
     createCommandBuffers();

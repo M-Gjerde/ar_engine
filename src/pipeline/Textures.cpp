@@ -6,12 +6,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 
 #include "../include/stb_image.h"
-
 #include "Textures.h"
 
 #include <utility>
 #include <iostream>
-
 Textures::Textures(Images *pImages) : Images(pImages) {
     images = pImages;
 }
@@ -45,33 +43,46 @@ void Textures::createTextureSampler() {
 
 }
 
-void Textures::createTextureImage(std::string fileName) {
+void Textures::createTextureImage(std::string fileName, Disparity *disparity) {
+
 
     int texWidth, texHeight, texChannels;
     stbi_uc *pixels;
     std::string filePath = "../textures/" + fileName;
-    if (fileName == "landscape.jpg" || fileName == "wallpaper.png" || fileName == "crate_1.jpg") {
+    if (fileName == "landscape.jpg" || fileName == "wallpaper.png" || fileName == "output-onlinepngtools.jpg" ) {
         pixels = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha); //TODO METHOD
         texChannels = 4; // 1+ beacuse of alpha
         format = VK_FORMAT_R8G8B8A8_SRGB;
     } else {
-        pixels = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey); //TODO METHOD
-        format = VK_FORMAT_R8_SRGB;
+        pixels = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha); //TODO METHOD
+        texChannels = 4; // 1+ beacuse of alpha
+        format = VK_FORMAT_R8G8B8A8_SRGB;
+    }
+    VkDeviceSize imageSize = texWidth * texHeight * texChannels;
 
+    if (fileName == "cvtThreeChannel.png"){
+
+        disparity->getDisparityFromImage(pixels);
+        imageSize = disparity->imageSize;
+        format = VK_FORMAT_R8G8B8A8_SRGB;
+        texChannels = 4;
+        texWidth = disparity->imageWidth;
+        texHeight = disparity->imageHeight;
     }
 
     if (!pixels) {
         std::cout << "Something went wrong\n";
-        throw std::runtime_error("failed to load texture image!");
+        throw std::runtime_error("failed to load texture image: " + fileName);
     }
 
-    VkDeviceSize imageSize = texWidth * texHeight * texChannels;
-    imageBuffer.bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+
+  /*  imageBuffer.bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     imageBuffer.bufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     imageBuffer.bufferSize = imageSize;
 
     images->createBuffer(&imageBuffer);
-
+*/
     // Create image to bind memory
     images->createImage(texWidth, texHeight, format, VK_IMAGE_TILING_LINEAR, VK_IMAGE_USAGE_SAMPLED_BIT,
                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -82,9 +93,9 @@ void Textures::createTextureImage(std::string fileName) {
     transitionImageLayout(arTextureSampler.textureImage, format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
                           arTextureSampler.transferCommandPool, arTextureSampler.transferQueue);
 
-    // Copy pixel data to image memory
 
     void *data;
+
     vkMapMemory(images->mainDevice.device, arTextureSampler.textureImageMemory, 0, imageSize, 0, &data);
     memcpy(data, pixels, static_cast<size_t>(imageSize));
 
@@ -104,10 +115,10 @@ void Textures::createTextureImage(std::string fileName) {
     transitionImageLayout(arTextureSampler.textureImage, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, arTextureSampler.transferCommandPool,
                           arTextureSampler.transferQueue);
-*/
+
     vkFreeMemory(images->mainDevice.device, imageBuffer.bufferMemory, nullptr);
     vkDestroyBuffer(images->mainDevice.device, imageBuffer.buffer, nullptr);
-
+*/
 }
 
 void Textures::createTextureImageView() {
@@ -127,9 +138,9 @@ void Textures::cleanUp() {
     vkFreeMemory(images->mainDevice.device, arTextureSampler.textureImageMemory, nullptr);
 }
 
-void Textures::createTexture(ArTextureSampler *pArTextureSampler, std::string fileName) {
+void Textures::createTexture(ArTextureSampler *pArTextureSampler, std::string fileName, Disparity *disparity) {
     arTextureSampler = *pArTextureSampler;
-    createTextureImage(std::move(fileName));
+    createTextureImage(std::move(fileName), disparity);
     createTextureImageView();
     createTextureSampler();
 

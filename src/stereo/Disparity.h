@@ -25,6 +25,12 @@ public:
     int input = 0;
     void stopProgram();
 
+    void getDisparityFromImage(unsigned char *data);
+    static void getDisparityFromVideo();
+
+    size_t imageSize;
+    int imageWidth, imageHeight;
+
 private:
 
     // Init variables
@@ -35,8 +41,6 @@ private:
 
     // Functions
     void checkForActions();
-    void getDisparityFromImage();
-    static void getDisparityFromVideo();
 
     static std::string loadProgram(std::string input);
     static cl::Device getGPUDevice();
