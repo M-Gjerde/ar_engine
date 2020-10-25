@@ -25,17 +25,23 @@ public:
     int input = 0;
     void stopProgram();
 
-    void getDisparityFromImage(unsigned char *data);
-    static void getDisparityFromVideo();
+    void getDisparityFromImage(unsigned char **data);
+    void getDisparityFromVideo();
 
     size_t imageSize;
     int imageWidth, imageHeight;
+    unsigned char* pixelData;
+    bool pixelDataReady = false;
+    bool resourceBusy = false;
+
 
 private:
 
     // Init variables
     bool run_status = false;
-    std::thread check_for_actions_thread{};
+    std::thread threadCheckInput{};
+    std::thread threadProcessDisparity{};
+    bool disparityInProgress = false;
 
     // Runtime things
 

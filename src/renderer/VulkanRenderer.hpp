@@ -28,16 +28,23 @@ public:
     int init(GLFWwindow *newWindow);
 
     void updateModel(glm::mat4 newModel, int index);
+
     void updateCamera(glm::mat4 newView, glm::mat4 newProjection);
-    void createTexture(std::string fileName); // TODO TEST METHOD
+
+    void updateTextureImage(std::string fileName); // TODO TEST METHOD
+    void updateDisparityVideoTexture(); // TODO TEST METHOD
 
     void draw();
+
     void cleanup();
 
     ~VulkanRenderer();
+
     // TODO REMOVE
     Disparity *disparity;
 
+    // TODO Think of better handles than this
+    bool textureUpdateToggle = false;
 
 private:
     // Vulkan components
@@ -63,8 +70,16 @@ private:
     Descriptors *descriptors{};
     ArDescriptor arDescriptor;
 
+    // Textures
     Textures *textures;
-    ArTextureSampler arTextureSampler{};
+    ArTextureImage arTextureSampler{};
+    ArBuffer textureImageBuffer{};
+
+    ArTextureImage disparityTexture{};
+    ArBuffer disparityTextureBuffer{};
+
+    ArTextureImage videoTexture{};
+    ArBuffer videoTextureBuffer{};
     // - Drawing
     std::vector<VkFramebuffer> swapChainFramebuffers;
     std::vector<VkCommandBuffer> commandBuffers;
@@ -77,9 +92,13 @@ private:
     size_t currentFrame = 0;
 
     void createPipeline();
+
     void createFrameBuffers();
+
     void createCommandBuffers();
+
     void recordCommand();
+
     void createSyncObjects();
 
     void createSimpleMesh();

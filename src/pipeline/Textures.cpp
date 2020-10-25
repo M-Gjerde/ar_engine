@@ -10,19 +10,21 @@
 
 #include <utility>
 #include <iostream>
+#include <zconf.h>
+
 Textures::Textures(Images *pImages) : Images(pImages) {
     images = pImages;
 }
 
-void Textures::createTextureSampler() {
+void Textures::createTextureSampler(ArTextureImage *arTextureSampler) {
 
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     samplerInfo.magFilter = VK_FILTER_NEAREST;
     samplerInfo.minFilter = VK_FILTER_NEAREST;
-    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
 
     samplerInfo.anisotropyEnable = VK_FALSE;
     samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
@@ -35,7 +37,7 @@ void Textures::createTextureSampler() {
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = 0.0f;
 
-    if (vkCreateSampler(images->mainDevice.device, &samplerInfo, nullptr, &arTextureSampler.textureSampler) !=
+    if (vkCreateSampler(images->mainDevice.device, &samplerInfo, nullptr, &arTextureSampler->textureSampler) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create texture sampler!");
     }
@@ -43,93 +45,64 @@ void Textures::createTextureSampler() {
 
 }
 
-void Textures::createTextureImage(std::string fileName, Disparity *disparity) {
+void Textures::createTextureImage(std::string fileName, ArTextureImage *arTextureSampler, ArBuffer *imageBuffer) {
 
-
+    // Load image using stb_image.h
     int texWidth, texHeight, texChannels;
     stbi_uc *pixels;
     std::string filePath = "../textures/" + fileName;
-    if (fileName == "landscape.jpg" || fileName == "wallpaper.png" || fileName == "output-onlinepngtools.jpg" ) {
+    if (fileName == "cvtThreeChannel.png" || fileName == "wallpaper.png" || fileName == "output-onlinepngtools.jpg") {
         pixels = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha); //TODO METHOD
         texChannels = 4; // 1+ beacuse of alpha
-        format = VK_FORMAT_R8G8B8A8_SRGB;
-    } else {
-        pixels = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha); //TODO METHOD
-        texChannels = 4; // 1+ beacuse of alpha
-        format = VK_FORMAT_R8G8B8A8_SRGB;
+        format = VK_FORMAT_R8G8B8A8_UNORM;
     }
-    VkDeviceSize imageSize = texWidth * texHeight * texChannels;
+    if (!pixels) throw std::runtime_error("failed to load texture image: " + fileName);
 
-    if (fileName == "cvtThreeChannel.png"){
+    // Creating staging buffer
+    imageBuffer->bufferSize = texWidth * texHeight * texChannels;
+    images->createBuffer(imageBuffer);
 
-        disparity->getDisparityFromImage(pixels);
-        imageSize = disparity->imageSize;
-        format = VK_FORMAT_R8G8B8A8_SRGB;
-        texChannels = 4;
-        texWidth = disparity->imageWidth;
-        texHeight = disparity->imageHeight;
-    }
-
-    if (!pixels) {
-        std::cout << "Something went wrong\n";
-        throw std::runtime_error("failed to load texture image: " + fileName);
-    }
-
-
-
-  /*  imageBuffer.bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    imageBuffer.bufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    imageBuffer.bufferSize = imageSize;
-
-    images->createBuffer(&imageBuffer);
-*/
-    // Create image to bind memory
-    images->createImage(texWidth, texHeight, format, VK_IMAGE_TILING_LINEAR, VK_IMAGE_USAGE_SAMPLED_BIT,
-                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                        arTextureSampler.textureImage, arTextureSampler.textureImageMemory, VK_IMAGE_LAYOUT_UNDEFINED);
-
-
-
-    transitionImageLayout(arTextureSampler.textureImage, format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
-                          arTextureSampler.transferCommandPool, arTextureSampler.transferQueue);
-
-
+    // Copy data to buffer
     void *data;
+    vkMapMemory(images->mainDevice.device, imageBuffer->bufferMemory, 0, imageBuffer->bufferSize, 0, &data);
+    memcpy(data, pixels, static_cast<size_t>(imageBuffer->bufferSize));
+    vkUnmapMemory(images->mainDevice.device, imageBuffer->bufferMemory);
 
-    vkMapMemory(images->mainDevice.device, arTextureSampler.textureImageMemory, 0, imageSize, 0, &data);
-    memcpy(data, pixels, static_cast<size_t>(imageSize));
+    // Create image and bind image memory
+    images->createImage(texWidth, texHeight, format, VK_IMAGE_TILING_LINEAR,
+                        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, arTextureSampler->textureImage,
+                        arTextureSampler->textureImageMemory, VK_IMAGE_LAYOUT_UNDEFINED);
+
+    // Transition image to transfer destination
+    transitionImageLayout(arTextureSampler->textureImage, format, VK_IMAGE_LAYOUT_UNDEFINED,
+                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, arTextureSampler->transferCommandPool,
+                          arTextureSampler->transferQueue);
+
+    // Copy data from buffer to image
+    copyBufferToImage(imageBuffer->buffer, arTextureSampler->textureImage, static_cast<uint32_t>(texWidth),
+                      static_cast<uint32_t>(texHeight), arTextureSampler->transferCommandPool,
+                      arTextureSampler->transferQueue);
+
+    // Transition image to present format
+    transitionImageLayout(arTextureSampler->textureImage, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, arTextureSampler->transferCommandPool,
+                          arTextureSampler->transferQueue);
 
 
-    stbi_image_free(pixels);
+}
+
+void Textures::createTextureImageView(ArTextureImage *arTextureSampler) {
+    arTextureSampler->textureImageView = images->createImageView(arTextureSampler->textureImage, format,
+                                                                 VK_IMAGE_ASPECT_COLOR_BIT);
+}
 
 
-    transitionImageLayout(arTextureSampler.textureImage, format, VK_IMAGE_LAYOUT_GENERAL,
-                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, arTextureSampler.transferCommandPool,
-                          arTextureSampler.transferQueue);
-
-    /*
-    copyBufferToImage(imageBuffer.buffer, arTextureSampler.textureImage, static_cast<uint32_t>(texWidth),
-                      static_cast<uint32_t>(texHeight), arTextureSampler.transferCommandPool,
-                      arTextureSampler.transferQueue);
-
-    transitionImageLayout(arTextureSampler.textureImage, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, arTextureSampler.transferCommandPool,
-                          arTextureSampler.transferQueue);
-
+void Textures::cleanUp(ArTextureImage arTextureSampler, ArBuffer imageBuffer) {
+    // Free buffer memory
     vkFreeMemory(images->mainDevice.device, imageBuffer.bufferMemory, nullptr);
     vkDestroyBuffer(images->mainDevice.device, imageBuffer.buffer, nullptr);
-*/
-}
 
-void Textures::createTextureImageView() {
-
-    arTextureSampler.textureImageView = images->createImageView(arTextureSampler.textureImage, format,
-                                                                VK_IMAGE_ASPECT_COLOR_BIT);
-
-}
-
-
-void Textures::cleanUp() {
     vkDestroySampler(images->mainDevice.device, arTextureSampler.textureSampler, nullptr);
 
     vkDestroyImageView(images->mainDevice.device, arTextureSampler.textureImageView, nullptr);
@@ -138,13 +111,98 @@ void Textures::cleanUp() {
     vkFreeMemory(images->mainDevice.device, arTextureSampler.textureImageMemory, nullptr);
 }
 
-void Textures::createTexture(ArTextureSampler *pArTextureSampler, std::string fileName, Disparity *disparity) {
-    arTextureSampler = *pArTextureSampler;
-    createTextureImage(std::move(fileName), disparity);
-    createTextureImageView();
-    createTextureSampler();
+void Textures::createTexture(std::string fileName, ArTextureImage *pArTextureSampler, ArBuffer *imageStagingBuffer) {
+
+    createTextureImage(std::move(fileName), pArTextureSampler, imageStagingBuffer);
+    createTextureImageView(pArTextureSampler);
+    createTextureSampler(pArTextureSampler);
+
+}
+
+void Textures::createTextureImage(ArTextureImage *arTexture, ArBuffer *textureBuffer) {
+    format = VK_FORMAT_R8_UNORM;
+    int imageSize = arTexture->height * arTexture->width * arTexture->channels;
+    // Create image and bind image memory
+    images->createImage(arTexture->width, arTexture->height, format, VK_IMAGE_TILING_LINEAR,
+                        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, arTexture->textureImage,
+                        arTexture->textureImageMemory, VK_IMAGE_LAYOUT_UNDEFINED);
+
+    // Creating staging buffer
+    textureBuffer->bufferSize = imageSize;
+    images->createBuffer(textureBuffer);
+
+    arTexture->textureImageView = images->createImageView(arTexture->textureImage, format,
+                                                                 VK_IMAGE_ASPECT_COLOR_BIT);
+
+    createTextureSampler(arTexture);
+
+    // Map texture image memory to void pointer
+    vkMapMemory(images->mainDevice.device, textureBuffer->bufferMemory, 0, textureBuffer->bufferSize, 0, &arTexture->data);
 
 
-    *pArTextureSampler = arTextureSampler;
+}
+
+void Textures::setDisparityImageTexture(Disparity *disparity, ArTextureImage *arTextureSampler, ArBuffer *imageBuffer) {
+
+
+    // Load texture from disparity
+    int width, height;
+    auto* pixels = new unsigned char[imageBuffer->bufferSize];
+    disparity->getDisparityFromImage(&pixels);
+    width = disparity->imageWidth;
+    height = disparity->imageHeight;
+    format = VK_FORMAT_R8_UNORM;
+
+    // Copy data to buffer
+    void *data;
+    vkMapMemory(images->mainDevice.device, imageBuffer->bufferMemory, 0, imageBuffer->bufferSize, 0, &data);
+    memcpy(data, pixels, static_cast<size_t>(imageBuffer->bufferSize));
+    vkUnmapMemory(images->mainDevice.device, imageBuffer->bufferMemory);
+
+
+
+    // Transition image to transfer destination
+    transitionImageLayout(arTextureSampler->textureImage, format, VK_IMAGE_LAYOUT_UNDEFINED,
+                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, arTextureSampler->transferCommandPool,
+                          arTextureSampler->transferQueue);
+
+    // Copy data from buffer to image
+    copyBufferToImage(imageBuffer->buffer, arTextureSampler->textureImage, static_cast<uint32_t>(width),
+                      static_cast<uint32_t>(height), arTextureSampler->transferCommandPool,
+                      arTextureSampler->transferQueue);
+
+    // Transition image to present format
+    transitionImageLayout(arTextureSampler->textureImage, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, arTextureSampler->transferCommandPool,
+                          arTextureSampler->transferQueue);
+
+}
+
+void Textures::setDisparityVideoTexture(Disparity *disparity, ArTextureImage *videoTexture, ArBuffer *imageBuffer){
+    format = VK_FORMAT_R8_UNORM;
+
+
+
+    // Copy data to buffer note pixelData is located in Disparity handle
+    memcpy(videoTexture->data, disparity->pixelData, static_cast<size_t>(imageBuffer->bufferSize));
+
+
+    // Transition image to transfer destination
+    transitionImageLayout(videoTexture->textureImage, format, VK_IMAGE_LAYOUT_UNDEFINED,
+                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, videoTexture->transferCommandPool,
+                          videoTexture->transferQueue);
+
+    // Copy data from buffer to image
+    copyBufferToImage(imageBuffer->buffer, videoTexture->textureImage, static_cast<uint32_t>(videoTexture->width),
+                      static_cast<uint32_t>(videoTexture->height), videoTexture->transferCommandPool,
+                      videoTexture->transferQueue);
+
+    // Transition image to present format
+    transitionImageLayout(videoTexture->textureImage, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, videoTexture->transferCommandPool,
+                          videoTexture->transferQueue);
+
+
 }
 

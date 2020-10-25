@@ -21,13 +21,11 @@ void Descriptors::createDescriptors(ArDescriptor *pDescriptor) {
 }
 
 
-void Descriptors::createDescriptorsSampler(ArDescriptor *pDescriptor, ArTextureSampler pTextureSampler) {
+void Descriptors::createDescriptorsSampler(ArDescriptor *pDescriptor, ArTextureImage pTextureSampler) {
     arTextureSampler = pTextureSampler;
     mArDescriptor = *pDescriptor;
-    createSetLayout();
-    createSetPool();
-    createDescriptorSets();
-    createTextureSamplerDescriptor();
+    updateTextureSamplerDescriptor();
+
     // Return descriptors
     *pDescriptor = mArDescriptor;
 }
@@ -160,7 +158,7 @@ void Descriptors::cleanUp(ArDescriptor arDescriptor) {
 
 }
 
-void Descriptors::createTextureSamplerDescriptor() {
+void Descriptors::updateTextureSamplerDescriptor() {
 
     std::vector<VkDescriptorSetLayout> setLayouts(mArDescriptor.descriptorSets.size(),
                                                   mArDescriptor.descriptorSetLayout);

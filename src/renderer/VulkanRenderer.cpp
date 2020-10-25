@@ -41,7 +41,9 @@ int VulkanRenderer::init(GLFWwindow *newWindow) {
 void VulkanRenderer::cleanup() {
     vkDeviceWaitIdle(arPipeline.device); // wait for GPU to finish rendering before we clean up resources
 
-    textures->cleanUp();
+    textures->cleanUp(arTextureSampler, textureImageBuffer); // TODO This could be vectorized
+    textures->cleanUp(disparityTexture, disparityTextureBuffer);
+    textures->cleanUp(videoTexture, videoTextureBuffer);
     images->cleanUp();
 
     for (auto &mesh : meshes) {
@@ -83,7 +85,12 @@ void VulkanRenderer::draw() {
     }
     // Mark the image as now being in use by this frame
     imagesInFlight[imageIndex] = inFlightFences[currentFrame];
+
+    // TODO check if this should be done different
     updateBuffer(imageIndex);
+    if (textureUpdateToggle)
+        updateDisparityVideoTexture();
+
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -263,7 +270,6 @@ void VulkanRenderer::updateBuffer(uint32_t imageIndex) {
     }
 
 
-
 }
 
 
@@ -309,12 +315,42 @@ void VulkanRenderer::createSimpleMesh() {
         arDescriptor.bufferMemory[i] = uboBuffers[i].bufferMemory;
     }
     // Create descriptors
+    descriptors->createDescriptors(&arDescriptor);
 
+    // Create Texture descriptors
     arTextureSampler.transferQueue = arEngine.graphicsQueue;
     arTextureSampler.transferCommandPool = arEngine.commandPool;
-    textures->createTexture(&arTextureSampler, "squaredStereo.png", disparity);
 
+    textureImageBuffer.bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    textureImageBuffer.bufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+    // Create initial texture for visual pleasantries
+    textures->createTexture("wallpaper.png", &arTextureSampler, &textureImageBuffer);
     descriptors->createDescriptorsSampler(&arDescriptor, arTextureSampler);
+
+    // initialize texture objects for disparity IMAGE
+    disparityTexture.transferQueue = arEngine.graphicsQueue;
+    disparityTexture.transferCommandPool = arEngine.commandPool;
+    disparityTexture.width = 640;
+    disparityTexture.height = 550;
+    disparityTexture.channels = 1;
+    disparityTextureBuffer.bufferProperties =
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    disparityTextureBuffer.bufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+    textures->createTextureImage(&disparityTexture, &disparityTextureBuffer);
+
+    // Initialize texture objects for disparity VIDEO
+
+    videoTexture.transferQueue = arEngine.graphicsQueue;
+    videoTexture.transferCommandPool = arEngine.commandPool;
+    videoTexture.width = 1242;
+    videoTexture.height = 375;
+    videoTexture.channels = 1;
+
+    videoTextureBuffer.bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    videoTextureBuffer.bufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    textures->createTextureImage(&videoTexture, &videoTextureBuffer);
 
 }
 
@@ -331,11 +367,23 @@ void VulkanRenderer::updateModel(glm::mat4 newModel, int index) {
 
 }
 
-void VulkanRenderer::createTexture(std::string fileName) {
+void VulkanRenderer::updateTextureImage(std::string fileName) {
 
-    textures->createTexture(&arTextureSampler, std::move(fileName), disparity);
-    descriptors->createDescriptorsSampler(&arDescriptor, arTextureSampler);
-
+    textures->setDisparityImageTexture(disparity, &disparityTexture, &disparityTextureBuffer);
+    descriptors->createDescriptorsSampler(&arDescriptor, disparityTexture);
     createCommandBuffers();
 
+}
+
+void VulkanRenderer::updateDisparityVideoTexture() {
+
+    // Skip updating if pixels are not Ready optional: add a timeout function to this
+    if (!disparity->pixelDataReady) {
+        return;
+    }
+
+    textures->setDisparityVideoTexture(disparity, &videoTexture, &videoTextureBuffer);
+
+    descriptors->createDescriptorsSampler(&arDescriptor, videoTexture);
+    recordCommand();
 }

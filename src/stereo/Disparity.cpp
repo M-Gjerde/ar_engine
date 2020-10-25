@@ -7,9 +7,9 @@
 #include "Disparity.h"
 
 
+
 int Disparity::init() {
-    check_for_actions_thread = std::thread(&Disparity::checkForActions,
-                                           this);     // Create new thread to handle custom stuff
+    threadCheckInput = std::thread(&Disparity::checkForActions, this); // Create new thread to handle custom stuff
 
 
     run_status = true;
@@ -36,16 +36,23 @@ void Disparity::checkForActions() {
                 input = 0;
                 break;
             case 3:
-                getDisparityFromVideo();
+                if (!disparityInProgress) {
+                    disparityInProgress = true;
+                    threadProcessDisparity = std::thread(&Disparity::getDisparityFromVideo, this);
+                } else {
+                    disparityInProgress = false;
+                    pixelDataReady = false;
+                    printf("Joining disparity process thread\n");
+                    threadProcessDisparity.join();
+                }
                 input = 0;
                 break;
         }
-
     }
 }
 
 void Disparity::cleanUp() {
-    check_for_actions_thread.join();
+    threadCheckInput.join();
     std::cout << "Disparity thread joined. Goodbye!" << std::endl;
 }
 
@@ -83,7 +90,7 @@ cl::Device Disparity::getGPUDevice() {
 void Disparity::getDisparityFromVideo() {
 
     // ----- IMAGES SETUP -----
-    int numberOfImages = 339;
+     int numberOfImages = 339;
     int imageLoop = 0;
     std::string imageLeftPath = "/home/magnus/common/2011_09_26_drive_0091_sync/2011_09_26/2011_09_26_drive_0091_sync/image_00/data/";
     std::string imageRightPath = "/home/magnus/common/2011_09_26_drive_0091_sync/2011_09_26/2011_09_26_drive_0091_sync/image_01/data/";
@@ -96,9 +103,7 @@ void Disparity::getDisparityFromVideo() {
     cl::CommandQueue queue(context, device);
 
     // Create program
-    cl::Program program = cl::Program(context,
-                                      loadProgram("../kernels/disparity_video_kernel.cpp"),
-                                      true);
+    cl::Program program = cl::Program(context, loadProgram("../kernels/disparity_video_kernel.cpp"), true);
 
     // --- Create Image Objects ---
     // Input image buffer data
@@ -111,8 +116,15 @@ void Disparity::getDisparityFromVideo() {
     std::array<long unsigned int, 3> origin{};
     std::array<long unsigned int, 3> region{};
 
-    while (true) {
-        if (imageLoop == numberOfImages + 1) break;
+    pixelData = new unsigned char[465750];  // TODO pass imageSize
+    auto *imageResult = new uchar[465750];
+    auto pixelData2 = pixelData;
+
+
+    while (disparityInProgress) {
+        if (imageLoop == numberOfImages + 1) imageLoop = 0; // Stay in range of 339 images
+
+
         if (imageLoop < 10)
             imageNoPath = "000000000" + std::to_string(imageLoop) + ".png";
         else if (imageLoop < 99 && imageLoop > 9)
@@ -124,11 +136,6 @@ void Disparity::getDisparityFromVideo() {
         cv::Mat imageLeft = cv::imread(imageLeftPath + imageNoPath, cv::IMREAD_GRAYSCALE);
         cv::Mat imageRight = cv::imread(imageRightPath + imageNoPath, cv::IMREAD_GRAYSCALE);
 
-        if (imageLoop == 1) {
-            cv::Mat stupidImage;
-            cv::cvtColor(imageRight, stupidImage, cv::COLOR_GRAY2RGB);
-            cv::imwrite("../textures/cvtThreeChannel.png", stupidImage);
-        }
         // Create vectors of the images
         //std::vector<uchar> inputImgRightData(imgSize);
         cv::Mat flat = imageLeft.reshape(1, imageLeft.total() * imageLeft.channels());
@@ -146,8 +153,10 @@ void Disparity::getDisparityFromVideo() {
         leftImageData = inputImgLeftData.data();
         rightImageData = inputImgRightData.data();
 
+        // pixel data (Shared among threads)
+
         // Output image buffer
-        auto *imageResult = new uchar[imgSize];
+
         memset(imageResult, 0, imgSize);
         // Read origin and region for output buffer
         origin = {0, 0, 0};
@@ -175,19 +184,28 @@ void Disparity::getDisparityFromVideo() {
         kernel.setArg(1, rightImage);
         kernel.setArg(2, outImage);
 
-        cl_int result = queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(width, height),cl::NDRange(256, 1));
+        cl_int result = queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(width, height),
+                                                   cl::NDRange(256, 1));
         if (result != CL_SUCCESS)
-            std::cerr << "util::getErrorString(result) "<< std::endl;
+            std::cerr << "util::getErrorString(result) " << std::endl;
 
         queue.finish();
         queue.enqueueReadImage(outImage, CL_TRUE, origin, region, width, 0, imageResult, nullptr, nullptr);
 
-        cv::Mat outputImage(cv::Size(width, height), CV_8U);
-        memcpy(outputImage.data, imageResult, imgSize);
+
+        if (!resourceBusy){
+        }
+        memcpy(pixelData, imageResult, imgSize); // Putting data in pixelData handle
+
+        pixelDataReady = true;
+
 
         auto endTime = (double) (clock() - Start) / CLOCKS_PER_SEC;
-        printf("Time taken: %.7fs\n", endTime);
+        //printf("Time taken: %.7fs\n", endTime);
 
+        /*
+        cv::Mat outputImage(cv::Size(width, height), CV_8U);
+        outputImage.data = pixelData;
 
         cv::normalize(outputImage, outputImage, 0, 255, cv::NORM_MINMAX, CV_8U);
 
@@ -199,19 +217,20 @@ void Disparity::getDisparityFromVideo() {
             cv::destroyWindow("Disparity image");
             break;
         }
-
+*/
 
         imageLoop++; // Increment to next image
     }
 }
 
-void Disparity::getDisparityFromImage(unsigned char *data) {
+void Disparity::getDisparityFromImage(unsigned char **data) {
     // ----- Image loading -----
     // Specify images
     // TODO: Temporary method
-    cv::Mat imageLeft = cv::imread("/home/magnus/CLionProjects/Stereovision/util/images/Aloe/view1.png", cv::IMREAD_GRAYSCALE);
-    cv::Mat imageRight = cv::imread("/home/magnus/CLionProjects/Stereovision/util/images/Aloe/view5.png", cv::IMREAD_GRAYSCALE);
-
+    cv::Mat imageLeft = cv::imread("/home/magnus/CLionProjects/Stereovision/util/images/Aloe/view1.png",
+                                   cv::IMREAD_GRAYSCALE);
+    cv::Mat imageRight = cv::imread("/home/magnus/CLionProjects/Stereovision/util/images/Aloe/view5.png",
+                                    cv::IMREAD_GRAYSCALE);
 
 
     cv::resize(imageLeft, imageLeft, cv::Size(640, 550), cv::INTER_NEAREST);
@@ -245,9 +264,7 @@ void Disparity::getDisparityFromImage(unsigned char *data) {
     cl::CommandQueue queue(context, device);
 
     // Create program
-    cl::Program program = cl::Program(context,
-                                      loadProgram("../kernels/disparity_image_kernel.cpp"),
-                                      true);
+    cl::Program program = cl::Program(context, loadProgram("../kernels/disparity_image_kernel.cpp"), true);
 
 
     // --- Create Image Objects ---
@@ -306,25 +323,24 @@ void Disparity::getDisparityFromImage(unsigned char *data) {
     if (result != CL_SUCCESS)
         std::cerr << "util::getErrorString(result)" << std::endl;
 
-    //queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(width, height), cl::NullRange);
-
     queue.finish();
     queue.enqueueReadImage(outImage, CL_TRUE, origin, region, width, 0, imageResult, nullptr, nullptr);
 
     printf("Time taken: %.7fs\n", (double) (clock() - Start) / CLOCKS_PER_SEC);
 
+    //data = new unsigned char[imgSize];
     imageSize = imgSize;
     imageHeight = height;
     imageWidth = width;
-    memcpy(data, imageResult, imageSize);
+    memcpy(*data, imageResult, imgSize);
 
+/*
     cv::Mat outputImage(cv::Size(width, height), CV_8U);
-    memcpy(outputImage.data, imageResult, imgSize);
+    outputImage.data = data;
+
+    cv::normalize(outputImage, outputImage, 0, 255, cv::NORM_MINMAX, CV_8U);
 
 
-   cv::normalize(outputImage, outputImage, 0, 255, cv::NORM_MINMAX, CV_8U);
-
-    /*
       cv::namedWindow("Disparity image", cv::WINDOW_NORMAL);
       cv::imshow("Disparity image", outputImage);
       cv::imwrite("../../GPUResult.png", outputImage);
@@ -338,7 +354,7 @@ void Disparity::getDisparityFromImage(unsigned char *data) {
               break;
           }
       }
-   */
+    */
     //clock_t Start = clock();
     //printf("Time taken: %.7fs\n", (double) (clock() - Start) / CLOCKS_PER_SEC);
 }
@@ -356,6 +372,7 @@ std::string Disparity::loadProgram(std::string strInput) {
 }
 
 void Disparity::stopProgram() {
+    disparityInProgress = false;
     run_status = false;
 }
 

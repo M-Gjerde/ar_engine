@@ -34,6 +34,13 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
         disparity.input = 3;
         std::cout << "disparity input: " << disparity.input << std::endl;
 
+        // Toggle texture renderer from disparity
+        if (vulkanRenderer.textureUpdateToggle)
+            vulkanRenderer.textureUpdateToggle = false;
+        //vulkanRenderer.updateDisparityVideoTexture();
+        vulkanRenderer.textureUpdateToggle = true;
+
+
     }
 
     if (key == GLFW_KEY_H && action == GLFW_PRESS) {
@@ -44,7 +51,7 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
 
     if (key == GLFW_KEY_UP) {
         glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 1.0f));
-        trans = glm::scale(trans, glm::vec3(10.0f, 10.0f, 1.0f));
+        trans = glm::scale(trans, glm::vec3(10.0f, 2.50f, 1.0f));
         vulkanRenderer.updateModel(trans, 1);
     }
     if (key == GLFW_KEY_DOWN) {
@@ -61,21 +68,7 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
     }
 
     if (key == GLFW_KEY_LEFT_CONTROL  && action == GLFW_PRESS) {
-        vulkanRenderer.createTexture("stereo/image_01/data/0000000001.png");
-    }
-
-    if (key == GLFW_KEY_LEFT_ALT  && action == GLFW_PRESS) {
-        vulkanRenderer.createTexture("cvtThreeChannel.png");
-        printf("Updating texture\n");
-    }
-
-    if (key == GLFW_KEY_X && action == GLFW_PRESS) {
-        vulkanRenderer.createTexture("wallpaper.png");
-        printf("Updating texture\n");
-    }
-    if (key == GLFW_KEY_C && action == GLFW_PRESS) {
-        vulkanRenderer.createTexture("output-onlinepngtools.jpg");
-        printf("Updating texture\n");
+        vulkanRenderer.updateTextureImage("stereo/image_01/data/0000000001.png");
     }
 
 

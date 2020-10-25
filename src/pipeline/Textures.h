@@ -15,20 +15,21 @@
 class Textures : Images {
 public:
     explicit Textures(Images *pImages);
-    void createTexture(ArTextureSampler *pArTextureSampler, std::string fileName, Disparity *disparity);
+    void createTexture(std::string fileName, ArTextureImage *pArTextureSampler, ArBuffer *imageStagingBuffer);
 
-    void cleanUp();
+    void cleanUp(ArTextureImage arTextureSampler, ArBuffer imageBuffer);
+    void setDisparityImageTexture(Disparity *disparity, ArTextureImage *arTextureSampler, ArBuffer *imageBuffer);
+    void createTextureImage(ArTextureImage *arTexture, ArBuffer *textureBuffer);
+    void setDisparityVideoTexture(Disparity *disparity, ArTextureImage *videoTexture, ArBuffer *imageBuffer);
 
 private:
-
-    ArBuffer imageBuffer;
-    ArTextureSampler arTextureSampler;
     Images *images;
     VkFormat format;
 
-    void createTextureImage(std::string fileName, Disparity *disparity);
-    void createTextureSampler();
-    void createTextureImageView();
+    void createTextureImage(std::string fileName, ArTextureImage *arTextureSampler, ArBuffer *imageBuffer);
+    void createTextureSampler(ArTextureImage *arTextureSampler);
+    void createTextureImageView(ArTextureImage *arTextureSampler);
+
 
 };
 
