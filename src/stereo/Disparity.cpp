@@ -117,13 +117,15 @@ void Disparity::getDisparityFromVideo() {
     std::array<long unsigned int, 3> region{};
 
     pixelData = new unsigned char[465750];  // TODO pass imageSize
-    auto *imageResult = new uchar[465750];
-    auto pixelData2 = pixelData;
+
+    // Output image buffer
+    auto *imageResult = new uchar[465750];  // TODO pass imageSize
 
 
     while (disparityInProgress) {
-        if (imageLoop == numberOfImages + 1) imageLoop = 0; // Stay in range of 339 images
+        clock_t Start = clock();
 
+        if (imageLoop == numberOfImages + 1) imageLoop = 0; // Stay in range of 339 images
 
         if (imageLoop < 10)
             imageNoPath = "000000000" + std::to_string(imageLoop) + ".png";
@@ -153,21 +155,13 @@ void Disparity::getDisparityFromVideo() {
         leftImageData = inputImgLeftData.data();
         rightImageData = inputImgRightData.data();
 
-        // pixel data (Shared among threads)
-
-        // Output image buffer
-
-        memset(imageResult, 0, imgSize);
         // Read origin and region for output buffer
         origin = {0, 0, 0};
         region = {static_cast<unsigned long>(width), static_cast<unsigned long>(height), 1};
 
-
         // Create output image
         cl::Image2D outImage(context, CL_MEM_WRITE_ONLY, imageFormat, width, height, 0, nullptr, nullptr);
 
-
-        clock_t Start = clock();
 
         // Create input image
         cl::Image2D leftImage(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, imageFormat, width, height, 0,
@@ -193,15 +187,13 @@ void Disparity::getDisparityFromVideo() {
         queue.enqueueReadImage(outImage, CL_TRUE, origin, region, width, 0, imageResult, nullptr, nullptr);
 
 
-        if (!resourceBusy){
-        }
         memcpy(pixelData, imageResult, imgSize); // Putting data in pixelData handle
 
         pixelDataReady = true;
 
 
         auto endTime = (double) (clock() - Start) / CLOCKS_PER_SEC;
-        //printf("Time taken: %.7fs\n", endTime);
+        printf("Time taken: %.7fs\n", endTime);
 
         /*
         cv::Mat outputImage(cv::Size(width, height), CV_8U);

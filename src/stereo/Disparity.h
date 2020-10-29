@@ -32,8 +32,6 @@ public:
     int imageWidth, imageHeight;
     unsigned char* pixelData;
     bool pixelDataReady = false;
-    bool resourceBusy = false;
-
 
 private:
 

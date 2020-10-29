@@ -65,6 +65,7 @@ private:
     // Objects
     std::vector<Mesh> meshes;
     std::vector<StandardModel> triangleModels{};
+    std::vector<StandardModel> loadModels{};
 
     // - Descriptors
     Descriptors *descriptors{};
@@ -105,6 +106,7 @@ private:
 
     void updateBuffer(uint32_t imageIndex);
 
+    void loadModel();
 };
 
 

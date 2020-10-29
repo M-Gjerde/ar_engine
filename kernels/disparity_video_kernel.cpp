@@ -8,9 +8,9 @@ __kernel void image_kernel(
 
 
     // kernel size and loop boundaries from L to H
-    int kernelL = -2;
-    int kernelH = 3;
-    int kernelSize = 25;
+    int kernelL = -3;
+    int kernelH = 4;
+    int kernelSize = 49;
 
     int sum = 0;
     int minAverage = 255;

@@ -43,14 +43,14 @@ add_library(VulkanRenderer
         src/pipeline/Textures.cpp
         src/pipeline/Textures.h
         src/include/stb_image.h
-        )
+        src/pipeline/MeshModel.cpp src/pipeline/MeshModel.h)
 
 target_link_libraries(VulkanRenderer
         stereoVision
         vulkan
         )
 
-add_executable(engine main.cpp)
+add_executable(engine main.cpp external/tinyobj/tiny_obj_loader.h)
 
 target_link_libraries(engine
         glfw ${GLFW_LIBRARIES}

@@ -7,6 +7,7 @@
 
 
 #include "Buffer.h"
+#include <cstring>
 
 class Mesh : Buffer {
 
@@ -28,9 +29,11 @@ private:
 
     uboModel model1;
 
+
     void createVertexBuffer();
     void createIndexBuffer();
 
+    void loadModel();
 };
 
 

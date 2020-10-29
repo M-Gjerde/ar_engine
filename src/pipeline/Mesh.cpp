@@ -4,8 +4,9 @@
 
 #include "Mesh.h"
 
-#include <utility>
-#include <cstring>
+
+
+
 
 
 Mesh::Mesh(MainDevice mainDevice, StandardModel *standardModel, std::vector<ArBuffer> newArBuffer) : Buffer(
@@ -25,7 +26,11 @@ Mesh::Mesh(MainDevice mainDevice, StandardModel *standardModel, std::vector<ArBu
     // Copy data back to standard model.
     standardModel->vertexBuffer = vertexBuffer.buffer;
     standardModel->indexBuffer = indexBuffer.buffer;
-    standardModel->indexCount = meshIndices.size();
+    //standardModel->indexCount = meshIndices.size();
+}
+
+void Mesh::loadModel(){
+
 }
 
 

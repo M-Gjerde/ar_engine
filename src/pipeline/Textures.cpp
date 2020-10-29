@@ -183,7 +183,6 @@ void Textures::setDisparityVideoTexture(Disparity *disparity, ArTextureImage *vi
     format = VK_FORMAT_R8_UNORM;
 
 
-
     // Copy data to buffer note pixelData is located in Disparity handle
     memcpy(videoTexture->data, disparity->pixelData, static_cast<size_t>(imageBuffer->bufferSize));
 

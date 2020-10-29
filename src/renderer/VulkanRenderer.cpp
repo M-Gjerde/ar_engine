@@ -3,6 +3,9 @@
 //
 
 
+#define TINYOBJLOADER_IMPLEMENTATION
+
+#include "../../external/tinyobj/tiny_obj_loader.h"
 
 #include <array>
 #include <utility>
@@ -22,7 +25,10 @@ int VulkanRenderer::init(GLFWwindow *newWindow) {
 
         textures = new Textures(images);
 
+        loadModel();
         createSimpleMesh();
+        // TODO REWRITE
+
 
         createPipeline();
         createFrameBuffers();
@@ -224,6 +230,21 @@ void VulkanRenderer::recordCommand() {
 
         }
 
+        for (int j = 0; j < loadModels.size(); ++j) {
+            VkBuffer vertexBuffers[] = {loadModels[j].vertexBuffer};
+            VkDeviceSize offsets[] = {0};
+            vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+
+
+            vkCmdBindIndexBuffer(commandBuffers[i], loadModels[j].indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+            vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, arPipeline.pipelineLayout, 0, 1,
+                                    &arDescriptor.descriptorSets[j], 0, nullptr);
+
+            vkCmdDrawIndexed(commandBuffers[i], loadModels[j].indexCount, 1, 0, 0, 0);
+
+        }
+
         vkCmdEndRenderPass(commandBuffers[i]);
 
         if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
@@ -272,6 +293,60 @@ void VulkanRenderer::updateBuffer(uint32_t imageIndex) {
 
 }
 
+void VulkanRenderer::loadModel() {
+
+    tinyobj::attrib_t attrib;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string warn, err;
+    std::string MODEL_PATH = "../objects/viking_room.obj";
+
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str())) {
+        throw std::runtime_error(warn + err);
+    }
+
+    std::vector<ArBuffer> modelBuffers;
+    modelBuffers.resize(2);
+    loadModels.resize(1);
+
+    std::map<Vertex, uint32_t> uniqueVertices{};
+
+
+    for (int i = 0; i < shapes.size(); ++i) {
+        for (int j = 0; j < shapes[i].mesh.indices.size(); ++j) {
+            Vertex vertex{};
+
+            vertex.pos = {attrib.vertices[3 * shapes[i].mesh.indices[j].vertex_index + 0],
+                          attrib.vertices[3 * shapes[i].mesh.indices[j].vertex_index + 1],
+                          attrib.vertices[3 * shapes[i].mesh.indices[j].vertex_index + 2]};
+
+            vertex.texCoord = {attrib.texcoords[2 * shapes[i].mesh.indices[j].texcoord_index + 0],
+                               1.0f - attrib.texcoords[2 * shapes[i].mesh.indices[j].texcoord_index + 1]};
+
+            vertex.color = {1.0f, 1.0f, 1.0f};
+
+            loadModels[0].vertices.push_back(vertex);
+
+            loadModels[0].indices.push_back(loadModels[0].indices.size());
+        }
+    }
+
+        modelBuffers[0].bufferSize = sizeof(loadModels[0].vertices[0]) * loadModels[0].vertices.size();
+        modelBuffers[0].bufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        modelBuffers[0].bufferProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+        modelBuffers[1].bufferSize = sizeof(loadModels[0].indices[0]) * loadModels[0].indices.size();
+        modelBuffers[1].bufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+        modelBuffers[1].bufferProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+        loadModels[0].indexCount = loadModels[0].indices.size();
+        loadModels[0].transferCommandPool = arEngine.commandPool;
+        loadModels[0].transferQueue = arEngine.graphicsQueue;
+        meshes.emplace_back(Mesh(arEngine.mainDevice, &loadModels[0], modelBuffers));
+
+    }
+
+
+
 
 void VulkanRenderer::createSimpleMesh() {
 
@@ -285,7 +360,7 @@ void VulkanRenderer::createSimpleMesh() {
     modelBuffers[1].bufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     modelBuffers[1].bufferProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-    triangleModels.resize(2);
+    triangleModels.resize(0);
 
     for (int i = 0; i < triangleModels.size(); ++i) {
         triangleModels[i].indices = meshIndices;
@@ -381,9 +456,11 @@ void VulkanRenderer::updateDisparityVideoTexture() {
     if (!disparity->pixelDataReady) {
         return;
     }
-
+    //clock_t Start = clock();
     textures->setDisparityVideoTexture(disparity, &videoTexture, &videoTextureBuffer);
 
     descriptors->createDescriptorsSampler(&arDescriptor, videoTexture);
     recordCommand();
+
+    // printf("Texture and re-record cmd buffers time taken: %.7fs\n", (double) (clock() - Start) / CLOCKS_PER_SEC;);
 }
