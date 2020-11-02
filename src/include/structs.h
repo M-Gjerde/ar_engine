@@ -10,20 +10,20 @@
 #include <GLFW/glfw3.h>
 #include <vector>
 #include "triangle.h"
+#include <string>
 
-struct StandardModel {
+struct ArModel {
     VkQueue transferQueue;
     VkCommandPool transferCommandPool;
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
-    int newTexId;
-
     uint32_t vertexCount{};
     VkBuffer vertexBuffer{};
     VkDeviceMemory vertexBufferMemory{};
     uint32_t indexCount{};
     VkBuffer indexBuffer{};
     VkDeviceMemory indexBufferMemory{};
+    std::string modelName;
 };
 
 struct ArDescriptor{
@@ -84,7 +84,6 @@ struct ArPipeline {
     VkExtent2D swapchainExtent;
     VkPipelineLayout pipelineLayout;
     VkPipeline pipeline;
-    VkRenderPass renderPass;
 };
 
 struct ArDepthResource {

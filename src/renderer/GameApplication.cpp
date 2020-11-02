@@ -5,6 +5,9 @@
 #include <zconf.h>
 #include "GameApplication.h"
 
+bool rotate = false;
+float angle = 0;
+glm::mat4 rotateMat;
 
 void AppExtension::update() {
 
@@ -12,13 +15,24 @@ void AppExtension::update() {
     deltaTime = now - lastTime;
     lastTime = now;
 
+
+    if (rotate) {
+        angle += 50.0f * static_cast<float>(deltaTime);
+        if (angle > 360) angle -= 360.0f;
+        glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.0f, 0.0f));
+        rotateMat = glm::rotate(trans, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        rotateMat = glm::rotate(rotateMat, glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
+        vulkanRenderer.updateModel(rotateMat, 0);
+    }
+
+
+    /*
     // Keep update function at 24 frames per second
     if (deltaTime < 0.03) {
         double timeToSleep = (0.03 - deltaTime) * 1000;
         usleep(timeToSleep);
     }
-
-
+*/
 }
 
 
@@ -61,16 +75,26 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
 
     if (key == GLFW_KEY_LEFT_SHIFT) {
         glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.0f, 0.0f));
-        vulkanRenderer.updateModel(trans, 0);
+        rotateMat = glm::rotate(trans, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+        vulkanRenderer.updateModel(rotateMat, 0);
         trans = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f));
-        vulkanRenderer.updateModel(trans, 1);
+        //vulkanRenderer.updateModel(trans, 1);
         trans = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-        vulkanRenderer.updateModel(trans, 2);
-
-
+        //vulkanRenderer.updateModel(trans, 2);
     }
 
-    if (key == GLFW_KEY_LEFT_CONTROL  && action == GLFW_PRESS) {
+    if (key == GLFW_KEY_X && action == GLFW_PRESS) {
+
+        if (rotate)
+            rotate = false;
+        else
+            rotate = true;
+
+        vulkanRenderer.updateModel(rotateMat, 0);
+    }
+
+    if (key == GLFW_KEY_LEFT_CONTROL && action == GLFW_PRESS) {
         vulkanRenderer.updateTextureImage("stereo/image_01/data/0000000001.png");
     }
 

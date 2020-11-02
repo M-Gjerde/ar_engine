@@ -18,6 +18,10 @@ add_library(stereoVision src/stereo/Disparity.cpp src/stereo/Disparity.h)
 target_link_libraries(stereoVision PUBLIC ${OpenCV_LIBS}  )
 target_compile_options(stereoVision PUBLIC -pthread )
 
+## JSON Parser
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+add_subdirectory(external/json)
+
 # Ties vulkanRenderer with helper classes
 add_library(VulkanRenderer
         src/renderer/VulkanRenderer.cpp
@@ -43,11 +47,15 @@ add_library(VulkanRenderer
         src/pipeline/Textures.cpp
         src/pipeline/Textures.h
         src/include/stb_image.h
-        src/pipeline/MeshModel.cpp src/pipeline/MeshModel.h)
+        src/pipeline/MeshModel.cpp
+        src/pipeline/MeshModel.h
+        src/Platform/LoadSettings.cpp
+        src/Platform/LoadSettings.h)
 
 target_link_libraries(VulkanRenderer
         stereoVision
         vulkan
+        nlohmann_json::nlohmann_json
         )
 
 add_executable(engine main.cpp external/tinyobj/tiny_obj_loader.h)
@@ -55,6 +63,7 @@ add_executable(engine main.cpp external/tinyobj/tiny_obj_loader.h)
 target_link_libraries(engine
         glfw ${GLFW_LIBRARIES}
         VulkanRenderer
+        nlohmann_json::nlohmann_json
         )
 
 add_executable(test test.cpp)

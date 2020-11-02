@@ -17,13 +17,14 @@ int Disparity::init() {
 }
 
 void Disparity::checkForActions() {
+    /*
     std::cout << "New thread started\n";
     std::cout
             << "\nInput new integer:\n 1 = stop \n 2 = Get disparity OpenCL GPU device\n 3 = Get video disparity GPU device\n"
             << std::endl;
 
     std::cout << input << " <-- input" << std::endl;
-
+*/
 
     while (run_status) {
         switch (input) {
@@ -60,10 +61,12 @@ cl::Device Disparity::getGPUDevice() {
     // Get a vector of available platforms
     std::vector<cl::Platform> platforms;
     cl::Platform::get(&platforms);
-    // Get platform names
+    // Print platform names
+    /*
     for (const auto &i : platforms) {
         printf("Platform: %s\n", i.getInfo<CL_PLATFORM_NAME>().c_str());
     }
+     */
     auto platform = platforms.front();
 
     // Display devices

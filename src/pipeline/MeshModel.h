@@ -7,15 +7,17 @@
 
 
 #include <string>
+#include "../include/structs.h"
+#include "Mesh.h"
 
 class MeshModel {
 
 public:
 
+    Mesh loadModel(MainDevice mainDevice, ArModel *arModel);
+
 private:
 
-    const std::string MODEL_PATH = "models/viking_room.obj";
-    const std::string TEXTURE_PATH = "textures/viking_room.png";
 
 
 };

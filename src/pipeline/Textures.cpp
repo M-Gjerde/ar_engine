@@ -51,11 +51,11 @@ void Textures::createTextureImage(std::string fileName, ArTextureImage *arTextur
     int texWidth, texHeight, texChannels;
     stbi_uc *pixels;
     std::string filePath = "../textures/" + fileName;
-    if (fileName == "cvtThreeChannel.png" || fileName == "wallpaper.png" || fileName == "output-onlinepngtools.jpg") {
-        pixels = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha); //TODO METHOD
-        texChannels = 4; // 1+ beacuse of alpha
-        format = VK_FORMAT_R8G8B8A8_UNORM;
-    }
+
+    pixels = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha); //TODO METHOD
+    texChannels = 4; // 1+ beacuse of alpha
+    format = VK_FORMAT_R8G8B8A8_UNORM;
+
     if (!pixels) throw std::runtime_error("failed to load texture image: " + fileName);
 
     // Creating staging buffer
@@ -125,20 +125,20 @@ void Textures::createTextureImage(ArTextureImage *arTexture, ArBuffer *textureBu
     // Create image and bind image memory
     images->createImage(arTexture->width, arTexture->height, format, VK_IMAGE_TILING_LINEAR,
                         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, arTexture->textureImage,
-                        arTexture->textureImageMemory, VK_IMAGE_LAYOUT_UNDEFINED);
+                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, arTexture->textureImage, arTexture->textureImageMemory,
+                        VK_IMAGE_LAYOUT_UNDEFINED);
 
     // Creating staging buffer
     textureBuffer->bufferSize = imageSize;
     images->createBuffer(textureBuffer);
 
-    arTexture->textureImageView = images->createImageView(arTexture->textureImage, format,
-                                                                 VK_IMAGE_ASPECT_COLOR_BIT);
+    arTexture->textureImageView = images->createImageView(arTexture->textureImage, format, VK_IMAGE_ASPECT_COLOR_BIT);
 
     createTextureSampler(arTexture);
 
     // Map texture image memory to void pointer
-    vkMapMemory(images->mainDevice.device, textureBuffer->bufferMemory, 0, textureBuffer->bufferSize, 0, &arTexture->data);
+    vkMapMemory(images->mainDevice.device, textureBuffer->bufferMemory, 0, textureBuffer->bufferSize, 0,
+                &arTexture->data);
 
 
 }
@@ -148,7 +148,7 @@ void Textures::setDisparityImageTexture(Disparity *disparity, ArTextureImage *ar
 
     // Load texture from disparity
     int width, height;
-    auto* pixels = new unsigned char[imageBuffer->bufferSize];
+    auto *pixels = new unsigned char[imageBuffer->bufferSize];
     disparity->getDisparityFromImage(&pixels);
     width = disparity->imageWidth;
     height = disparity->imageHeight;
@@ -179,7 +179,7 @@ void Textures::setDisparityImageTexture(Disparity *disparity, ArTextureImage *ar
 
 }
 
-void Textures::setDisparityVideoTexture(Disparity *disparity, ArTextureImage *videoTexture, ArBuffer *imageBuffer){
+void Textures::setDisparityVideoTexture(Disparity *disparity, ArTextureImage *videoTexture, ArBuffer *imageBuffer) {
     format = VK_FORMAT_R8_UNORM;
 
 

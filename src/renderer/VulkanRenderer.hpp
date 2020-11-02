@@ -46,16 +46,19 @@ public:
     // TODO Think of better handles than this
     bool textureUpdateToggle = false;
 
+    void drawScene(std::vector<std::map<std::string, std::string>> vector);
+
 private:
     // Vulkan components
     Platform *platform{};
     ArEngine arEngine;
 
-    // - Pipelines
+    // Pipelines and drawing stuff
     Pipeline pipeline;
     ArPipeline arPipeline{};
     Images *images;
     ArDepthResource arDepthResource;
+    VkRenderPass renderPass;
 
     // Buffer
     Buffer *buffer{};
@@ -64,8 +67,8 @@ private:
 
     // Objects
     std::vector<Mesh> meshes;
-    std::vector<StandardModel> triangleModels{};
-    std::vector<StandardModel> loadModels{};
+    std::vector<ArModel> triangleModels{};
+    std::vector<ArModel> models{};
 
     // - Descriptors
     Descriptors *descriptors{};
@@ -94,7 +97,7 @@ private:
 
     void createPipeline();
 
-    void createFrameBuffers();
+    void createFrameBuffersAndRenderPass();
 
     void createCommandBuffers();
 
@@ -106,7 +109,7 @@ private:
 
     void updateBuffer(uint32_t imageIndex);
 
-    void loadModel();
+    void createUBODescriptors();
 };
 
 

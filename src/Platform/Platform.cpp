@@ -85,17 +85,20 @@ void Platform::setDebugMessenger() {
 }
 
 void Platform::cleanUp() {
-    vkDestroyCommandPool(arEngine.mainDevice.device, arEngine.commandPool, nullptr);
 
     for (auto imageView : arEngine.swapChainImageViews) {
         vkDestroyImageView(arEngine.mainDevice.device, imageView, nullptr);
     }
     vkDestroySwapchainKHR(arEngine.mainDevice.device, arEngine.swapchain, nullptr);
-    vkDestroySurfaceKHR(arEngine.instance, arEngine.surface, nullptr);
+
+    vkDestroyCommandPool(arEngine.mainDevice.device, arEngine.commandPool, nullptr);
+
     vkDestroyDevice(arEngine.mainDevice.device, nullptr);
     if (enableValidationLayers) {
         Validation::DestroyDebugUtilsMessengerEXT(arEngine.instance, arEngine.debugMessenger, nullptr);
     }
+    vkDestroySurfaceKHR(arEngine.instance, arEngine.surface, nullptr);
+
     vkDestroyInstance(arEngine.instance, nullptr);
 }
 
@@ -115,7 +118,7 @@ VkPhysicalDevice_T *Platform::selectPhysicalDevice() const {
         VkPhysicalDeviceFeatures deviceFeatures;
         vkGetPhysicalDeviceFeatures(devices[i], &deviceFeatures);
     }
-    printf("Using device: %s\n", deviceProperties[0].deviceName);
+
     return devices[0];
 }
 

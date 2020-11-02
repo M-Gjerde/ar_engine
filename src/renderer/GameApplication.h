@@ -18,6 +18,7 @@
 #include "VulkanRenderer.hpp"
 #include "../pipeline/Camera.h"
 #include "../stereo/Disparity.h"
+#include "../Platform/LoadSettings.h"
 
 class GameApplication {
 
@@ -26,6 +27,7 @@ public:
     VulkanRenderer vulkanRenderer;
     Camera camera;
     Disparity disparity;
+    LoadSettings loadSettings;
 
 
     explicit GameApplication(const std::string &title) {
@@ -39,17 +41,24 @@ public:
 
         glfwSetErrorCallback(error_callback);
 
+        // Load settings
+        loadSettings.init();
+
+        // Init disparity
         disparity.init();
         vulkanRenderer.disparity = &disparity; // TODO REMOVE
 
+        // Init vulkan renderer engine
         if (vulkanRenderer.init(window) == EXIT_FAILURE)
             throw std::runtime_error("Failed to init");
 
-
+        // Initialize camera
         vulkanRenderer.updateCamera(camera.getView(), camera.getProjection());
+
+        // Load scene objects according to settings file
+        auto settingsMap = loadSettings.getSceneObjects();
+        vulkanRenderer.drawScene(settingsMap);
     }
-
-
 
     virtual void keyCallback(GLFWwindow *glfWwindow, int key, int scancode, int action, int mods) {};
 

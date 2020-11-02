@@ -10,14 +10,13 @@ Pipeline::Pipeline() = default;
 
 Pipeline::~Pipeline() = default;
 
-void Pipeline::createGraphicsPipeline(ArPipeline *pipeline, VkDescriptorSetLayout descriptorSetLayout) {
-    arPipeline = *pipeline;
-    createRenderPass();
+void Pipeline::createGraphicsPipeline(VkRenderPass renderPass, VkDescriptorSetLayout descriptorSetLayout,
+                                      ArPipeline *pipeline) {
     auto vertShaderCode = readFile("../shaders/vert.spv");
     auto fragShaderCode = readFile("../shaders/frag.spv");
 
-    VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
-    VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
+    VkShaderModule vertShaderModule = createShaderModule(pipeline->device, vertShaderCode);
+    VkShaderModule fragShaderModule = createShaderModule(pipeline->device,fragShaderCode);
 
     //SHADER SETUP
 
@@ -78,14 +77,14 @@ void Pipeline::createGraphicsPipeline(ArPipeline *pipeline, VkDescriptorSetLayou
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float) arPipeline.swapchainExtent.width;
-    viewport.height = (float) arPipeline.swapchainExtent.height;
+    viewport.width = (float) pipeline->swapchainExtent.width;
+    viewport.height = (float) pipeline->swapchainExtent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     VkRect2D scissor{};
     scissor.offset = {0, 0};
-    scissor.extent = arPipeline.swapchainExtent;
+    scissor.extent = pipeline->swapchainExtent;
 
     VkPipelineViewportStateCreateInfo viewportState{};
     viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -147,7 +146,7 @@ void Pipeline::createGraphicsPipeline(ArPipeline *pipeline, VkDescriptorSetLayou
     pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
 
 
-    if (vkCreatePipelineLayout(arPipeline.device, &pipelineLayoutInfo, nullptr, &arPipeline.pipelineLayout) !=
+    if (vkCreatePipelineLayout(pipeline->device, &pipelineLayoutInfo, nullptr, &pipeline->pipelineLayout) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     }
@@ -164,39 +163,39 @@ void Pipeline::createGraphicsPipeline(ArPipeline *pipeline, VkDescriptorSetLayou
     pipelineInfo.pMultisampleState = &multisampling;
     pipelineInfo.pDepthStencilState = &depthStencil;
     pipelineInfo.pColorBlendState = &colorBlending;
-    pipelineInfo.layout = arPipeline.pipelineLayout;
-    pipelineInfo.renderPass = arPipeline.renderPass;
+    pipelineInfo.layout = pipeline->pipelineLayout;
+    pipelineInfo.renderPass = renderPass;
     pipelineInfo.subpass = 0;
 
-    if (vkCreateGraphicsPipelines(arPipeline.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &arPipeline.pipeline) !=
+    if (vkCreateGraphicsPipelines(pipeline->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->pipeline) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
 
-    *pipeline = arPipeline;
-    vkDestroyShaderModule(arPipeline.device, fragShaderModule, nullptr);
-    vkDestroyShaderModule(arPipeline.device, vertShaderModule, nullptr);
+
+    vkDestroyShaderModule(pipeline->device, fragShaderModule, nullptr);
+    vkDestroyShaderModule(pipeline->device, vertShaderModule, nullptr);
 }
 
-VkShaderModule Pipeline::createShaderModule(const std::vector<char> &code) {
+VkShaderModule Pipeline::createShaderModule(VkDevice device, const std::vector<char> &code) {
     VkShaderModuleCreateInfo shaderModuleCreateInfo{};
-
     shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     shaderModuleCreateInfo.codeSize = static_cast<uint32_t>(code.size());
     shaderModuleCreateInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
 
     VkShaderModule shaderModule;
-    if (vkCreateShaderModule(arPipeline.device, &shaderModuleCreateInfo, nullptr, &shaderModule) != VK_SUCCESS)
+    if (vkCreateShaderModule(device, &shaderModuleCreateInfo, nullptr, &shaderModule) != VK_SUCCESS)
         throw std::runtime_error("Failed to create shader module");
 
     return shaderModule;
 }
 
 
-void Pipeline::createRenderPass() {
+void
+Pipeline::createRenderPass(VkDevice device, VkFormat depthFormat, VkFormat colorFormat, VkRenderPass *pRenderPass) {
     // depth attachment
     VkAttachmentDescription depthAttachment{};
-    depthAttachment.format = arPipeline.depthFormat;
+    depthAttachment.format = depthFormat;
     depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
     depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -211,7 +210,7 @@ void Pipeline::createRenderPass() {
 
     // Color attachment
     VkAttachmentDescription colorAttachment{};
-    colorAttachment.format = arPipeline.swapchainImageFormat;
+    colorAttachment.format = colorFormat;
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -251,42 +250,17 @@ void Pipeline::createRenderPass() {
     renderPassInfo.pDependencies = &dependency;
 
 
-    if (vkCreateRenderPass(arPipeline.device, &renderPassInfo, nullptr, &arPipeline.renderPass) != VK_SUCCESS) {
+    if (vkCreateRenderPass(device, &renderPassInfo, nullptr, pRenderPass) != VK_SUCCESS) {
         throw std::runtime_error("failed to create render pass!");
     }
 }
 
 
-void Pipeline::cleanUp() const {
+void Pipeline::cleanUp(ArPipeline arPipeline) const {
+
     vkDestroyPipeline(arPipeline.device, arPipeline.pipeline, nullptr);
-    vkDestroyRenderPass(arPipeline.device, arPipeline.renderPass, nullptr);
     vkDestroyPipelineLayout(arPipeline.device, arPipeline.pipelineLayout, nullptr);
 
 }
 
-void Pipeline::createRayTracingPipeline(ArPipeline *pipeline) {
 
-    // CREATE PIPELINE LAYOUT
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 0;        // Number of descriptor set layouts
-    pipelineLayoutInfo.pSetLayouts = nullptr;
-
-
-    if (vkCreatePipelineLayout(arPipeline.device, &pipelineLayoutInfo, nullptr, &arPipeline.pipelineLayout) !=
-        VK_SUCCESS) {
-        throw std::runtime_error("failed to create pipeline layout!");
-    }
-
-/*
-    VkRayTracingPipelineCreateInfoNV pipelineCreateInfoNv;
-
-    VkResult result = vkCreateRayTracingPipelinesNV(
-            pipeline->device,
-            VK_NULL_HANDLE,
-            1,
-            &pipelineCreateInfoNv,
-        nullptr,
-            &pipeline->pipeline);
-*/
-}

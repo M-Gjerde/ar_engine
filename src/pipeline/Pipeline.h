@@ -20,15 +20,14 @@ public:
     Pipeline();
     ~Pipeline();
 
-    void createGraphicsPipeline(ArPipeline *pipeline, VkDescriptorSetLayout descriptorSetLayout);
+    void createRenderPass(VkDevice device, VkFormat depthFormat, VkFormat colorFormat, VkRenderPass *pRenderPass);
+    void
+    createGraphicsPipeline(VkRenderPass renderPass, VkDescriptorSetLayout descriptorSetLayout, ArPipeline *pipeline);
     void createRayTracingPipeline(ArPipeline *pipeline);
-    void cleanUp() const;
+    void cleanUp(ArPipeline arPipeline) const;
 private:
 
-    ArPipeline arPipeline{};
-
-    VkShaderModule createShaderModule(const std::vector<char>&code);
-    void createRenderPass();
+    VkShaderModule createShaderModule(VkDevice device, const std::vector<char> &code);
 
 };
 

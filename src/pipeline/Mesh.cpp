@@ -9,7 +9,7 @@
 
 
 
-Mesh::Mesh(MainDevice mainDevice, StandardModel *standardModel, std::vector<ArBuffer> newArBuffer) : Buffer(
+Mesh::Mesh(MainDevice mainDevice, ArModel *standardModel, std::vector<ArBuffer> newArBuffer) : Buffer(
         mainDevice) {
 
     device = mainDevice.device;
@@ -29,9 +29,6 @@ Mesh::Mesh(MainDevice mainDevice, StandardModel *standardModel, std::vector<ArBu
     //standardModel->indexCount = meshIndices.size();
 }
 
-void Mesh::loadModel(){
-
-}
 
 
 void Mesh::cleanUp() {
@@ -53,7 +50,6 @@ void Mesh::createVertexBuffer() {
 
     // Create Staging buffer and allocate memory to it
     createBuffer(&stagingBuffer);
-
 
     // MAP MEMORY TO STAGING BUFFER
     void *data;                                                                                         // 1. Create pointer to a point in normal memory

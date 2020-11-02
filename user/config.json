@@ -1,0 +1,37 @@
+{
+  "name": "ArEngine",
+  "description": "Augmented reality renderer engine",
+  "version": "0.0.1",
+  "author": "Magnus Kaufmann Gjerde",
+  "settings": {
+    "objects": [
+      {
+        "type": "sphere",
+        "texture": "default",
+        "texture_format": ".png",
+        "shader": "default.vert",
+        "fragment_shader": "default.frag"
+      },
+      {
+        "type": "cube",
+        "texture": "default",
+        "texture_format": ".png",
+        "shader": "default.vert",
+        "fragment_shader": "default.frag"
+      },
+      {
+        "type": "tree",
+        "texture": "default",
+        "texture_format": ".png",
+        "shader": "default.vert",
+        "fragment_shader": "default.frag"
+      }
+    ]
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://opensource.org/licenses/MIT"
+    }
+  ]
+}

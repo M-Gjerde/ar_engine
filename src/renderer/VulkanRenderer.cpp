@@ -3,13 +3,13 @@
 //
 
 
-#define TINYOBJLOADER_IMPLEMENTATION
 
-#include "../../external/tinyobj/tiny_obj_loader.h"
 
 #include <array>
 #include <utility>
+#include <glm/ext/matrix_transform.hpp>
 #include "VulkanRenderer.hpp"
+#include "../pipeline/MeshModel.h"
 
 VulkanRenderer::VulkanRenderer() = default;
 
@@ -25,13 +25,13 @@ int VulkanRenderer::init(GLFWwindow *newWindow) {
 
         textures = new Textures(images);
 
-        loadModel();
-        createSimpleMesh();
+
+        //createSimpleMesh();
         // TODO REWRITE
 
+        createFrameBuffersAndRenderPass();
 
-        createPipeline();
-        createFrameBuffers();
+
 
         createCommandBuffers();
         createSyncObjects();
@@ -48,8 +48,8 @@ void VulkanRenderer::cleanup() {
     vkDeviceWaitIdle(arPipeline.device); // wait for GPU to finish rendering before we clean up resources
 
     textures->cleanUp(arTextureSampler, textureImageBuffer); // TODO This could be vectorized
-    textures->cleanUp(disparityTexture, disparityTextureBuffer);
-    textures->cleanUp(videoTexture, videoTextureBuffer);
+    //textures->cleanUp(disparityTexture, disparityTextureBuffer);
+    //textures->cleanUp(videoTexture, videoTextureBuffer);
     images->cleanUp();
 
     for (auto &mesh : meshes) {
@@ -64,10 +64,13 @@ void VulkanRenderer::cleanup() {
         vkDestroyFence(arPipeline.device, inFlightFences[i], nullptr);
     }
 
+    vkDestroyRenderPass(arEngine.mainDevice.device, renderPass, nullptr);
+
     for (auto framebuffer : swapChainFramebuffers) {
         vkDestroyFramebuffer(arEngine.mainDevice.device, framebuffer, nullptr);
     }
-    pipeline.cleanUp();
+
+    pipeline.cleanUp(arPipeline);
     platform->cleanUp();
 }
 
@@ -138,24 +141,26 @@ void VulkanRenderer::draw() {
 
 
 void VulkanRenderer::createPipeline() {
-    arPipeline.device = arEngine.mainDevice.device;
-    arPipeline.swapchainImageFormat = arEngine.swapchainFormat;
-    arPipeline.swapchainExtent = arEngine.swapchainExtent;
-    arPipeline.depthFormat = images->findDepthFormat();
-    images->createDepthImageView(&arDepthResource.depthImageView);       // Create depth image view
 
-    pipeline.createGraphicsPipeline(&arPipeline, arDescriptor.descriptorSetLayout);
 
 }
 
-void VulkanRenderer::createFrameBuffers() {
+void VulkanRenderer::createFrameBuffersAndRenderPass() {
+    // Use pipeline helper class to create RenderPass
+    pipeline.createRenderPass(arEngine.mainDevice.device, images->findDepthFormat(), arEngine.swapchainFormat,
+                              &renderPass);
+
+    // Create depth image view for use in framebuffer --> Probably wont touch it again so it's fine its here..
+    images->createDepthImageView(&arDepthResource.depthImageView);
+
+    // Create FrameBuffers
     swapChainFramebuffers.resize(arEngine.swapchainImages.size());
     for (size_t i = 0; i < arEngine.swapChainImageViews.size(); i++) {
         std::array<VkImageView, 2> attachments = {arEngine.swapChainImageViews[i], arDepthResource.depthImageView};
 
         VkFramebufferCreateInfo framebufferInfo{};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass = arPipeline.renderPass;
+        framebufferInfo.renderPass = renderPass;
         framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
         framebufferInfo.pAttachments = attachments.data();
         framebufferInfo.width = arEngine.swapchainExtent.width;
@@ -179,11 +184,10 @@ void VulkanRenderer::createCommandBuffers() {
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocInfo.commandBufferCount = (uint32_t) commandBuffers.size();
 
-    if (vkAllocateCommandBuffers(arPipeline.device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
+    if (vkAllocateCommandBuffers(arEngine.mainDevice.device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate command buffers!");
     }
 
-    recordCommand();
 }
 
 void VulkanRenderer::recordCommand() {
@@ -198,7 +202,7 @@ void VulkanRenderer::recordCommand() {
 
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = arPipeline.renderPass;
+        renderPassInfo.renderPass = renderPass;
         renderPassInfo.framebuffer = swapChainFramebuffers[i];
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = arPipeline.swapchainExtent;
@@ -230,18 +234,18 @@ void VulkanRenderer::recordCommand() {
 
         }
 
-        for (int j = 0; j < loadModels.size(); ++j) {
-            VkBuffer vertexBuffers[] = {loadModels[j].vertexBuffer};
+        for (int j = 0; j < models.size(); ++j) {
+            VkBuffer vertexBuffers[] = {models[j].vertexBuffer};
             VkDeviceSize offsets[] = {0};
             vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
 
 
-            vkCmdBindIndexBuffer(commandBuffers[i], loadModels[j].indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+            vkCmdBindIndexBuffer(commandBuffers[i], models[j].indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
             vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, arPipeline.pipelineLayout, 0, 1,
                                     &arDescriptor.descriptorSets[j], 0, nullptr);
 
-            vkCmdDrawIndexed(commandBuffers[i], loadModels[j].indexCount, 1, 0, 0, 0);
+            vkCmdDrawIndexed(commandBuffers[i], models[j].indexCount, 1, 0, 0, 0);
 
         }
 
@@ -267,9 +271,9 @@ void VulkanRenderer::createSyncObjects() {
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        if (vkCreateSemaphore(arPipeline.device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-            vkCreateSemaphore(arPipeline.device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-            vkCreateFence(arPipeline.device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
+        if (vkCreateSemaphore(arEngine.mainDevice.device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
+            vkCreateSemaphore(arEngine.mainDevice.device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
+            vkCreateFence(arEngine.mainDevice.device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
 
             throw std::runtime_error("failed to create synchronization objects for a frame!");
         }
@@ -292,58 +296,6 @@ void VulkanRenderer::updateBuffer(uint32_t imageIndex) {
 
 
 }
-
-void VulkanRenderer::loadModel() {
-
-    tinyobj::attrib_t attrib;
-    std::vector<tinyobj::shape_t> shapes;
-    std::vector<tinyobj::material_t> materials;
-    std::string warn, err;
-    std::string MODEL_PATH = "../objects/viking_room.obj";
-
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str())) {
-        throw std::runtime_error(warn + err);
-    }
-
-    std::vector<ArBuffer> modelBuffers;
-    modelBuffers.resize(2);
-    loadModels.resize(1);
-
-    std::map<Vertex, uint32_t> uniqueVertices{};
-
-
-    for (int i = 0; i < shapes.size(); ++i) {
-        for (int j = 0; j < shapes[i].mesh.indices.size(); ++j) {
-            Vertex vertex{};
-
-            vertex.pos = {attrib.vertices[3 * shapes[i].mesh.indices[j].vertex_index + 0],
-                          attrib.vertices[3 * shapes[i].mesh.indices[j].vertex_index + 1],
-                          attrib.vertices[3 * shapes[i].mesh.indices[j].vertex_index + 2]};
-
-            vertex.texCoord = {attrib.texcoords[2 * shapes[i].mesh.indices[j].texcoord_index + 0],
-                               1.0f - attrib.texcoords[2 * shapes[i].mesh.indices[j].texcoord_index + 1]};
-
-            vertex.color = {1.0f, 1.0f, 1.0f};
-
-            loadModels[0].vertices.push_back(vertex);
-
-            loadModels[0].indices.push_back(loadModels[0].indices.size());
-        }
-    }
-
-        modelBuffers[0].bufferSize = sizeof(loadModels[0].vertices[0]) * loadModels[0].vertices.size();
-        modelBuffers[0].bufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-        modelBuffers[0].bufferProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-        modelBuffers[1].bufferSize = sizeof(loadModels[0].indices[0]) * loadModels[0].indices.size();
-        modelBuffers[1].bufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-        modelBuffers[1].bufferProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-
-        loadModels[0].indexCount = loadModels[0].indices.size();
-        loadModels[0].transferCommandPool = arEngine.commandPool;
-        loadModels[0].transferQueue = arEngine.graphicsQueue;
-        meshes.emplace_back(Mesh(arEngine.mainDevice, &loadModels[0], modelBuffers));
-
-    }
 
 
 
@@ -400,7 +352,7 @@ void VulkanRenderer::createSimpleMesh() {
     textureImageBuffer.bufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
     // Create initial texture for visual pleasantries
-    textures->createTexture("wallpaper.png", &arTextureSampler, &textureImageBuffer);
+    textures->createTexture("viking_room.png", &arTextureSampler, &textureImageBuffer);
     descriptors->createDescriptorsSampler(&arDescriptor, arTextureSampler);
 
     // initialize texture objects for disparity IMAGE
@@ -463,4 +415,83 @@ void VulkanRenderer::updateDisparityVideoTexture() {
     recordCommand();
 
     // printf("Texture and re-record cmd buffers time taken: %.7fs\n", (double) (clock() - Start) / CLOCKS_PER_SEC;);
+}
+
+void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> modelSettings) {
+    models.resize(modelSettings.size()); // Number of objects
+
+
+    for (int i = 0; i < modelSettings.size(); ++i) {
+        ArModel arModel;
+        arModel.transferCommandPool = arEngine.commandPool;
+        arModel.transferQueue = arEngine.graphicsQueue;
+        arModel.modelName = "standard/" + modelSettings[i].at("type") + ".obj";
+        MeshModel meshModel;
+
+        meshes.push_back(meshModel.loadModel(arEngine.mainDevice, &arModel));
+        models[i] = arModel;
+    }
+
+    // Create descriptors for objects
+    createUBODescriptors();
+
+    // Create initial texture
+    arTextureSampler.transferQueue = arEngine.graphicsQueue;
+    arTextureSampler.transferCommandPool = arEngine.commandPool;
+    textureImageBuffer.bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    textureImageBuffer.bufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    textures->createTexture("default.jpg", &arTextureSampler, &textureImageBuffer);
+    // Create Texture descriptors
+    descriptors->createDescriptorsSampler(&arDescriptor, arTextureSampler);
+
+    // Should be called for specific objects during loading
+    // Initialize pipeline struct
+    arPipeline.device = arEngine.mainDevice.device;
+    arPipeline.swapchainImageFormat = arEngine.swapchainFormat;
+    arPipeline.swapchainExtent = arEngine.swapchainExtent;
+    // Create pipeline
+    pipeline.createGraphicsPipeline(renderPass, arDescriptor.descriptorSetLayout, &arPipeline);
+
+
+    // update command buffers
+    recordCommand();
+
+    // Translate models..
+    for (int i = 0; i < models.size(); ++i) {
+        glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(-4.0f + static_cast<float>(i), 0.0f, -8.0f));
+        updateModel(trans, i);
+
+        if (modelSettings[i].at("type") == "tree"){
+            trans = glm::translate(glm::mat4(1.0f), glm::vec3(-4.0f + static_cast<float>(i), 5.0f, -20.0f));
+            trans = glm::rotate(trans, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+            updateModel(trans, i);
+        }
+    }
+
+}
+
+void VulkanRenderer::createUBODescriptors() {
+
+    // Create UBO for each Mesh
+    arDescriptor.descriptorSets.resize(3);
+    uboBuffers.resize(arDescriptor.descriptorSets.size());
+    arDescriptor.buffer.resize(arDescriptor.descriptorSets.size());
+    arDescriptor.bufferMemory.resize(arDescriptor.descriptorSets.size());
+
+    VkDeviceSize vpBufferSize = sizeof(uboModel);
+
+    for (int i = 0; i < arDescriptor.descriptorSets.size(); ++i) {
+        uboBuffers[i].bufferSize = vpBufferSize;
+        uboBuffers[i].bufferUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        uboBuffers[i].bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+        buffer->createBuffer(&uboBuffers[i]);
+
+        arDescriptor.buffer[i] = uboBuffers[i].buffer;
+        arDescriptor.bufferMemory[i] = uboBuffers[i].bufferMemory;
+    }
+    // Create descriptors
+    descriptors->createDescriptors(&arDescriptor);
+
+
 }

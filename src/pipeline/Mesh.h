@@ -13,7 +13,7 @@ class Mesh : Buffer {
 
 public:
 
-    explicit Mesh(MainDevice mainDevice, StandardModel *standardModel, std::vector<ArBuffer> newArBuffer);
+    explicit Mesh(MainDevice mainDevice, ArModel *standardModel, std::vector<ArBuffer> newArBuffer);
 
     const glm::mat4 &getModel() const;
     void setModel(const glm::mat4 &model);
@@ -25,15 +25,13 @@ private:
     ArBuffer vertexBuffer{};
     ArBuffer indexBuffer{};
 
-    StandardModel modelInfo{};
+    ArModel modelInfo{};
 
     uboModel model1;
-
 
     void createVertexBuffer();
     void createIndexBuffer();
 
-    void loadModel();
 };
 
 
