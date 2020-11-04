@@ -22,8 +22,10 @@ public:
 
     void createRenderPass(VkDevice device, VkFormat depthFormat, VkFormat colorFormat, VkRenderPass *pRenderPass);
     void
-    createGraphicsPipeline(VkRenderPass renderPass, VkDescriptorSetLayout descriptorSetLayout, ArPipeline *pipeline);
-    void createRayTracingPipeline(ArPipeline *pipeline);
+    arCubePipeline(VkRenderPass renderPass, VkDescriptorSetLayout descriptorSetLayout, ArPipeline *pipeline);
+    void arLightPipeline(VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> descriptorSetLayouts, const ArShadersPath& shaderPath,
+                         ArPipeline *pipeline);
+
     void cleanUp(ArPipeline arPipeline) const;
 private:
 

@@ -20,6 +20,11 @@ struct uboModel {
     glm::mat4 model;
 };
 
+struct FragmentColor {
+    glm::vec3 objectColor;
+    glm::vec3 lightColor;
+};
+
 const std::vector<Vertex> vertices = {
         {{0.0f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
         {{0.5f, 0.5f, 0.5f,}, {0.0f, 1.0f, 0.0f}},

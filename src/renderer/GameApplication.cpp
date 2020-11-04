@@ -7,6 +7,7 @@
 
 bool rotate = false;
 float angle = 0;
+float rColor = 0;
 glm::mat4 rotateMat;
 
 void AppExtension::update() {
@@ -23,6 +24,11 @@ void AppExtension::update() {
         rotateMat = glm::rotate(trans, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
         rotateMat = glm::rotate(rotateMat, glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
         vulkanRenderer.updateModel(rotateMat, 0);
+
+        if (rColor > 1) rColor -= 1;
+        rColor += 0.00005;
+        vulkanRenderer.updateColor(glm::vec3(rColor, 0.2f, rColor));
+
     }
 
 

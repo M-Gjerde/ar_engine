@@ -5,7 +5,6 @@ layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec2 fragTexCoord;
 
 layout(binding = 1) uniform sampler2D texSampler;
-
 layout(location = 0) out vec4 outColor;
 
 void main() {
@@ -14,7 +13,6 @@ void main() {
     float avg = (color.r + color.g + color.b) / 3.0;
     color.rgb = vec3(avg);
 
-    outColor = vec4(color, 1.0f);;
     outColor = vec4(texture(texSampler, fragTexCoord).rgb, 1);
 
 }

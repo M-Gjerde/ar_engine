@@ -11,6 +11,10 @@
 #include <vector>
 #include "triangle.h"
 #include <string>
+struct ArShadersPath {
+    std::string vertexShader;
+    std::string fragmentShader;
+};
 
 struct ArModel {
     VkQueue transferQueue;
@@ -32,6 +36,9 @@ struct ArDescriptor{
     std::vector<VkDescriptorSet> descriptorSets;
     std::vector<VkBuffer> buffer;
     std::vector<VkDeviceMemory> bufferMemory;
+    //TODO REMOVE
+    VkDescriptorSetLayout descriptorSetLayout2;
+
 };
 
 struct ArTextureImage {

@@ -28,6 +28,7 @@ public:
     int init(GLFWwindow *newWindow);
 
     void updateModel(glm::mat4 newModel, int index);
+    void updateColor(glm::vec3 newColor);
 
     void updateCamera(glm::mat4 newView, glm::mat4 newProjection);
 
@@ -55,7 +56,7 @@ private:
 
     // Pipelines and drawing stuff
     Pipeline pipeline;
-    ArPipeline arPipeline{};
+    std::vector<ArPipeline> arPipelines{};
     Images *images;
     ArDepthResource arDepthResource;
     VkRenderPass renderPass;
@@ -63,16 +64,18 @@ private:
     // Buffer
     Buffer *buffer{};
     std::vector<ArBuffer> uboBuffers;
-    uboModel uboModelVar{};
 
     // Objects
     std::vector<Mesh> meshes;
-    std::vector<ArModel> triangleModels{};
     std::vector<ArModel> models{};
 
-    // - Descriptors
+    // Descriptors
     Descriptors *descriptors{};
-    ArDescriptor arDescriptor;
+    std::vector<ArDescriptor> arDescriptors;
+
+    // - Data structures for descriptors
+    uboModel uboModelVar{};
+    FragmentColor fragmentColor{};
 
     // Textures
     Textures *textures;
@@ -84,6 +87,7 @@ private:
 
     ArTextureImage videoTexture{};
     ArBuffer videoTextureBuffer{};
+
     // - Drawing
     std::vector<VkFramebuffer> swapChainFramebuffers;
     std::vector<VkCommandBuffer> commandBuffers;
@@ -109,7 +113,6 @@ private:
 
     void updateBuffer(uint32_t imageIndex);
 
-    void createUBODescriptors();
 };
 
 

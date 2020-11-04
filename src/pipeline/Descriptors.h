@@ -19,10 +19,12 @@ public:
 
     void cleanUp(ArDescriptor arDescriptor);
 
+    void lightDescriptors(ArDescriptor *pDescriptor);
+
 private:
     VkDevice device;
     ArDescriptor mArDescriptor;
-    ArTextureImage arTextureSampler;
+    ArTextureImage arTextureSampler{};
 
     void createSetLayout();
     void createSetPool();
@@ -31,6 +33,10 @@ private:
     void updateTextureSamplerDescriptor();
 
 
+    void fragmentSetLayout();
+    void fragmentDescriptorSet();
+
+    void createLightPool();
 };
 
 
