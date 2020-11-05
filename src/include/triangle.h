@@ -9,9 +9,8 @@
 
 struct Vertex {
     glm::vec3 pos;
-    glm::vec3 color;
     glm::vec2 texCoord;
-
+    glm::vec3 normal;
 };
 
 struct uboModel {
@@ -23,24 +22,8 @@ struct uboModel {
 struct FragmentColor {
     glm::vec3 objectColor;
     glm::vec3 lightColor;
+    glm::vec3 lightPos;
 };
 
-const std::vector<Vertex> vertices = {
-        {{0.0f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-        {{0.5f, 0.5f, 0.5f,}, {0.0f, 1.0f, 0.0f}},
-        {{-0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
-};
-
-const std::vector<Vertex> meshVertices = {
-        {{-0.5f, -0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-        {{0.5f, -0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-        {{0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-        {{-0.5f, 0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
-};
-
-const std::vector<uint32_t> meshIndices = {
-        0, 1, 2,
-        2, 3, 0,
-};
 
 #endif //AR_ENGINE_TRIANGLE_H

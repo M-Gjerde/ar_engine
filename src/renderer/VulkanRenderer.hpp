@@ -28,7 +28,7 @@ public:
     int init(GLFWwindow *newWindow);
 
     void updateModel(glm::mat4 newModel, int index);
-    void updateColor(glm::vec3 newColor);
+    void updateLightPos(glm::vec3 newColor);
 
     void updateCamera(glm::mat4 newView, glm::mat4 newProjection);
 
@@ -79,8 +79,8 @@ private:
 
     // Textures
     Textures *textures;
-    ArTextureImage arTextureSampler{};
-    ArBuffer textureImageBuffer{};
+    std::vector<ArTextureImage> arTextureSampler{};
+    std::vector<ArBuffer> textureImageBuffer{};
 
     ArTextureImage disparityTexture{};
     ArBuffer disparityTextureBuffer{};

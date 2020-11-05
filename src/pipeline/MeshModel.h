@@ -14,12 +14,12 @@ class MeshModel {
 
 public:
 
-    Mesh loadModel(MainDevice mainDevice, ArModel *arModel);
+    Mesh loadModel(MainDevice mainDevice, ArModel *arModel, bool generateNormals);
 
 private:
 
 
-
+    void calculateNormals();
 };
 
 

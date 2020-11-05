@@ -45,7 +45,10 @@ int VulkanRenderer::init(GLFWwindow *newWindow) {
 void VulkanRenderer::cleanup() {
     vkDeviceWaitIdle(arEngine.mainDevice.device); // wait for GPU to finish rendering before we clean up resources
 
-    textures->cleanUp(arTextureSampler, textureImageBuffer); // TODO This could be vectorized
+    for (int i = 0; i < arTextureSampler.size(); ++i) {
+        textures->cleanUp(arTextureSampler[i], textureImageBuffer[i]); // TODO This could be vectorized
+    }
+
     //textures->cleanUp(disparityTexture, disparityTextureBuffer);
     //textures->cleanUp(videoTexture, videoTextureBuffer);
     images->cleanUp();
@@ -54,7 +57,12 @@ void VulkanRenderer::cleanup() {
         mesh.cleanUp();
     }
 
-    descriptors->cleanUp(arDescriptors[0]);
+    // Clean descriptor sets
+    for (auto & arDescriptor : arDescriptors) {
+        descriptors->cleanUp(arDescriptor);
+    }
+    // TODO REWRITE
+    vkDestroyDescriptorSetLayout(arEngine.mainDevice.device, arDescriptors[1].descriptorSetLayout2, nullptr);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroySemaphore(arEngine.mainDevice.device, renderFinishedSemaphores[i], nullptr);
@@ -68,7 +76,10 @@ void VulkanRenderer::cleanup() {
         vkDestroyFramebuffer(arEngine.mainDevice.device, framebuffer, nullptr);
     }
 
-    pipeline.cleanUp(arPipelines[0]);
+    for (int i = 0; i < arPipelines.size(); ++i) {
+        pipeline.cleanUp(arPipelines[i]);
+
+    }
     platform->cleanUp();
 }
 
@@ -239,41 +250,9 @@ void VulkanRenderer::recordCommand() {
 
 
             vkCmdDrawIndexed(commandBuffers[i], models[j].indexCount, 1, 0, 0, 0);
-            int kka = 2;
 
         }
 
-        /*
-        for (int j = 0; j < triangleModels.size(); ++j) {
-            VkBuffer vertexBuffers[] = {triangleModels[j].vertexBuffer};
-            VkDeviceSize offsets[] = {0};
-            vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
-
-
-            vkCmdBindIndexBuffer(commandBuffers[i], triangleModels[j].indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-
-            vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, arPipelines[0].pipelineLayout,
-                                    0, 1, &arDescriptors[0].descriptorSets[j], 0, nullptr);
-
-            vkCmdDrawIndexed(commandBuffers[i], triangleModels[j].indexCount, 1, 0, 0, 0);
-
-        }
-
-        for (int j = 0; j < models.size(); ++j) {
-            VkBuffer vertexBuffers[] = {models[j].vertexBuffer};
-            VkDeviceSize offsets[] = {0};
-            vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
-
-
-            vkCmdBindIndexBuffer(commandBuffers[i], models[j].indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-
-            vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, arPipelines[0].pipelineLayout,
-                                    0, 1, &arDescriptors[0].descriptorSets[j], 0, nullptr);
-
-            vkCmdDrawIndexed(commandBuffers[i], models[j].indexCount, 1, 0, 0, 0);
-
-        }
-*/
         vkCmdEndRenderPass(commandBuffers[i]);
 
         if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
@@ -340,88 +319,6 @@ void VulkanRenderer::updateBuffer(uint32_t imageIndex) {
 }
 
 
-/*
-void VulkanRenderer::createSimpleMesh() {
-
-    // Create memory and buffers for vertices
-    std::vector<ArBuffer> modelBuffers;
-    modelBuffers.resize(2);
-    modelBuffers[0].bufferSize = sizeof(meshVertices[0]) * meshVertices.size();
-    modelBuffers[0].bufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    modelBuffers[0].bufferProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    modelBuffers[1].bufferSize = sizeof(meshIndices[0]) * meshIndices.size();
-    modelBuffers[1].bufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-    modelBuffers[1].bufferProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-
-    triangleModels.resize(0);
-
-    for (int i = 0; i < triangleModels.size(); ++i) {
-        triangleModels[i].indices = meshIndices;
-        triangleModels[i].vertices = meshVertices;
-        triangleModels[i].transferCommandPool = arEngine.commandPool;
-        triangleModels[i].transferQueue = arEngine.graphicsQueue;
-        meshes.emplace_back(Mesh(arEngine.mainDevice, &triangleModels[i], modelBuffers));
-
-    }
-
-    // Create UBO
-    arDescriptor.descriptorSets.resize(meshes.size());
-    uboBuffers.resize(arDescriptor.descriptorSets.size());
-    arDescriptor.buffer.resize(arDescriptor.descriptorSets.size());
-    arDescriptor.bufferMemory.resize(arDescriptor.descriptorSets.size());
-
-    VkDeviceSize vpBufferSize = sizeof(uboModel);
-
-    for (int i = 0; i < arDescriptor.descriptorSets.size(); ++i) {
-        uboBuffers[i].bufferSize = vpBufferSize;
-        uboBuffers[i].bufferUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        uboBuffers[i].bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-
-        buffer->createBuffer(&uboBuffers[i]);
-
-        arDescriptor.buffer[i] = uboBuffers[i].buffer;
-        arDescriptor.bufferMemory[i] = uboBuffers[i].bufferMemory;
-    }
-    // Create descriptors
-    descriptors->createDescriptors(&arDescriptor);
-
-    // Create Texture descriptors
-    arTextureSampler.transferQueue = arEngine.graphicsQueue;
-    arTextureSampler.transferCommandPool = arEngine.commandPool;
-
-    textureImageBuffer.bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    textureImageBuffer.bufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-
-    // Create initial texture for visual pleasantries
-    textures->createTexture("viking_room.png", &arTextureSampler, &textureImageBuffer);
-    descriptors->createDescriptorsSampler(&arDescriptor, arTextureSampler);
-
-    // initialize texture objects for disparity IMAGE
-    disparityTexture.transferQueue = arEngine.graphicsQueue;
-    disparityTexture.transferCommandPool = arEngine.commandPool;
-    disparityTexture.width = 640;
-    disparityTexture.height = 550;
-    disparityTexture.channels = 1;
-    disparityTextureBuffer.bufferProperties =
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    disparityTextureBuffer.bufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-
-    textures->createTextureImage(&disparityTexture, &disparityTextureBuffer);
-
-    // Initialize texture objects for disparity VIDEO
-
-    videoTexture.transferQueue = arEngine.graphicsQueue;
-    videoTexture.transferCommandPool = arEngine.commandPool;
-    videoTexture.width = 1242;
-    videoTexture.height = 375;
-    videoTexture.channels = 1;
-
-    videoTextureBuffer.bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    videoTextureBuffer.bufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    textures->createTextureImage(&videoTexture, &videoTextureBuffer);
-
-}
-*/
 
 void VulkanRenderer::updateCamera(glm::mat4 newView, glm::mat4 newProjection) {
 
@@ -435,9 +332,9 @@ void VulkanRenderer::updateModel(glm::mat4 newModel, int index) {
 
 }
 
-void VulkanRenderer::updateColor(glm::vec3 newColor) {
+void VulkanRenderer::updateLightPos(glm::vec3 newColor) {
 
-    fragmentColor.objectColor = newColor;
+    fragmentColor.lightPos = newColor;
 
 }
 
@@ -477,7 +374,7 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
         arModel.modelName = "standard/" + modelSettings[i].at("type") + ".obj";
         MeshModel meshModel;
 
-        meshes.push_back(meshModel.loadModel(arEngine.mainDevice, &arModel));
+        meshes.push_back(meshModel.loadModel(arEngine.mainDevice, &arModel, true));
         models[i] = arModel;
 
 
@@ -495,7 +392,7 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
 
         VkDeviceSize vpBufferSize = sizeof(uboModel);
 
-
+        // Create buffers
         for (int j = 0; j < arDescriptors[i].descriptorSets.size(); ++j) {
             if (j == 1)
                 vpBufferSize = sizeof(FragmentColor);
@@ -508,20 +405,23 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
             arDescriptors[i].buffer[j] = uboBuffers[j].buffer;
             arDescriptors[i].bufferMemory[j] = uboBuffers[j].bufferMemory;
         }
+
         // Create descriptors
-        if (i == 1) {
+        if (i == 1) { // light descriptor
             descriptors->lightDescriptors(&arDescriptors[i]);
-        } else {
+        } else { // Default descriptor
             descriptors->createDescriptors(&arDescriptors[i]);
             // Create initial texture
-            arTextureSampler.transferQueue = arEngine.graphicsQueue;
-            arTextureSampler.transferCommandPool = arEngine.commandPool;
-            textureImageBuffer.bufferProperties =
+            arTextureSampler.resize(3);
+            textureImageBuffer.resize(3);
+            arTextureSampler[i].transferQueue = arEngine.graphicsQueue;
+            arTextureSampler[i].transferCommandPool = arEngine.commandPool;
+            textureImageBuffer[i].bufferProperties =
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-            textureImageBuffer.bufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-            textures->createTexture("default.jpg", &arTextureSampler, &textureImageBuffer);
-            // Create Texture descriptors
-            descriptors->createDescriptorsSampler(&arDescriptors[i], arTextureSampler);
+            textureImageBuffer[i].bufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+            textures->createTexture("default.jpg", &arTextureSampler[i], &textureImageBuffer[i]);
+            // Create Texture sampler and add to descriptor set
+            descriptors->createDescriptorsSampler(&arDescriptors[i], arTextureSampler[i]);
         }
         // Should be called for specific objects during loading
         // Initialize pipeline structs
@@ -538,6 +438,7 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
             pipeline.arLightPipeline(renderPass, layouts, shadersPath, &arPipelines[i]);
             fragmentColor.lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
             fragmentColor.objectColor = glm::vec3(1.0f, 0.5f, 0.31f);
+            fragmentColor.lightPos = glm::vec3(1.2f, 1.0f, 2.0f);
 
         } else
             pipeline.arCubePipeline(renderPass, arDescriptors[i].descriptorSetLayout, &arPipelines[i]);

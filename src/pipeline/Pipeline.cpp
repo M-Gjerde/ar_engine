@@ -50,17 +50,17 @@ Pipeline::arLightPipeline(VkRenderPass renderPass, std::vector<VkDescriptorSetLa
     attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;          // Vec 2 size
     attributeDescriptions[0].offset = offsetof(Vertex, pos);
 
-    // Color Attribute
-    attributeDescriptions[1].binding = 0;                               // Binding is a value in the shader next to location
-    attributeDescriptions[1].location = 1;                              // Location that we want to bind our attributes to. Location is set in the shader aswell
-    attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;       // Vec 3 size
-    attributeDescriptions[1].offset = offsetof(Vertex, color);
-
     // Texture attributes
+    attributeDescriptions[1].binding = 0;
+    attributeDescriptions[1].location = 1;
+    attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
+    attributeDescriptions[1].offset = offsetof(Vertex, texCoord);
+
+    // Normal attribute
     attributeDescriptions[2].binding = 0;
     attributeDescriptions[2].location = 2;
     attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-    attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
+    attributeDescriptions[2].offset = offsetof(Vertex, normal);
 
     // Vertex input into pipeline
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
@@ -219,17 +219,18 @@ void Pipeline::arCubePipeline(VkRenderPass renderPass, VkDescriptorSetLayout des
     attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;          // Vec 2 size
     attributeDescriptions[0].offset = offsetof(Vertex, pos);
 
-    // Color Attribute
-    attributeDescriptions[1].binding = 0;                               // Binding is a value in the shader next to location
-    attributeDescriptions[1].location = 1;                              // Location that we want to bind our attributes to. Location is set in the shader aswell
-    attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;       // Vec 3 size
-    attributeDescriptions[1].offset = offsetof(Vertex, color);
 
     // Texture attributes
+    attributeDescriptions[1].binding = 0;
+    attributeDescriptions[1].location = 1;
+    attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
+    attributeDescriptions[1].offset = offsetof(Vertex, texCoord);
+
+    // Normal attribute
     attributeDescriptions[2].binding = 0;
     attributeDescriptions[2].location = 2;
     attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-    attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
+    attributeDescriptions[2].offset = offsetof(Vertex, normal);
 
     // Vertex input into pipeline
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
