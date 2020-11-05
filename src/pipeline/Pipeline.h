@@ -12,7 +12,6 @@
 #include <vector>
 #include "../include/load_file.h"
 #include "../include/structs.h"
-#include "../include/triangle.h"
 
 class Pipeline {
 

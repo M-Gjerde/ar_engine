@@ -5,7 +5,6 @@
 
 #include <array>
 #include "Descriptors.h"
-#include "../include/triangle.h"
 
 Descriptors::Descriptors(const ArEngine &engine) {
     device = engine.mainDevice.device;
@@ -164,7 +163,7 @@ void Descriptors::fragmentDescriptorSet() {
     VkDescriptorBufferInfo colorBufferInfo = {};
     colorBufferInfo.buffer = mArDescriptor.buffer[1];              // Buffer to get data from
     colorBufferInfo.offset = 0;                                    // Offset into the data
-    colorBufferInfo.range = sizeof(FragmentColor);                      // Size of the data that is going to be bound to the descriptor set
+    colorBufferInfo.range = sizeof(FragmentColor);                 // Size of the data that is going to be bound to the descriptor set
 
 
     // Data about connection between binding and buffer

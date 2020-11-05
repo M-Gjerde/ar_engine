@@ -146,7 +146,7 @@ Pipeline::arLightPipeline(VkRenderPass renderPass, std::vector<VkDescriptorSetLa
     // CREATE PIPELINE LAYOUT
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 2;        // Number of descriptor set layouts
+    pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size());
     pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
 
 

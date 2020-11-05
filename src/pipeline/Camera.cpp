@@ -57,7 +57,7 @@ void Camera::backward() {
 }
 
 void Camera::rotateLeft() {
-    yaw += 1;
+    yaw += 2;
     glm::vec3 direction;
     direction.x = cos(glm::radians(yaw));
     direction.z = sin(glm::radians(yaw));
@@ -67,7 +67,7 @@ void Camera::rotateLeft() {
 }
 
 void Camera::rotateRight() {
-    yaw -= 1;
+    yaw -= 2;
     glm::vec3 direction;
     direction.x = cos(glm::radians(yaw));
     direction.z = sin(glm::radians(yaw));

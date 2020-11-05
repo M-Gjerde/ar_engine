@@ -6,26 +6,24 @@ layout(location = 1) in vec2 fragTexCoord;
 layout(location = 2) in vec3 fragPos;
 
 layout(binding = 1, set = 1) uniform Colors {
-    vec3 objectColor;
-    vec3 lightColor;
-    vec3 lightPos;
+    vec4 objectColor;
+    vec4 lightColor;
+    vec4 lightPos;
 } colors;
 
 layout(location = 0) out vec4 FragColor;
 
 void main()
 {
-    // ambient
     float ambientStrength = 0.1;
-    vec3 ambient = ambientStrength * colors.lightColor;
-
+    vec3 ambient = ambientStrength * colors.lightColor.xyz;
     // diffuse
     vec3 norm = normalize(Normal);
-    vec3 lightDir = normalize(colors.lightPos - fragPos);
+    vec3 lightDir = normalize(colors.lightPos.xyz - fragPos);
     float diff = max(dot(norm, lightDir), 0.0);
-    vec3 diffuse = diff * colors.lightColor;
+    vec3 diffuse = diff * colors.lightColor.xyz;
 
-    vec3 result = (ambient + diffuse) * colors.objectColor;
+    vec3 result = (ambient + diffuse) * colors.objectColor.xyz;
     FragColor = vec4(result, 1.0);
 
 }

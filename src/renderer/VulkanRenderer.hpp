@@ -28,7 +28,7 @@ public:
     int init(GLFWwindow *newWindow);
 
     void updateModel(glm::mat4 newModel, int index);
-    void updateLightPos(glm::vec3 newColor);
+    void updateLightPos(glm::vec4 newColor, int index);
 
     void updateCamera(glm::mat4 newView, glm::mat4 newProjection);
 

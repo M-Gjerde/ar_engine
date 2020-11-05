@@ -20,7 +20,7 @@
         "fragment_shader": "default.frag"
       },
       {
-        "type": "tree",
+        "type": "cube",
         "texture": "default",
         "texture_format": ".png",
         "shader": "default.vert",

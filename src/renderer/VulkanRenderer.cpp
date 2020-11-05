@@ -321,20 +321,24 @@ void VulkanRenderer::updateBuffer(uint32_t imageIndex) {
 
 
 void VulkanRenderer::updateCamera(glm::mat4 newView, glm::mat4 newProjection) {
-
     uboModelVar.view = newView;
     uboModelVar.projection = newProjection;
 }
 
 void VulkanRenderer::updateModel(glm::mat4 newModel, int index) {
-
     meshes[index].setModel(newModel);
-
 }
 
-void VulkanRenderer::updateLightPos(glm::vec3 newColor) {
+void VulkanRenderer::updateLightPos(glm::vec4 newColor, int index) {
+    glm::vec3 translate;
+    translate.x = newColor.x;
+    translate.y = newColor.y;
+    translate.z = newColor.z;
 
+    meshes[index].setModel(glm::translate(glm::mat4(1.0f), translate));
     fragmentColor.lightPos = newColor;
+    fragmentColor.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
+    fragmentColor.objectColor = glm::vec4(1.0f, 1.0f, 0.31f, 0.0f);
 
 }
 
@@ -436,11 +440,17 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
             shadersPath.vertexShader = "../shaders/vert";
             std::vector<VkDescriptorSetLayout> layouts = {arDescriptors[i].descriptorSetLayout, arDescriptors[i].descriptorSetLayout2};
             pipeline.arLightPipeline(renderPass, layouts, shadersPath, &arPipelines[i]);
-            fragmentColor.lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
-            fragmentColor.objectColor = glm::vec3(1.0f, 0.5f, 0.31f);
-            fragmentColor.lightPos = glm::vec3(1.2f, 1.0f, 2.0f);
+            fragmentColor.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
+            fragmentColor.objectColor = glm::vec4(1.0f, 1.0f, 0.31f, 0.0f);
 
-        } else
+        } else if(i == 2){
+            ArShadersPath shadersPath;
+            shadersPath.fragmentShader = "../shaders/fraglightcubeshader";
+            shadersPath.vertexShader = "../shaders/lightcubeshader";
+            std::vector<VkDescriptorSetLayout> layouts = {arDescriptors[i].descriptorSetLayout};
+            pipeline.arLightPipeline(renderPass, layouts, shadersPath, &arPipelines[i]);
+        }
+        else
             pipeline.arCubePipeline(renderPass, arDescriptors[i].descriptorSetLayout, &arPipelines[i]);
 
     }
@@ -449,14 +459,18 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
 
     // Translate models..
     for (int i = 0; i < models.size(); ++i) {
-        glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(-4.0f + static_cast<float>(i), 0.0f, -8.0f));
+        glm::mat4 trans(1.0f);
         updateModel(trans, i);
 
-        if (modelSettings[i].at("type") == "tree") {
-            trans = glm::translate(glm::mat4(1.0f), glm::vec3(-4.0f + static_cast<float>(i), 5.0f, -20.0f));
-            trans = glm::rotate(trans, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        if (i == 2)
+        {
+            glm::vec4 lightPos = glm::vec4(5.0f, -2.0f, 3.0f, 0.0f);
+            trans = glm::translate(trans, glm::vec3(5.0f, -2.0f, 3.0f));
             updateModel(trans, i);
+            updateLightPos(lightPos, 2);
+
         }
+
     }
 
 }
