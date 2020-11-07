@@ -360,7 +360,7 @@ void VulkanRenderer::updateDisparityVideoTexture() {
     //clock_t Start = clock();
     textures->setDisparityVideoTexture(disparity, &videoTexture, &videoTextureBuffer);
 
-    descriptors->createDescriptorsSampler(&arDescriptors[0], videoTexture);
+    descriptors->createDescriptorsSampler(&arDescriptors[3], videoTexture);
     recordCommand();
 
     // printf("Texture and re-record cmd buffers time taken: %.7fs\n", (double) (clock() - Start) / CLOCKS_PER_SEC;);
@@ -385,7 +385,7 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
         // Create UBO for each Mesh
         arDescriptors[i].descriptorSets.resize(2);
         //TODO Create descriptor sets according to how many sets the object/shader needs
-        if (i == 2) arDescriptors[i].descriptorSets.resize(1);
+        if (i > 1) arDescriptors[i].descriptorSets.resize(1);
         uboBuffers.resize(arDescriptors[i].descriptorSets.size());
         arDescriptors[i].buffer.resize(arDescriptors[i].descriptorSets.size());
         arDescriptors[i].bufferMemory.resize(arDescriptors[i].descriptorSets.size());
@@ -416,9 +416,19 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
             textureImageBuffer.resize(3);
             arTextureSampler[i].transferQueue = arEngine.graphicsQueue;
             arTextureSampler[i].transferCommandPool = arEngine.commandPool;
-            textureImageBuffer[i].bufferProperties =
-                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+            textureImageBuffer[i].bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
             textureImageBuffer[i].bufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+            videoTexture.transferQueue = arEngine.graphicsQueue;
+            videoTexture.transferCommandPool = arEngine.commandPool;
+            videoTextureBuffer.bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+            videoTextureBuffer.bufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+            videoTexture.width = 1242;
+            videoTexture.height = 375;
+            videoTexture.channels = 1;
+            // Create texture image
+            textures->createTextureImage(&videoTexture, &videoTextureBuffer);
+
             textures->createTexture("default.jpg", &arTextureSampler[i], &textureImageBuffer[i]);
             // Create Texture sampler and add to descriptor set
             descriptors->createDescriptorsSampler(&arDescriptors[i], arTextureSampler[i]);
@@ -430,7 +440,7 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
         arPipelines[i].swapchainImageFormat = arEngine.swapchainFormat;
         arPipelines[i].swapchainExtent = arEngine.swapchainExtent;
         // Create pipeline
-        if (i == 1) {
+        if (i == 1 || i == 0) {
             ArShadersPath shadersPath;
             shadersPath.fragmentShader = "../shaders/lightshader";
             shadersPath.vertexShader = "../shaders/vert";
@@ -448,13 +458,10 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
             pipeline.arLightPipeline(renderPass, layouts, shadersPath, &arPipelines[i]);
         } else {
             ArShadersPath shadersPath;
-            shadersPath.fragmentShader = "../shaders/lightshader";
+            shadersPath.fragmentShader = "../shaders/frag";
             shadersPath.vertexShader = "../shaders/vert";
-            std::vector<VkDescriptorSetLayout> layouts = {arDescriptors[i].descriptorSetLayout,
-                                                          arDescriptors[i].descriptorSetLayout2};
+            std::vector<VkDescriptorSetLayout> layouts = {arDescriptors[i].descriptorSetLayout};
             pipeline.arLightPipeline(renderPass, layouts, shadersPath, &arPipelines[i]);
-            fragmentColor.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
-            fragmentColor.objectColor = glm::vec4(0.5f, 0.5f, 0.31f, 0.0f);
 
         }
     }
@@ -464,10 +471,18 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
     // Translate models..
     for (int i = 0; i < models.size(); ++i) {
         glm::mat4 trans(1.0f);
-        updateModel(trans, i);
+        updateModel(glm::translate(trans, glm::vec3(i * 2, 0.0f, 0.0f)), i);
 
         if (i == 0){
             updateModel(glm::translate(trans, glm::vec3(0.0f, 0.0f, -5)), i);
+
+        }
+
+        if (i == 3){
+            glm::mat4 model(1.0f);
+            model = glm::translate(model, glm::vec3(i * 2, 0.0f, -4.0f));
+            model = glm::scale(model, glm::vec3(10.0f, 3.0f, 1.0f));
+            updateModel(model, i);
 
         }
 

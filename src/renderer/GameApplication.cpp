@@ -10,7 +10,7 @@ float angle = 0;
 float rColor = 0;
 glm::mat4 rotateMat;
 
-glm::vec3 lightPos = glm::vec3(5.0f, -2.0f, 3.0f);
+glm::vec3 lightPos = glm::vec3(5.0f, 0.0f, 3.0f);
 glm::mat4 lightTrans(1.0f);
 
 void AppExtension::update() {

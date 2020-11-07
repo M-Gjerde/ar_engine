@@ -25,6 +25,13 @@
         "texture_format": ".png",
         "shader": "default.vert",
         "fragment_shader": "default.frag"
+      },
+      {
+        "type": "cube",
+        "texture": "default",
+        "texture_format": ".png",
+        "shader": "default.vert",
+        "fragment_shader": "default.frag"
       }
     ]
   },

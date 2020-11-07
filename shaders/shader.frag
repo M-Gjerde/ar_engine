@@ -15,5 +15,5 @@ void main() {
     float avg = (color.r + color.g + color.b) / 3.0;
     color.rgb = vec3(avg);
 
-    outColor = vec4(texture(texSampler, fragTexCoord).rgb, 1);
+    outColor = vec4(color, 1);
 }
