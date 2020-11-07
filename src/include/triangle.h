@@ -23,6 +23,7 @@ struct FragmentColor {
     glm::vec4 objectColor;
     glm::vec4 lightColor;
     glm::vec4 lightPos;
+    glm::vec4 viewPos;
 };
 
 const std::vector<Vertex> meshVertices{{{-0.5f, -0.5f, -0.5f},  {0.0f, 0.0f}, {0.0f,  0.0f,  -1.0f}},

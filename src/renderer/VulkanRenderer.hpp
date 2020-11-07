@@ -28,7 +28,8 @@ public:
     int init(GLFWwindow *newWindow);
 
     void updateModel(glm::mat4 newModel, int index);
-    void updateLightPos(glm::vec4 newColor, int index);
+    void updateLightPos(glm::vec3 newPos, glm::mat4 transMat, int index);
+    void updateSpecularLightCamera(glm::vec3 newPos);
 
     void updateCamera(glm::mat4 newView, glm::mat4 newProjection);
 
@@ -100,18 +101,14 @@ private:
     size_t currentFrame = 0;
 
     void createPipeline();
-
     void createFrameBuffersAndRenderPass();
-
     void createCommandBuffers();
-
     void recordCommand();
-
     void createSyncObjects();
-
     void createSimpleMesh();
-
     void updateBuffer(uint32_t imageIndex);
+
+
 
 };
 

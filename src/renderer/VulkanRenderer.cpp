@@ -58,7 +58,7 @@ void VulkanRenderer::cleanup() {
     }
 
     // Clean descriptor sets
-    for (auto & arDescriptor : arDescriptors) {
+    for (auto &arDescriptor : arDescriptors) {
         descriptors->cleanUp(arDescriptor);
     }
     // TODO REWRITE
@@ -235,7 +235,8 @@ void VulkanRenderer::recordCommand() {
 
             vkCmdBindIndexBuffer(commandBuffers[i], models[j].indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-            if (j == 1) {
+            // TODO rework
+            if (j == 1 || j == 0) {
                 /*vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
                                         arPipelines[j].pipelineLayout, 0, 1, &arDescriptors[j].descriptorSets[1], 0,
                                         nullptr);*/
@@ -293,18 +294,18 @@ void VulkanRenderer::updateBuffer(uint32_t imageIndex) {
 
         uboModelVar.model = meshes[i].getModel();
         // Copy VP data TODO REMOVE
-        if (i == 1) {
+        if (i == 1 || i == 0) {
             // Copy color data
             void *data;
-            vkMapMemory(arEngine.mainDevice.device, arDescriptors[1].bufferMemory[0], 0, sizeof(uboModel), 0, &data);
+            vkMapMemory(arEngine.mainDevice.device, arDescriptors[i].bufferMemory[0], 0, sizeof(uboModel), 0, &data);
             memcpy(data, &uboModelVar, sizeof(uboModel));
-            vkUnmapMemory(arEngine.mainDevice.device, arDescriptors[1].bufferMemory[0]);
+            vkUnmapMemory(arEngine.mainDevice.device, arDescriptors[i].bufferMemory[0]);
 
             void *data2;
-            vkMapMemory(arEngine.mainDevice.device, arDescriptors[1].bufferMemory[1], 0, sizeof(FragmentColor), 0,
+            vkMapMemory(arEngine.mainDevice.device, arDescriptors[i].bufferMemory[1], 0, sizeof(FragmentColor), 0,
                         &data2);
             memcpy(data2, &fragmentColor, sizeof(FragmentColor));
-            vkUnmapMemory(arEngine.mainDevice.device, arDescriptors[1].bufferMemory[1]);
+            vkUnmapMemory(arEngine.mainDevice.device, arDescriptors[i].bufferMemory[1]);
 
         } else {
             void *data;
@@ -319,7 +320,6 @@ void VulkanRenderer::updateBuffer(uint32_t imageIndex) {
 }
 
 
-
 void VulkanRenderer::updateCamera(glm::mat4 newView, glm::mat4 newProjection) {
     uboModelVar.view = newView;
     uboModelVar.projection = newProjection;
@@ -329,17 +329,18 @@ void VulkanRenderer::updateModel(glm::mat4 newModel, int index) {
     meshes[index].setModel(newModel);
 }
 
-void VulkanRenderer::updateLightPos(glm::vec4 newColor, int index) {
-    glm::vec3 translate;
-    translate.x = newColor.x;
-    translate.y = newColor.y;
-    translate.z = newColor.z;
+void VulkanRenderer::updateLightPos(glm::vec3 newPos, glm::mat4 transMat, int index) {
 
-    meshes[index].setModel(glm::translate(glm::mat4(1.0f), translate));
-    fragmentColor.lightPos = newColor;
+
+    meshes[index].setModel(glm::translate(transMat, newPos));
+    fragmentColor.lightPos = glm::vec4(newPos, 1.0f);
     fragmentColor.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
-    fragmentColor.objectColor = glm::vec4(1.0f, 1.0f, 0.31f, 0.0f);
+    fragmentColor.objectColor = glm::vec4(0.5f, 0.5f, 0.31f, 0.0f);
 
+}
+
+void VulkanRenderer::updateSpecularLightCamera(glm::vec3 newPos) {
+    fragmentColor.viewPos = glm::vec4(newPos, 1.0f);
 }
 
 void VulkanRenderer::updateTextureImage(std::string fileName) {
@@ -381,15 +382,10 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
         meshes.push_back(meshModel.loadModel(arEngine.mainDevice, &arModel, true));
         models[i] = arModel;
 
-
-
         // Create UBO for each Mesh
-        arDescriptors[i].descriptorSets.resize(1);
-        //TODO Color cube descriptors needs 2 sets
-        arDescriptors[1].descriptorSets.resize(2);
-        arDescriptors[1].buffer.resize(2);
-        arDescriptors[1].bufferMemory.resize(2);
-
+        arDescriptors[i].descriptorSets.resize(2);
+        //TODO Create descriptor sets according to how many sets the object/shader needs
+        if (i == 2) arDescriptors[i].descriptorSets.resize(1);
         uboBuffers.resize(arDescriptors[i].descriptorSets.size());
         arDescriptors[i].buffer.resize(arDescriptors[i].descriptorSets.size());
         arDescriptors[i].bufferMemory.resize(arDescriptors[i].descriptorSets.size());
@@ -411,7 +407,7 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
         }
 
         // Create descriptors
-        if (i == 1) { // light descriptor
+        if (i == 1 || i == 0) { // light descriptor
             descriptors->lightDescriptors(&arDescriptors[i]);
         } else { // Default descriptor
             descriptors->createDescriptors(&arDescriptors[i]);
@@ -438,21 +434,29 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
             ArShadersPath shadersPath;
             shadersPath.fragmentShader = "../shaders/lightshader";
             shadersPath.vertexShader = "../shaders/vert";
-            std::vector<VkDescriptorSetLayout> layouts = {arDescriptors[i].descriptorSetLayout, arDescriptors[i].descriptorSetLayout2};
+            std::vector<VkDescriptorSetLayout> layouts = {arDescriptors[i].descriptorSetLayout,
+                                                          arDescriptors[i].descriptorSetLayout2};
             pipeline.arLightPipeline(renderPass, layouts, shadersPath, &arPipelines[i]);
             fragmentColor.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
-            fragmentColor.objectColor = glm::vec4(1.0f, 1.0f, 0.31f, 0.0f);
+            fragmentColor.objectColor = glm::vec4(0.5f, 0.5f, 0.31f, 0.0f);
 
-        } else if(i == 2){
+        } else if (i == 2) {
             ArShadersPath shadersPath;
             shadersPath.fragmentShader = "../shaders/fraglightcubeshader";
             shadersPath.vertexShader = "../shaders/lightcubeshader";
             std::vector<VkDescriptorSetLayout> layouts = {arDescriptors[i].descriptorSetLayout};
             pipeline.arLightPipeline(renderPass, layouts, shadersPath, &arPipelines[i]);
-        }
-        else
-            pipeline.arCubePipeline(renderPass, arDescriptors[i].descriptorSetLayout, &arPipelines[i]);
+        } else {
+            ArShadersPath shadersPath;
+            shadersPath.fragmentShader = "../shaders/lightshader";
+            shadersPath.vertexShader = "../shaders/vert";
+            std::vector<VkDescriptorSetLayout> layouts = {arDescriptors[i].descriptorSetLayout,
+                                                          arDescriptors[i].descriptorSetLayout2};
+            pipeline.arLightPipeline(renderPass, layouts, shadersPath, &arPipelines[i]);
+            fragmentColor.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
+            fragmentColor.objectColor = glm::vec4(0.5f, 0.5f, 0.31f, 0.0f);
 
+        }
     }
     // update command buffers
     recordCommand();
@@ -462,16 +466,15 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
         glm::mat4 trans(1.0f);
         updateModel(trans, i);
 
-        if (i == 2)
-        {
-            glm::vec4 lightPos = glm::vec4(5.0f, -2.0f, 3.0f, 0.0f);
-            trans = glm::translate(trans, glm::vec3(5.0f, -2.0f, 3.0f));
-            updateModel(trans, i);
-            updateLightPos(lightPos, 2);
+        if (i == 0){
+            updateModel(glm::translate(trans, glm::vec3(0.0f, 0.0f, -5)), i);
 
         }
 
-    }
+        if (i == 2) {
+            updateLightPos(glm::vec3(5.0f, -2.0f, 3.0f), trans, 2);
 
+        }
+    }
 }
 

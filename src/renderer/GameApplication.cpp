@@ -9,7 +9,9 @@ bool rotate = false;
 float angle = 0;
 float rColor = 0;
 glm::mat4 rotateMat;
-glm::vec3 lightPos;
+
+glm::vec3 lightPos = glm::vec3(5.0f, -2.0f, 3.0f);
+glm::mat4 lightTrans(1.0f);
 
 void AppExtension::update() {
 
@@ -36,10 +38,12 @@ void AppExtension::update() {
         usleep(timeToSleep);
     }
 */
+
+    vulkanRenderer.updateSpecularLightCamera(camera.cameraPos);
 }
 
 
-float forward = 0, right = 0;
+float forward = 5, right = 0, rotation = 0;
 
 void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
@@ -63,15 +67,13 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
 
     if (key == GLFW_KEY_UP) {
         forward++;
-        glm::vec4 trans = glm::vec4(0.0f, 0.0f, forward, 0.0f);
-        vulkanRenderer.updateLightPos(trans, 2);
+        lightPos.x = forward;
+        vulkanRenderer.updateLightPos(lightPos, lightTrans, 2);
     }
     if (key == GLFW_KEY_DOWN) {
         forward--;
-        //glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, forward));
-        //vulkanRenderer.updateModel(trans, 1);
-        glm::vec4 trans = glm::vec4(0.0f, 0.0f, forward, 0.0f);
-        vulkanRenderer.updateLightPos(trans, 2);
+        lightPos.x = forward;
+        vulkanRenderer.updateLightPos(lightPos, lightTrans, 2);
     }
 
     /*
@@ -86,7 +88,7 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
         vulkanRenderer.updateLightPos(trans, 2);
     }
 
-     */
+
 
     if (key == GLFW_KEY_LEFT_SHIFT) {
         glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.0f, 0.0f));
@@ -98,7 +100,7 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
         trans = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
         //vulkanRenderer.updateModel(trans, 2);
     }
-
+  */
     if (key == GLFW_KEY_X && action == GLFW_PRESS) {
 
         if (rotate)
@@ -109,11 +111,23 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
         vulkanRenderer.updateModel(rotateMat, 0);
     }
 
-    if (key == GLFW_KEY_E){
-        glm::mat4 trans(1.0f);
-        glm::mat4 rotation = glm::rotate(trans, glm::radians(45.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    if (key == GLFW_KEY_E) {
+        rotation++;
+        glm::mat4 rot = glm::rotate(lightTrans, glm::radians(rotation), glm::vec3(1.0f, 0.0f, 0.0f));
 
-        vulkanRenderer.updateModel(rotation, 1);
+        vulkanRenderer.updateModel(rot, 1);
+
+
+        vulkanRenderer.updateModel(glm::translate(rot, glm::vec3(0.0f, 0.0f, -5.0f)), 0);
+
+    }
+    if (key == GLFW_KEY_Q) {
+        rotation--;
+        glm::mat4 rot = glm::rotate(lightTrans, glm::radians(rotation), glm::vec3(1.0f, 0.0f, 0.0f));
+
+        vulkanRenderer.updateModel(rot, 1);
+        vulkanRenderer.updateModel(glm::translate(rot, glm::vec3(0.0f, 0.0f, -5.0f)), 0);
+
     }
 
 
@@ -129,7 +143,6 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
         camera.moveLeft();
     if (key == GLFW_KEY_D)
         camera.moveRight();
-
 
 
     vulkanRenderer.updateCamera(camera.getView(), camera.getProjection());

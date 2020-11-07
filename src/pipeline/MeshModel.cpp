@@ -90,7 +90,7 @@ Mesh MeshModel::loadModel(MainDevice mainDevice, ArModel *arModel, bool generate
                             normal.x = nx;
                             normal.y = ny;
                             normal.z = nz;
-                            vertex.normal = normal;
+                            vertex.normal = -normal; //TODO Something wrong with normals
                             break;
                     }
                 }

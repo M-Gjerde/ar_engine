@@ -6,6 +6,7 @@
 #define AR_ENGINE_PIPELINE_H
 
 #define GLFW_INCLUDE_VULKAN
+
 #include <GLFW/glfw3.h>
 
 #include <fstream>
@@ -17,15 +18,16 @@ class Pipeline {
 
 public:
     Pipeline();
+
     ~Pipeline();
 
     void createRenderPass(VkDevice device, VkFormat depthFormat, VkFormat colorFormat, VkRenderPass *pRenderPass);
-    void
-    arCubePipeline(VkRenderPass renderPass, VkDescriptorSetLayout descriptorSetLayout, ArPipeline *pipeline);
-    void arLightPipeline(VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> descriptorSetLayouts, const ArShadersPath& shaderPath,
-                         ArPipeline *pipeline);
+
+    void arLightPipeline(VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> descriptorSetLayouts,
+                         const ArShadersPath &shaderPath, ArPipeline *pipeline);
 
     void cleanUp(ArPipeline arPipeline) const;
+
 private:
 
     VkShaderModule createShaderModule(VkDevice device, const std::vector<char> &code);

@@ -21,6 +21,5 @@ void main() {
 
     fragTexCoord = inTexCoord;
     fragPos = vec3(uboViewProjection.model * vec4(inPosition, 1.0));
-    outNormal = inNormal;
-
+    outNormal = mat3(transpose(inverse(uboViewProjection.model))) * inNormal;
 }
