@@ -442,8 +442,8 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
         // Create pipeline
         if (i == 1 || i == 0) {
             ArShadersPath shadersPath;
-            shadersPath.fragmentShader = "../shaders/lightshader";
-            shadersPath.vertexShader = "../shaders/vert";
+            shadersPath.fragmentShader = "../shaders/phongLightFrag";
+            shadersPath.vertexShader = "../shaders/defaultVert";
             std::vector<VkDescriptorSetLayout> layouts = {arDescriptors[i].descriptorSetLayout,
                                                           arDescriptors[i].descriptorSetLayout2};
             pipeline.arLightPipeline(renderPass, layouts, shadersPath, &arPipelines[i]);
@@ -452,14 +452,14 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
 
         } else if (i == 2) {
             ArShadersPath shadersPath;
-            shadersPath.fragmentShader = "../shaders/fraglightcubeshader";
-            shadersPath.vertexShader = "../shaders/lightcubeshader";
+            shadersPath.fragmentShader = "../shaders/lampFrag";
+            shadersPath.vertexShader = "../shaders/lampVert";
             std::vector<VkDescriptorSetLayout> layouts = {arDescriptors[i].descriptorSetLayout};
             pipeline.arLightPipeline(renderPass, layouts, shadersPath, &arPipelines[i]);
         } else {
             ArShadersPath shadersPath;
-            shadersPath.fragmentShader = "../shaders/frag";
-            shadersPath.vertexShader = "../shaders/vert";
+            shadersPath.fragmentShader = "../shaders/defaultFrag";
+            shadersPath.vertexShader = "../shaders/defaultVert";
             std::vector<VkDescriptorSetLayout> layouts = {arDescriptors[i].descriptorSetLayout};
             pipeline.arLightPipeline(renderPass, layouts, shadersPath, &arPipelines[i]);
 
