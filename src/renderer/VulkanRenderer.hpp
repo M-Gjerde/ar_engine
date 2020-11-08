@@ -15,10 +15,11 @@
 #include "../pipeline/Mesh.h"
 #include "../pipeline/Images.h"
 #include "../pipeline/Textures.h"
-#include "../stereo/Disparity.h"
+//#include "../stereo/Disparity.h"
 #include <stdexcept>
 #include <vector>
 #include <iostream>
+#include <map>
 
 class VulkanRenderer {
 
@@ -43,7 +44,7 @@ public:
     ~VulkanRenderer();
 
     // TODO REMOVE
-    Disparity *disparity;
+    //Disparity *disparity;
 
     // TODO Think of better handles than this
     bool textureUpdateToggle = false;

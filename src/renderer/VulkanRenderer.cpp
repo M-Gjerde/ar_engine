@@ -345,7 +345,7 @@ void VulkanRenderer::updateSpecularLightCamera(glm::vec3 newPos) {
 
 void VulkanRenderer::updateTextureImage(std::string fileName) {
 
-    textures->setDisparityImageTexture(disparity, &disparityTexture, &disparityTextureBuffer);
+    //textures->setDisparityImageTexture(disparity, &disparityTexture, &disparityTextureBuffer);
     descriptors->createDescriptorsSampler(&arDescriptors[0], disparityTexture);
     createCommandBuffers();
 
@@ -354,7 +354,7 @@ void VulkanRenderer::updateTextureImage(std::string fileName) {
 void VulkanRenderer::updateDisparityVideoTexture() {
 
     // Skip updating if pixels are not Ready optional: add a timeout function to this
-    if (!disparity->pixelDataReady) {
+    /*if (!disparity->pixelDataReady) {
         return;
     }
     //clock_t Start = clock();
@@ -362,6 +362,7 @@ void VulkanRenderer::updateDisparityVideoTexture() {
 
     descriptors->createDescriptorsSampler(&arDescriptors[3], videoTexture);
     recordCommand();
+     */
 
     // printf("Texture and re-record cmd buffers time taken: %.7fs\n", (double) (clock() - Start) / CLOCKS_PER_SEC;);
 }

@@ -7,7 +7,7 @@
 
 
 #include "Images.h"
-#include "../stereo/Disparity.h"
+//#include "../stereo/Disparity.h"
 #include <vulkan/vulkan.h>
 #include <stdexcept>
 #include <cstring>
@@ -18,9 +18,9 @@ public:
     void createTexture(std::string fileName, ArTextureImage *pArTextureSampler, ArBuffer *imageStagingBuffer);
 
     void cleanUp(ArTextureImage arTextureSampler, ArBuffer imageBuffer);
-    void setDisparityImageTexture(Disparity *disparity, ArTextureImage *arTextureSampler, ArBuffer *imageBuffer);
+    void setDisparityImageTexture(ArTextureImage *arTextureSampler, ArBuffer *imageBuffer);
     void createTextureImage(ArTextureImage *arTexture, ArBuffer *textureBuffer);
-    void setDisparityVideoTexture(Disparity *disparity, ArTextureImage *videoTexture, ArBuffer *imageBuffer);
+    void setDisparityVideoTexture(ArTextureImage *videoTexture, ArBuffer *imageBuffer);
 
 private:
     Images *images;

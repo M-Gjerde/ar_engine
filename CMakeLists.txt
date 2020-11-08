@@ -4,19 +4,20 @@ project(ar_engine)
 set(CMAKE_CXX_STANDARD 17)
 
 # Include Vulkan and OpenCL from AMD drivers
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17  -L/opt/amdgpu-pro/lib/x86_64-linux-gnu -lamdocl-orca64")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17  ")#-L/opt/amdgpu-pro/lib/x86_64-linux-gnu -lamdocl-orca64")
 
 
 find_package(glm REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(OpenCV REQUIRED)
-find_package(OpenCL REQUIRED)
+#find_package(OpenCL REQUIRED)
+
 
 ## Stereovision extension
-add_library(stereoVision src/stereo/Disparity.cpp src/stereo/Disparity.h)
-target_link_libraries(stereoVision PUBLIC ${OpenCV_LIBS}  )
-target_compile_options(stereoVision PUBLIC -pthread )
+#add_library(stereoVision src/stereo/Disparity.cpp src/stereo/Disparity.h)
+#target_link_libraries(stereoVision PUBLIC ${OpenCV_LIBS}  )
+#target_compile_options(stereoVision PUBLIC -pthread )
 
 ## JSON Parser
 set(JSON_BuildTests OFF CACHE INTERNAL "")
@@ -53,7 +54,7 @@ add_library(VulkanRenderer
         src/Platform/LoadSettings.h)
 
 target_link_libraries(VulkanRenderer
-        stereoVision
+        #stereoVision
         vulkan
         nlohmann_json::nlohmann_json
         )

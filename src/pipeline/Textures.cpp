@@ -143,15 +143,15 @@ void Textures::createTextureImage(ArTextureImage *arTexture, ArBuffer *textureBu
 
 }
 
-void Textures::setDisparityImageTexture(Disparity *disparity, ArTextureImage *arTextureSampler, ArBuffer *imageBuffer) {
+void Textures::setDisparityImageTexture(ArTextureImage *arTextureSampler, ArBuffer *imageBuffer) {
 
 
     // Load texture from disparity
     int width, height;
     auto *pixels = new unsigned char[imageBuffer->bufferSize];
-    disparity->getDisparityFromImage(&pixels);
-    width = disparity->imageWidth;
-    height = disparity->imageHeight;
+    //disparity->getDisparityFromImage(&pixels);
+    //width = disparity->imageWidth;
+    //height = disparity->imageHeight;
     format = VK_FORMAT_R8_UNORM;
 
     // Copy data to buffer
@@ -179,12 +179,12 @@ void Textures::setDisparityImageTexture(Disparity *disparity, ArTextureImage *ar
 
 }
 
-void Textures::setDisparityVideoTexture(Disparity *disparity, ArTextureImage *videoTexture, ArBuffer *imageBuffer) {
+void Textures::setDisparityVideoTexture(ArTextureImage *videoTexture, ArBuffer *imageBuffer) {
     format = VK_FORMAT_R8_UNORM;
 
 
     // Copy data to buffer note pixelData is located in Disparity handle
-    memcpy(videoTexture->data, disparity->pixelData, static_cast<size_t>(imageBuffer->bufferSize));
+    //memcpy(videoTexture->data, disparity->pixelData, static_cast<size_t>(imageBuffer->bufferSize));
 
 
     // Transition image to transfer destination

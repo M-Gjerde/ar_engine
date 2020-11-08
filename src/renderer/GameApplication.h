@@ -18,7 +18,7 @@
 #include <iostream>
 #include "VulkanRenderer.hpp"
 #include "../pipeline/Camera.h"
-#include "../stereo/Disparity.h"
+//#include "../stereo/Disparity.h"
 #include "../Platform/LoadSettings.h"
 
 class GameApplication {
@@ -27,7 +27,7 @@ public:
     GLFWwindow *window;
     VulkanRenderer vulkanRenderer;
     Camera camera;
-    Disparity disparity;
+    //Disparity disparity;
     LoadSettings loadSettings;
 
 
@@ -46,8 +46,8 @@ public:
         loadSettings.init();
 
         // Init disparity
-        disparity.init();
-        vulkanRenderer.disparity = &disparity; // TODO REMOVE
+        //disparity.init();
+        //vulkanRenderer.disparity = &disparity; // TODO REMOVE
 
         // Init vulkan renderer engine
         if (vulkanRenderer.init(window) == EXIT_FAILURE)
