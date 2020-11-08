@@ -67,6 +67,4 @@ target_link_libraries(engine
         nlohmann_json::nlohmann_json
         )
 
-add_executable(test test.cpp)
-
 
