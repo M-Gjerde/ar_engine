@@ -3,8 +3,8 @@
   <component name="CMakeWorkspace" PROJECT_DIR="$PROJECT_DIR$" />
   <component name="CidrRootsConfiguration">
     <excludeRoots>
-      <file path="$PROJECT_DIR$/external" />
-      <file path="$PROJECT_DIR$/objects" />
+      <file path="$PROJECT_DIR$/objects/Crate" />
+      <file path="$PROJECT_DIR$/objects/models" />
       <file path="$PROJECT_DIR$/textures/stereo/image_00/data" />
     </excludeRoots>
   </component>

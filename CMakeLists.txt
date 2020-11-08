@@ -65,7 +65,3 @@ target_link_libraries(engine
         VulkanRenderer
         nlohmann_json::nlohmann_json
         )
-
-add_executable(test test.cpp)
-
-

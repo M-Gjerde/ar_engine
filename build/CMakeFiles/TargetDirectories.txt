@@ -3,11 +3,10 @@
 /home/magnus/CLionProjects/ar_engine/build/CMakeFiles/install.dir
 /home/magnus/CLionProjects/ar_engine/build/CMakeFiles/list_install_components.dir
 /home/magnus/CLionProjects/ar_engine/build/CMakeFiles/rebuild_cache.dir
-/home/magnus/CLionProjects/ar_engine/build/CMakeFiles/edit_cache.dir
 /home/magnus/CLionProjects/ar_engine/build/CMakeFiles/stereoVision.dir
 /home/magnus/CLionProjects/ar_engine/build/CMakeFiles/engine.dir
 /home/magnus/CLionProjects/ar_engine/build/CMakeFiles/VulkanRenderer.dir
-/home/magnus/CLionProjects/ar_engine/build/CMakeFiles/test.dir
+/home/magnus/CLionProjects/ar_engine/build/CMakeFiles/edit_cache.dir
 /home/magnus/CLionProjects/ar_engine/build/external/json/CMakeFiles/install/strip.dir
 /home/magnus/CLionProjects/ar_engine/build/external/json/CMakeFiles/install.dir
 /home/magnus/CLionProjects/ar_engine/build/external/json/CMakeFiles/list_install_components.dir
