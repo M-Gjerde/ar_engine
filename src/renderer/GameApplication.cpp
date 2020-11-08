@@ -50,7 +50,7 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
         std::cout << "exiting..." << std::endl;
         //disparity.stopProgram();
 
-        glfwSetWindowShouldClose(window, GL_TRUE);
+        glfwSetWindowShouldClose(window, true);
     }
 
     if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {

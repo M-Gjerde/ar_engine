@@ -19,7 +19,6 @@ Platform::Platform(GLFWwindow *window, ArEngine *_arEngine) {
 
 
 void Platform::createInstance() {
-
     if (!Validation::checkValidationLayerSupport()) {
         throw std::runtime_error("validation layers requested, but not available!");
     }
@@ -30,7 +29,7 @@ void Platform::createInstance() {
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "AR_ENGINE";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_2;
+    appInfo.apiVersion = VK_API_VERSION_1_1;
 
     VkInstanceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;

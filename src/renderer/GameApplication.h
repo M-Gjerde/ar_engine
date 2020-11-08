@@ -13,7 +13,7 @@
 #define GLFW_INCLUDE_VULKAN
 
 #include <glm/glm.hpp>
-#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include "VulkanRenderer.hpp"

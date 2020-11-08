@@ -6,7 +6,7 @@
 
 
 #include <array>
-#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include "VulkanRenderer.hpp"
 #include "../pipeline/MeshModel.h"
 
@@ -45,13 +45,13 @@ int VulkanRenderer::init(GLFWwindow *newWindow) {
 void VulkanRenderer::cleanup() {
     vkDeviceWaitIdle(arEngine.mainDevice.device); // wait for GPU to finish rendering before we clean up resources
 
-    for (int i = 0; i < arTextureSampler.size(); ++i) {
-        textures->cleanUp(arTextureSampler[i], textureImageBuffer[i]); // TODO This could be vectorized
-    }
 
-    //textures->cleanUp(disparityTexture, disparityTextureBuffer);
-    //textures->cleanUp(videoTexture, videoTextureBuffer);
-    images->cleanUp();
+    // TODO clean this code
+    textures->cleanUp(videoTexture, videoTextureBuffer);
+    textures->cleanUp(arTextureSampler[3], textureImageBuffer[3]);
+    textures->cleanUp(arTextureSampler[2], textureImageBuffer[2]);
+
+    images->cleanUp(); // Clean up depth images
 
     for (auto &mesh : meshes) {
         mesh.cleanUp();
@@ -61,8 +61,9 @@ void VulkanRenderer::cleanup() {
     for (auto &arDescriptor : arDescriptors) {
         descriptors->cleanUp(arDescriptor);
     }
-    // TODO REWRITE
+    // TODO REWRITE setLayouts
     vkDestroyDescriptorSetLayout(arEngine.mainDevice.device, arDescriptors[1].descriptorSetLayout2, nullptr);
+    vkDestroyDescriptorSetLayout(arEngine.mainDevice.device, arDescriptors[0].descriptorSetLayout2, nullptr);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroySemaphore(arEngine.mainDevice.device, renderFinishedSemaphores[i], nullptr);
@@ -371,6 +372,8 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
     models.resize(modelSettings.size()); // Number of objects
     arPipelines.resize(modelSettings.size());
     arDescriptors.resize(modelSettings.size());
+    arTextureSampler.resize(modelSettings.size());
+    textureImageBuffer.resize(modelSettings.size());
 // Load in each model
     for (int i = 0; i < modelSettings.size(); ++i) {
         // Create Mesh
@@ -413,8 +416,7 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
         } else { // Default descriptor
             descriptors->createDescriptors(&arDescriptors[i]);
             // Create initial texture
-            arTextureSampler.resize(3);
-            textureImageBuffer.resize(3);
+
             arTextureSampler[i].transferQueue = arEngine.graphicsQueue;
             arTextureSampler[i].transferCommandPool = arEngine.commandPool;
             textureImageBuffer[i].bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -428,11 +430,15 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
             videoTexture.height = 375;
             videoTexture.channels = 1;
             // Create texture image
-            textures->createTextureImage(&videoTexture, &videoTextureBuffer);
+            if ( i == 3) // i == 3 then it is Disparity block
+            {
+                textures->createTextureImage(&videoTexture, &videoTextureBuffer);
+            }
 
-            textures->createTexture("default.jpg", &arTextureSampler[i], &textureImageBuffer[i]);
-            // Create Texture sampler and add to descriptor set
-            descriptors->createDescriptorsSampler(&arDescriptors[i], arTextureSampler[i]);
+                textures->createTexture("default.jpg", &arTextureSampler[i], &textureImageBuffer[i]);
+                // Create Texture sampler and add to descriptor set
+                descriptors->createDescriptorsSampler(&arDescriptors[i], arTextureSampler[i]);
+
         }
         // Should be called for specific objects during loading
         // Initialize pipeline structs
