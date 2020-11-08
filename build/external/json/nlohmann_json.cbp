@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="nlohmann_json"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;CMake Files\..\;CMake Files\..\..\;CMake Files\..\..\..\;CMake Files\..\..\..\..\;CMake Files\..\..\..\..\usr\;CMake Files\..\..\..\..\usr\lib\;CMake Files\..\..\..\..\usr\lib\cmake\;CMake Files\..\..\..\..\usr\lib\cmake\glm\;CMake Files\..\..\..\..\usr\local\;CMake Files\..\..\..\..\usr\local\lib\;CMake Files\..\..\..\..\usr\local\lib\cmake\;CMake Files\..\..\..\..\usr\local\lib\cmake\glfw3\;CMake Files\..\..\..\..\usr\local\lib\cmake\opencv4\;CMake Files\external\;CMake Files\external\json\;CMake Files\external\json\cmake\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/home/magnus/CLionProjects/ar_engine/build/external/json"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Continuous">
+				<Option working_dir="/home/magnus/CLionProjects/ar_engine/build/external/json"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 Continuous"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Nightly">
+				<Option working_dir="/home/magnus/CLionProjects/ar_engine/build/external/json"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 Nightly"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Experimental">
+				<Option working_dir="/home/magnus/CLionProjects/ar_engine/build/external/json"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 Experimental"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/../../../../usr/lib/cmake/glm/glmConfig-version.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\lib\cmake\glm\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/../../../../usr/lib/cmake/glm/glmConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\lib\cmake\glm\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/../../../../usr/local/lib/cmake/glfw3/glfw3Config.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\glfw3\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/../../../../usr/local/lib/cmake/glfw3/glfw3ConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\glfw3\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/../../../../usr/local/lib/cmake/glfw3/glfw3Targets-noconfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\glfw3\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/../../../../usr/local/lib/cmake/glfw3/glfw3Targets.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\glfw3\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/../../../../usr/local/lib/cmake/opencv4/OpenCVConfig-version.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\opencv4\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/../../../../usr/local/lib/cmake/opencv4/OpenCVConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\opencv4\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/../../../../usr/local/lib/cmake/opencv4/OpenCVModules-release.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\opencv4\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/../../../../usr/local/lib/cmake/opencv4/OpenCVModules.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\opencv4\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/external/json/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\external\json\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/external/json/cmake/config.cmake.in">
+			<Option virtualFolder="CMake Files\external\json\cmake\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/external/json/cmake/nlohmann_jsonConfigVersion.cmake.in">
+			<Option virtualFolder="CMake Files\external\json\cmake\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/external/json/cmake/pkg-config.pc.in">
+			<Option virtualFolder="CMake Files\external\json\cmake\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

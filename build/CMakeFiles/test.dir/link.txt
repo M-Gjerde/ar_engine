@@ -1,0 +1,1 @@
+/usr/bin/c++   -std=c++17  -L/opt/amdgpu-pro/lib/x86_64-linux-gnu -lamdocl-orca64 -g   CMakeFiles/test.dir/test.cpp.o  -o test 

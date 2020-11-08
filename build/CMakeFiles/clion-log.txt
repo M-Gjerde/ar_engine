@@ -1,0 +1,5 @@
+/snap/clion/129/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DOpenCL_LIBRARY=/usr/lib/x86_64-linux-gnu/libOpenCL.so -G "CodeBlocks - Unix Makefiles" /home/magnus/CLionProjects/ar_engine
+-- Using the single-header code from /home/magnus/CLionProjects/ar_engine/external/json/single_include/
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/magnus/CLionProjects/ar_engine/build

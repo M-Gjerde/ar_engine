@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="1f20d852-1dda-4e1d-9ae9-6cf697a872f3" name="jetson" url="http://10.42.0.10">
+        <fileTransfer accessType="SFTP" host="10.42.0.10" port="22" sshConfigId="26e0f260-efa5-4722-9c4b-8037bcdd95b0" sshConfig="jetson@10.42.0.10:22 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

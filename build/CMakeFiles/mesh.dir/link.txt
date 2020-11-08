@@ -1,0 +1,1 @@
+/usr/bin/c++ -fPIC  -std=c++17 -I/home/magnus/libraries/vulkan/1.2.148.0/x86_64/include -L/home/magnus/libraries/vulkan/1.2.148.0/x86_64/lib -lvulkan -g  -shared -Wl,-soname,libmeshd.so -o libmeshd.so CMakeFiles/mesh.dir/src/source/Mesh.cpp.o 

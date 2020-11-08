@@ -58,7 +58,7 @@ target_link_libraries(VulkanRenderer
         nlohmann_json::nlohmann_json
         )
 
-add_executable(engine main.cpp external/tinyobj/tiny_obj_loader.h)
+add_executable(engine main.cpp external/tinyobj/tiny_obj_loader.h external/tinyobj/tiny_obj_loader.h)
 
 target_link_libraries(engine
         glfw ${GLFW_LIBRARIES}

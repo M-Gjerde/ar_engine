@@ -1,0 +1,443 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="ar_engine"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;CMake Files\..\;CMake Files\..\..\;CMake Files\..\..\..\;CMake Files\..\..\..\..\;CMake Files\..\..\..\..\usr\;CMake Files\..\..\..\..\usr\lib\;CMake Files\..\..\..\..\usr\lib\cmake\;CMake Files\..\..\..\..\usr\lib\cmake\glm\;CMake Files\..\..\..\..\usr\local\;CMake Files\..\..\..\..\usr\local\lib\;CMake Files\..\..\..\..\usr\local\lib\cmake\;CMake Files\..\..\..\..\usr\local\lib\cmake\glfw3\;CMake Files\..\..\..\..\usr\local\lib\cmake\opencv4\;CMake Files\external\;CMake Files\external\json\;CMake Files\external\json\cmake\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/home/magnus/CLionProjects/ar_engine/build"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="install/strip">
+				<Option working_dir="/home/magnus/CLionProjects/ar_engine/build"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 install/strip"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="install/local">
+				<Option working_dir="/home/magnus/CLionProjects/ar_engine/build"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 install/local"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="install">
+				<Option working_dir="/home/magnus/CLionProjects/ar_engine/build"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 install"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="list_install_components">
+				<Option working_dir="/home/magnus/CLionProjects/ar_engine/build"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 list_install_components"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/home/magnus/CLionProjects/ar_engine/build"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/home/magnus/CLionProjects/ar_engine/build"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="stereoVision">
+				<Option output="/home/magnus/CLionProjects/ar_engine/build/libstereoVisiond.so" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/magnus/CLionProjects/ar_engine/build"/>
+				<Option object_output="./"/>
+				<Option type="3"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/usr/local/include/opencv4"/>
+					<Add directory="/usr/include/c++/9"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/9"/>
+					<Add directory="/usr/include/c++/9/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/9/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 stereoVision"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="stereoVision/fast">
+				<Option output="/home/magnus/CLionProjects/ar_engine/build/libstereoVisiond.so" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/magnus/CLionProjects/ar_engine/build"/>
+				<Option object_output="./"/>
+				<Option type="3"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/usr/local/include/opencv4"/>
+					<Add directory="/usr/include/c++/9"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/9"/>
+					<Add directory="/usr/include/c++/9/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/9/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 stereoVision/fast"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="engine">
+				<Option output="/home/magnus/CLionProjects/ar_engine/build/engine" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/magnus/CLionProjects/ar_engine/build"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DJSON_USE_IMPLICIT_CONVERSIONS=1"/>
+					<Add directory="/home/magnus/CLionProjects/ar_engine/external/json/single_include"/>
+					<Add directory="/usr/local/include/opencv4"/>
+					<Add directory="/usr/include/c++/9"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/9"/>
+					<Add directory="/usr/include/c++/9/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/9/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 engine"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="engine/fast">
+				<Option output="/home/magnus/CLionProjects/ar_engine/build/engine" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/magnus/CLionProjects/ar_engine/build"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DJSON_USE_IMPLICIT_CONVERSIONS=1"/>
+					<Add directory="/home/magnus/CLionProjects/ar_engine/external/json/single_include"/>
+					<Add directory="/usr/local/include/opencv4"/>
+					<Add directory="/usr/include/c++/9"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/9"/>
+					<Add directory="/usr/include/c++/9/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/9/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 engine/fast"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="VulkanRenderer">
+				<Option output="/home/magnus/CLionProjects/ar_engine/build/libVulkanRendererd.so" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/magnus/CLionProjects/ar_engine/build"/>
+				<Option object_output="./"/>
+				<Option type="3"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DJSON_USE_IMPLICIT_CONVERSIONS=1"/>
+					<Add directory="/home/magnus/CLionProjects/ar_engine/external/json/single_include"/>
+					<Add directory="/usr/local/include/opencv4"/>
+					<Add directory="/usr/include/c++/9"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/9"/>
+					<Add directory="/usr/include/c++/9/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/9/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 VulkanRenderer"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="VulkanRenderer/fast">
+				<Option output="/home/magnus/CLionProjects/ar_engine/build/libVulkanRendererd.so" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/magnus/CLionProjects/ar_engine/build"/>
+				<Option object_output="./"/>
+				<Option type="3"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DJSON_USE_IMPLICIT_CONVERSIONS=1"/>
+					<Add directory="/home/magnus/CLionProjects/ar_engine/external/json/single_include"/>
+					<Add directory="/usr/local/include/opencv4"/>
+					<Add directory="/usr/include/c++/9"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/9"/>
+					<Add directory="/usr/include/c++/9/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/9/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 VulkanRenderer/fast"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="test">
+				<Option output="/home/magnus/CLionProjects/ar_engine/build/test" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/magnus/CLionProjects/ar_engine/build"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/usr/include/c++/9"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/9"/>
+					<Add directory="/usr/include/c++/9/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/9/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 test"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="test/fast">
+				<Option output="/home/magnus/CLionProjects/ar_engine/build/test" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/magnus/CLionProjects/ar_engine/build"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/usr/include/c++/9"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/9"/>
+					<Add directory="/usr/include/c++/9/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/9/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 test/fast"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Continuous">
+				<Option working_dir="/home/magnus/CLionProjects/ar_engine/build/external/json"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 Continuous"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Nightly">
+				<Option working_dir="/home/magnus/CLionProjects/ar_engine/build/external/json"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 Nightly"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="Experimental">
+				<Option working_dir="/home/magnus/CLionProjects/ar_engine/build/external/json"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 Experimental"/>
+					<CompileFile command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j12 -f &quot;/home/magnus/CLionProjects/ar_engine/build/external/json/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/external/tinyobj/tiny_obj_loader.h">
+			<Option target="engine"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/main.cpp">
+			<Option target="engine"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/Platform/LoadSettings.cpp">
+			<Option target="VulkanRenderer"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/Platform/LoadSettings.h">
+			<Option target="VulkanRenderer"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/Platform/Platform.cpp">
+			<Option target="VulkanRenderer"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/Platform/Platform.h">
+			<Option target="VulkanRenderer"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/include/Validation.h">
+			<Option target="VulkanRenderer"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/include/stb_image.h">
+			<Option target="VulkanRenderer"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/include/structs.h">
+			<Option target="VulkanRenderer"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/pipeline/Buffer.cpp">
+			<Option target="VulkanRenderer"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/pipeline/Buffer.h">
+			<Option target="VulkanRenderer"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/pipeline/Camera.cpp">
+			<Option target="VulkanRenderer"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/pipeline/Camera.h">
+			<Option target="VulkanRenderer"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/pipeline/Descriptors.cpp">
+			<Option target="VulkanRenderer"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/pipeline/Descriptors.h">
+			<Option target="VulkanRenderer"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/pipeline/Images.cpp">
+			<Option target="VulkanRenderer"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/pipeline/Images.h">
+			<Option target="VulkanRenderer"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/pipeline/Mesh.cpp">
+			<Option target="VulkanRenderer"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/pipeline/Mesh.h">
+			<Option target="VulkanRenderer"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/pipeline/MeshModel.cpp">
+			<Option target="VulkanRenderer"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/pipeline/MeshModel.h">
+			<Option target="VulkanRenderer"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/pipeline/Pipeline.cpp">
+			<Option target="VulkanRenderer"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/pipeline/Pipeline.h">
+			<Option target="VulkanRenderer"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/pipeline/Textures.cpp">
+			<Option target="VulkanRenderer"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/pipeline/Textures.h">
+			<Option target="VulkanRenderer"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/renderer/GameApplication.cpp">
+			<Option target="VulkanRenderer"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/renderer/GameApplication.h">
+			<Option target="VulkanRenderer"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/renderer/VulkanRenderer.cpp">
+			<Option target="VulkanRenderer"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/renderer/VulkanRenderer.hpp">
+			<Option target="VulkanRenderer"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/stereo/Disparity.cpp">
+			<Option target="stereoVision"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/src/stereo/Disparity.h">
+			<Option target="stereoVision"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/test.cpp">
+			<Option target="test"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/../../../../usr/lib/cmake/glm/glmConfig-version.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\lib\cmake\glm\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/../../../../usr/lib/cmake/glm/glmConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\lib\cmake\glm\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/../../../../usr/local/lib/cmake/glfw3/glfw3Config.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\glfw3\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/../../../../usr/local/lib/cmake/glfw3/glfw3ConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\glfw3\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/../../../../usr/local/lib/cmake/glfw3/glfw3Targets-noconfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\glfw3\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/../../../../usr/local/lib/cmake/glfw3/glfw3Targets.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\glfw3\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/../../../../usr/local/lib/cmake/opencv4/OpenCVConfig-version.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\opencv4\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/../../../../usr/local/lib/cmake/opencv4/OpenCVConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\opencv4\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/../../../../usr/local/lib/cmake/opencv4/OpenCVModules-release.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\opencv4\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/../../../../usr/local/lib/cmake/opencv4/OpenCVModules.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\opencv4\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/external/json/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\external\json\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/external/json/cmake/config.cmake.in">
+			<Option virtualFolder="CMake Files\external\json\cmake\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/external/json/cmake/nlohmann_jsonConfigVersion.cmake.in">
+			<Option virtualFolder="CMake Files\external\json\cmake\"/>
+		</Unit>
+		<Unit filename="/home/magnus/CLionProjects/ar_engine/external/json/cmake/pkg-config.pc.in">
+			<Option virtualFolder="CMake Files\external\json\cmake\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>
