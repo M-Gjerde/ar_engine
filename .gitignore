@@ -3,3 +3,5 @@
 /objects/Crate
 /objects/models
 /textures/stereo/*
+build
+.idea
