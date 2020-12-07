@@ -14,7 +14,7 @@
 #include <cstring>
 #include <iostream>
 
-
+//#define NDEBUG
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
 #else

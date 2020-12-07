@@ -19,7 +19,7 @@ Platform::Platform(GLFWwindow *window, ArEngine *_arEngine) {
 
 
 void Platform::createInstance() {
-    if (!Validation::checkValidationLayerSupport()) {
+    if (!Validation::checkValidationLayerSupport() && enableValidationLayers) {
         throw std::runtime_error("validation layers requested, but not available!");
     }
     // Generic Vulkan app info

@@ -4,7 +4,7 @@ project(ar_engine)
 set(CMAKE_CXX_STANDARD 17)
 
 # Include Vulkan and OpenCL from AMD drivers
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17  ")#-L/opt/amdgpu-pro/lib/x86_64-linux-gnu -lamdocl-orca64")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17  ")
 
 
 find_package(glm REQUIRED)
