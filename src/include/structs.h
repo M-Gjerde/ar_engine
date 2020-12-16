@@ -31,13 +31,12 @@ struct ArModel {
 };
 
 struct ArDescriptor{
-    VkDescriptorSetLayout descriptorSetLayout;
     VkDescriptorPool descriptorPool;
     std::vector<VkDescriptorSet> descriptorSets;
     std::vector<VkBuffer> buffer;
     std::vector<VkDeviceMemory> bufferMemory;
     //TODO REMOVE
-    VkDescriptorSetLayout descriptorSetLayout2;
+    std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
 
 };
 

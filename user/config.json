@@ -1,6 +1,6 @@
 {
   "name": "ArEngine",
-  "description": "Augmented reality renderer engine",
+  "description": "Augmented reality engine",
   "version": "0.0.1",
   "author": "Magnus Kaufmann Gjerde",
   "settings": {
@@ -9,29 +9,39 @@
         "type": "sphere",
         "texture": "default",
         "texture_format": ".png",
-        "shader": "default.vert",
-        "fragment_shader": "default.frag"
+        "vertex_shader": "defaultVert",
+        "fragment_shader": "phongLightFrag",
+        "descriptorSets": "2",
+        "descriptorSetLayouts": "2"
       },
       {
         "type": "cube",
         "texture": "default",
         "texture_format": ".png",
-        "shader": "default.vert",
-        "fragment_shader": "default.frag"
+        "vertex_shader": "defaultVert",
+        "fragment_shader": "phongLightFrag",
+        "descriptorSets": "2",
+        "descriptorSetLayouts": "2"
+
       },
       {
         "type": "cube",
         "texture": "default",
         "texture_format": ".png",
-        "shader": "default.vert",
-        "fragment_shader": "default.frag"
+        "vertex_shader": "lampVert",
+        "fragment_shader": "lampFrag",
+        "descriptorSets": "1",
+        "descriptorSetLayouts": "1"
+
       },
       {
         "type": "cube",
         "texture": "default",
         "texture_format": ".png",
-        "shader": "default.vert",
-        "fragment_shader": "default.frag"
+        "vertex_shader": "defaultVert",
+        "fragment_shader": "defaultFrag",
+        "descriptorSets": "1",
+        "descriptorSetLayouts": "1"
       }
     ]
   },

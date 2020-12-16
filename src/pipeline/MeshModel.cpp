@@ -13,15 +13,12 @@
 
 Mesh MeshModel::loadModel(MainDevice mainDevice, ArModel *arModel, bool generateNormals) {
 
-
-
         // Use library to load in model
         tinyobj::attrib_t attrib;
         std::vector<tinyobj::shape_t> shapes;
         std::vector<tinyobj::material_t> materials;
         std::string warn, err;
         std::string MODEL_PATH = "../objects/" + arModel->modelName;
-
 
         if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str())) {
             throw std::runtime_error(warn + err);
@@ -41,7 +38,7 @@ Mesh MeshModel::loadModel(MainDevice mainDevice, ArModel *arModel, bool generate
                     vertex.texCoord = {attrib.texcoords[2 * shapes[i].mesh.indices[j].texcoord_index + 0],
                                        1.0f - attrib.texcoords[2 * shapes[i].mesh.indices[j].texcoord_index + 1]};
 
-
+                // calculate normals for plane
                 if (generateNormals) {
                     float nx, ny, nz = 0.0f; // normal for current triangle
                     float vx1, vx2, vx3 = 0.f; // vertex 1
@@ -99,7 +96,6 @@ Mesh MeshModel::loadModel(MainDevice mainDevice, ArModel *arModel, bool generate
             }
         }
         arModel->indexCount = arModel->indices.size();
-
 
     // Create two buffers holding vertex and index data
     std::vector<ArBuffer> modelBuffers(2);

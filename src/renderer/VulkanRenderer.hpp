@@ -36,6 +36,7 @@ public:
 
     void updateTextureImage(std::string fileName); // TODO TEST METHOD
     void updateDisparityVideoTexture(); // TODO TEST METHOD
+    void vulkanComputeShaders(); //TODO Test method
 
     void draw();
 
@@ -43,8 +44,6 @@ public:
 
     ~VulkanRenderer();
 
-    // TODO REMOVE
-    //Disparity *disparity;
 
     // TODO Think of better handles than this
     bool textureUpdateToggle = false;
@@ -101,12 +100,10 @@ private:
     std::vector<VkFence> imagesInFlight;
     size_t currentFrame = 0;
 
-    void createPipeline();
     void createFrameBuffersAndRenderPass();
     void createCommandBuffers();
     void recordCommand();
     void createSyncObjects();
-    void createSimpleMesh();
     void updateBuffer(uint32_t imageIndex);
 
 

@@ -18,7 +18,6 @@
 #include <iostream>
 #include "VulkanRenderer.hpp"
 #include "../pipeline/Camera.h"
-//#include "../stereo/Disparity.h"
 #include "../Platform/LoadSettings.h"
 
 class GameApplication {
@@ -27,10 +26,7 @@ public:
     GLFWwindow *window;
     VulkanRenderer vulkanRenderer;
     Camera camera;
-    //Disparity disparity;
     LoadSettings loadSettings;
-
-
     explicit GameApplication(const std::string &title) {
 
         // boilerplate stuff (ie. basic window setup, initialize OpenGL) occurs in abstract class
@@ -44,10 +40,6 @@ public:
 
         // Load settings
         loadSettings.init();
-
-        // Init disparity
-        //disparity.init();
-        //vulkanRenderer.disparity = &disparity; // TODO REMOVE
 
         // Init vulkan renderer engine
         if (vulkanRenderer.init(window) == EXIT_FAILURE)

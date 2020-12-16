@@ -53,15 +53,10 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
         glfwSetWindowShouldClose(window, true);
     }
 
+    // execute vulkan compute sequence
     if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
-        //disparity.input = 3;
-        //std::cout << "disparity input: " << disparity.input << std::endl;
 
-        // Toggl texture renderer from disparity
-        if (vulkanRenderer.textureUpdateToggle)
-            vulkanRenderer.textureUpdateToggle = false;
-        //vulkanRenderer.updateDisparityVideoTexture();
-        vulkanRenderer.textureUpdateToggle = true;
+        vulkanRenderer.vulkanComputeShaders();
 
     }
 
@@ -76,31 +71,6 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
         vulkanRenderer.updateLightPos(lightPos, lightTrans, 2);
     }
 
-    /*
-    if (key == GLFW_KEY_LEFT) {
-        right++;
-        glm::vec4 trans = glm::vec4(right, 0.0f, 0.0f, 0.0f);
-        vulkanRenderer.updateLightPos(trans, 2);
-    }
-    if (key == GLFW_KEY_RIGHT) {
-        right--;
-        glm::vec4 trans = glm::vec4(right, 0.0f, 0.0f, 0.0f);
-        vulkanRenderer.updateLightPos(trans, 2);
-    }
-
-
-
-    if (key == GLFW_KEY_LEFT_SHIFT) {
-        glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.0f, 0.0f));
-        rotateMat = glm::rotate(trans, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-
-        vulkanRenderer.updateModel(rotateMat, 0);
-        trans = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f));
-        //vulkanRenderer.updateModel(trans, 1);
-        trans = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-        //vulkanRenderer.updateModel(trans, 2);
-    }
-  */
     if (key == GLFW_KEY_X && action == GLFW_PRESS) {
 
         if (rotate)

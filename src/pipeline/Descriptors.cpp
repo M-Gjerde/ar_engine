@@ -26,11 +26,6 @@ void Descriptors::lightDescriptors(ArDescriptor *pDescriptor) {
     createLightPool();
     fragmentDescriptorSet();
 
-    //createSetLayout();
-    //createSetPool();
-    //createDescriptorSets();
-    //updateLightDescriptor();
-
     // Return descriptors
     *pDescriptor = mArDescriptor;
 }
@@ -64,7 +59,8 @@ void Descriptors::createLightPool() {
     // Data to create descriptor pool
     VkDescriptorPoolCreateInfo poolCreateInfo = {};
     poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolCreateInfo.maxSets = static_cast<uint32_t>(mArDescriptor.descriptorSets.size() + 1);       // Maximum number of descriptor sets that can be created from pool
+    poolCreateInfo.maxSets = static_cast<uint32_t>(mArDescriptor.descriptorSets.size() +
+                                                   1);       // Maximum number of descriptor sets that can be created from pool
     poolCreateInfo.poolSizeCount = static_cast<uint32_t>(poolList.size());        // Amount of pool sizes being passed
     poolCreateInfo.pPoolSizes = poolList.data();                                  // Pool sizes to create pool with
 
@@ -75,7 +71,7 @@ void Descriptors::createLightPool() {
 
 }
 
-
+// TODO Possible remake of this. Make this dynamic if possible
 void Descriptors::fragmentSetLayout() {
     // UNIFORM VALUES DESCRIPTOR SET LAYOUT
     // VP binding info Create descriptor layout bindings
@@ -94,38 +90,39 @@ void Descriptors::fragmentSetLayout() {
     colorLayoutBinding.pImmutableSamplers = nullptr;
     colorLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    std::vector<VkDescriptorSetLayoutBinding> layoutBindings2 = {colorLayoutBinding};
-    // Create descriptor set layout with given bindings
-    VkDescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-    layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutCreateInfo.bindingCount = static_cast<uint32_t>(layoutBindings2.size());     // Number of binding infos
-    layoutCreateInfo.pBindings = layoutBindings2.data();                               // Array of binding infos
-
-    // Create descriptor set layout
-    VkResult result = vkCreateDescriptorSetLayout(device, &layoutCreateInfo, nullptr,
-                                                  &mArDescriptor.descriptorSetLayout2);
-    if (result != VK_SUCCESS)
-        throw std::runtime_error("Failed to create Descriptor set layout");
-
     std::vector<VkDescriptorSetLayoutBinding> layoutBindings = {uboLayoutBinding};
     // Create descriptor set layout with given bindings
+    VkDescriptorSetLayoutCreateInfo layoutCreateInfo = {};
     layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     layoutCreateInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());     // Number of binding infos
     layoutCreateInfo.pBindings = layoutBindings.data();                               // Array of binding infos
 
     // Create descriptor set layout
-    result = vkCreateDescriptorSetLayout(device, &layoutCreateInfo, nullptr,
-                                                  &mArDescriptor.descriptorSetLayout);
+    VkResult result = vkCreateDescriptorSetLayout(device, &layoutCreateInfo, nullptr,
+                                                  &mArDescriptor.descriptorSetLayouts[0]);
     if (result != VK_SUCCESS)
         throw std::runtime_error("Failed to create Descriptor set layout");
+
+
+    std::vector<VkDescriptorSetLayoutBinding> layoutBindings2 = {colorLayoutBinding};
+    // Create descriptor set layout with given bindings
+    layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutCreateInfo.bindingCount = static_cast<uint32_t>(layoutBindings2.size());     // Number of binding infos
+    layoutCreateInfo.pBindings = layoutBindings2.data();                               // Array of binding infos
+
+    // Create descriptor set layout
+    result = vkCreateDescriptorSetLayout(device, &layoutCreateInfo, nullptr,
+                                         &mArDescriptor.descriptorSetLayouts[1]);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to create Descriptor set layout");
+
 }
 
 
 void Descriptors::fragmentDescriptorSet() {
 
-
-    std::vector<VkDescriptorSetLayout> setLayouts = {mArDescriptor.descriptorSetLayout, mArDescriptor.descriptorSetLayout2};
-
+    //std::vector<VkDescriptorSetLayout> setLayouts = {mArDescriptor.descriptorSetLayout, mArDescriptor.descriptorSetLayout2};
+    std::vector<VkDescriptorSetLayout> setLayouts = mArDescriptor.descriptorSetLayouts; //TODO fix
     //Descriptor set allocation info
     VkDescriptorSetAllocateInfo setAllocateInfo = {};
     setAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -145,8 +142,8 @@ void Descriptors::fragmentDescriptorSet() {
     // VIEW PROJECTION DESCRIPTOR
     VkDescriptorBufferInfo vpBufferInfo = {};
     vpBufferInfo.buffer = mArDescriptor.buffer[0];                // Buffer to get data from
-    vpBufferInfo.offset = 0;                               // Offset into the data
-    vpBufferInfo.range = sizeof(uboModel);                      // Size of the data that is going to be bound to the descriptor set
+    vpBufferInfo.offset = 0;                                      // Offset into the data
+    vpBufferInfo.range = sizeof(uboModel);                        // Size of the data that is going to be bound to the descriptor set
 
 
     // Data about connection between binding and buffer
@@ -213,7 +210,7 @@ void Descriptors::createSetLayout() {
 
     // Create descriptor set layout
     VkResult result = vkCreateDescriptorSetLayout(device, &layoutCreateInfo, nullptr,
-                                                  &mArDescriptor.descriptorSetLayout);
+                                                  &mArDescriptor.descriptorSetLayouts[0]);
     if (result != VK_SUCCESS)
         throw std::runtime_error("Failed to create Descriptor set layout");
 }
@@ -255,7 +252,7 @@ void Descriptors::createDescriptorSets() {
 
 
     std::vector<VkDescriptorSetLayout> setLayouts(mArDescriptor.descriptorSets.size(),
-                                                  mArDescriptor.descriptorSetLayout);
+                                                  mArDescriptor.descriptorSetLayouts[0]);
 
     //Descriptor set allocation info
     VkDescriptorSetAllocateInfo setAllocateInfo = {};
@@ -302,7 +299,9 @@ void Descriptors::createDescriptorSets() {
 
 void Descriptors::cleanUp(ArDescriptor arDescriptor) {
 
-    vkDestroyDescriptorSetLayout(device, arDescriptor.descriptorSetLayout, nullptr);
+    for (auto &descriptorSetLayout : arDescriptor.descriptorSetLayouts) {
+        vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
+    }
     vkDestroyDescriptorPool(device, arDescriptor.descriptorPool, nullptr);
 
     for (int i = 0; i < arDescriptor.buffer.size(); ++i) {

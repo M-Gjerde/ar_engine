@@ -61,9 +61,6 @@ void VulkanRenderer::cleanup() {
     for (auto &arDescriptor : arDescriptors) {
         descriptors->cleanUp(arDescriptor);
     }
-    // TODO REWRITE setLayouts
-    vkDestroyDescriptorSetLayout(arEngine.mainDevice.device, arDescriptors[1].descriptorSetLayout2, nullptr);
-    vkDestroyDescriptorSetLayout(arEngine.mainDevice.device, arDescriptors[0].descriptorSetLayout2, nullptr);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroySemaphore(arEngine.mainDevice.device, renderFinishedSemaphores[i], nullptr);
@@ -146,12 +143,6 @@ void VulkanRenderer::draw() {
     vkQueuePresentKHR(arEngine.presentQueue, &presentInfo);
 
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-
-}
-
-
-void VulkanRenderer::createPipeline() {
-
 
 }
 
@@ -289,12 +280,10 @@ void VulkanRenderer::createSyncObjects() {
 }
 
 void VulkanRenderer::updateBuffer(uint32_t imageIndex) {
-
-
     for (int i = 0; i < meshes.size(); ++i) {
 
         uboModelVar.model = meshes[i].getModel();
-        // Copy VP data TODO REMOVE
+        // Copy VP data TODO REMOVE or rewrite
         if (i == 1 || i == 0) {
             // Copy color data
             void *data;
@@ -326,12 +315,12 @@ void VulkanRenderer::updateCamera(glm::mat4 newView, glm::mat4 newProjection) {
     uboModelVar.projection = newProjection;
 }
 
+// TODO can be combined with updateLightPos if a wrapper is written around those two
 void VulkanRenderer::updateModel(glm::mat4 newModel, int index) {
     meshes[index].setModel(newModel);
 }
 
 void VulkanRenderer::updateLightPos(glm::vec3 newPos, glm::mat4 transMat, int index) {
-
 
     meshes[index].setModel(glm::translate(transMat, newPos));
     fragmentColor.lightPos = glm::vec4(newPos, 1.0f);
@@ -386,10 +375,9 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
         meshes.push_back(meshModel.loadModel(arEngine.mainDevice, &arModel, true));
         models[i] = arModel;
 
-        // Create UBO for each Mesh
-        arDescriptors[i].descriptorSets.resize(2);
-        //TODO Create descriptor sets according to how many sets the object/shader needs
-        if (i > 1) arDescriptors[i].descriptorSets.resize(1);
+        // Create number of descriptors according to scene file
+        arDescriptors[i].descriptorSets.resize(std::stoi(modelSettings[i].at("descriptorSets")));
+        arDescriptors[i].descriptorSetLayouts.resize(std::stoi(modelSettings[i].at("descriptorSetLayouts")));
         uboBuffers.resize(arDescriptors[i].descriptorSets.size());
         arDescriptors[i].buffer.resize(arDescriptors[i].descriptorSets.size());
         arDescriptors[i].bufferMemory.resize(arDescriptors[i].descriptorSets.size());
@@ -398,7 +386,7 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
 
         // Create buffers
         for (int j = 0; j < arDescriptors[i].descriptorSets.size(); ++j) {
-            if (j == 1)
+            if (j == 1) //TODO set buffer options in scene file
                 vpBufferSize = sizeof(FragmentColor);
             uboBuffers[j].bufferSize = vpBufferSize;
             uboBuffers[j].bufferUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
@@ -410,6 +398,7 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
             arDescriptors[i].bufferMemory[j] = uboBuffers[j].bufferMemory;
         }
 
+        // Set amount of descriptor set layouts
         // Create descriptors
         if (i == 1 || i == 0) { // light descriptor
             descriptors->lightDescriptors(&arDescriptors[i]);
@@ -419,9 +408,11 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
 
             arTextureSampler[i].transferQueue = arEngine.graphicsQueue;
             arTextureSampler[i].transferCommandPool = arEngine.commandPool;
-            textureImageBuffer[i].bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+            textureImageBuffer[i].bufferProperties =
+                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
             textureImageBuffer[i].bufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
+            /*
             videoTexture.transferQueue = arEngine.graphicsQueue;
             videoTexture.transferCommandPool = arEngine.commandPool;
             videoTextureBuffer.bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -434,10 +425,11 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
             {
                 textures->createTextureImage(&videoTexture, &videoTextureBuffer);
             }
+*/
 
-                textures->createTexture("default.jpg", &arTextureSampler[i], &textureImageBuffer[i]);
-                // Create Texture sampler and add to descriptor set
-                descriptors->createDescriptorsSampler(&arDescriptors[i], arTextureSampler[i]);
+            textures->createTexture(modelSettings[i].at("texture") + modelSettings[i].at("texture_format"), &arTextureSampler[i], &textureImageBuffer[i]);
+            // Create Texture sampler and add to descriptor set
+            descriptors->createDescriptorsSampler(&arDescriptors[i], arTextureSampler[i]);
 
         }
         // Should be called for specific objects during loading
@@ -446,57 +438,44 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
         arPipelines[i].device = arEngine.mainDevice.device;
         arPipelines[i].swapchainImageFormat = arEngine.swapchainFormat;
         arPipelines[i].swapchainExtent = arEngine.swapchainExtent;
+
         // Create pipeline
-        if (i == 1 || i == 0) {
-            ArShadersPath shadersPath;
-            shadersPath.fragmentShader = "../shaders/phongLightFrag";
-            shadersPath.vertexShader = "../shaders/defaultVert";
-            std::vector<VkDescriptorSetLayout> layouts = {arDescriptors[i].descriptorSetLayout,
-                                                          arDescriptors[i].descriptorSetLayout2};
-            pipeline.arLightPipeline(renderPass, layouts, shadersPath, &arPipelines[i]);
-            fragmentColor.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
-            fragmentColor.objectColor = glm::vec4(0.5f, 0.5f, 0.31f, 0.0f);
+        ArShadersPath shadersPath;
+        shadersPath.vertexShader = "../shaders/" + modelSettings[i].at("vertex_shader");
+        shadersPath.fragmentShader = "../shaders/" + modelSettings[i].at("fragment_shader");
+        pipeline.arLightPipeline(renderPass, arDescriptors[i].descriptorSetLayouts, shadersPath, &arPipelines[i]);
+        fragmentColor.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
+        fragmentColor.objectColor = glm::vec4(0.5f, 0.5f, 0.31f, 0.0f);
 
-        } else if (i == 2) {
-            ArShadersPath shadersPath;
-            shadersPath.fragmentShader = "../shaders/lampFrag";
-            shadersPath.vertexShader = "../shaders/lampVert";
-            std::vector<VkDescriptorSetLayout> layouts = {arDescriptors[i].descriptorSetLayout};
-            pipeline.arLightPipeline(renderPass, layouts, shadersPath, &arPipelines[i]);
-        } else {
-            ArShadersPath shadersPath;
-            shadersPath.fragmentShader = "../shaders/defaultFrag";
-            shadersPath.vertexShader = "../shaders/defaultVert";
-            std::vector<VkDescriptorSetLayout> layouts = {arDescriptors[i].descriptorSetLayout};
-            pipeline.arLightPipeline(renderPass, layouts, shadersPath, &arPipelines[i]);
-
-        }
     }
     // update command buffers
     recordCommand();
 
-    // Translate models..
+    // --- Translate models ---
+    glm::mat4 trans(1.0f);
     for (int i = 0; i < models.size(); ++i) {
-        glm::mat4 trans(1.0f);
         updateModel(glm::translate(trans, glm::vec3(i * 2, 0.0f, 0.0f)), i);
-
-        if (i == 0){
-            updateModel(glm::translate(trans, glm::vec3(0.0f, 0.0f, -5)), i);
-
-        }
-
-        if (i == 3){
-            glm::mat4 model(1.0f);
-            model = glm::translate(model, glm::vec3(i * 2, 0.0f, -4.0f));
-            model = glm::scale(model, glm::vec3(10.0f, 3.0f, 1.0f));
-            updateModel(model, i);
-
-        }
-
-        if (i == 2) {
-            updateLightPos(glm::vec3(5.0f, -2.0f, 3.0f), trans, 2);
-
-        }
     }
+    // Glasses
+    updateModel(glm::translate(trans, glm::vec3(0.0f, 0.0f, 3)), 0);
+    // lightbox
+    updateLightPos(glm::vec3(5.0f, -2.0f, 3.0f), trans, 2);
+    // Big box
+    glm::mat4 model(1.0f);
+    model = glm::translate(model, glm::vec3(6, 0.0f, -4.0f));
+    model = glm::scale(model, glm::vec3(10.0f, 3.0f, 1.0f));
+    updateModel(model, 3);
+
+}
+
+void VulkanRenderer::vulkanComputeShaders() {
+    // Load shaders
+
+    // Create descriptor sets
+
+    // - descriptor buffers
+
+    // Create pipelinelayout
+
 }
 

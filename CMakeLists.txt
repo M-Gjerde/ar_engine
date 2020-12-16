@@ -10,7 +10,7 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17  ")#-L/opt/amdgpu-pro/lib/x86
 find_package(glm REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(glfw3 REQUIRED)
-find_package(OpenCV REQUIRED)
+find_package(OpenCV REQUIRED HINTS /home/magnus/libraries/opencv-master/build)
 #find_package(OpenCL REQUIRED)
 
 
