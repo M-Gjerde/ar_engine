@@ -35,8 +35,9 @@ struct ArDescriptor{
     std::vector<VkDescriptorSet> descriptorSets;
     std::vector<VkBuffer> buffer;
     std::vector<VkDeviceMemory> bufferMemory;
-    //TODO REMOVE
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
+    std::vector<size_t> dataSizes;
+
 
 };
 

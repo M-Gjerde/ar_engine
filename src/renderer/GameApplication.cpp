@@ -26,7 +26,7 @@ void AppExtension::update() {
         glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.0f, 0.0f));
         rotateMat = glm::rotate(trans, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
         rotateMat = glm::rotate(rotateMat, glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
-        vulkanRenderer.updateModel(rotateMat, 1);
+        vulkanRenderer.updateModel(rotateMat, 0);
 
     }
 
@@ -63,16 +63,15 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
     if (key == GLFW_KEY_UP) {
         forward++;
         lightPos.x = forward;
-        vulkanRenderer.updateLightPos(lightPos, lightTrans, 2);
+        vulkanRenderer.updateLightPos(lightPos, lightTrans, 1);
     }
     if (key == GLFW_KEY_DOWN) {
         forward--;
         lightPos.x = forward;
-        vulkanRenderer.updateLightPos(lightPos, lightTrans, 2);
+        vulkanRenderer.updateLightPos(lightPos, lightTrans, 1);
     }
 
     if (key == GLFW_KEY_X && action == GLFW_PRESS) {
-
         if (rotate)
             rotate = false;
         else

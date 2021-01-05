@@ -47,9 +47,9 @@ void VulkanRenderer::cleanup() {
 
 
     // TODO clean this code
-    textures->cleanUp(videoTexture, videoTextureBuffer);
-    textures->cleanUp(arTextureSampler[3], textureImageBuffer[3]);
-    textures->cleanUp(arTextureSampler[2], textureImageBuffer[2]);
+    // textures->cleanUp(videoTexture, videoTextureBuffer);
+    //textures->cleanUp(arTextureSampler[3], textureImageBuffer[3]);
+    //textures->cleanUp(arTextureSampler[2], textureImageBuffer[2]);
 
     images->cleanUp(); // Clean up depth images
 
@@ -211,14 +211,12 @@ void VulkanRenderer::recordCommand() {
         clearValues[0].color = {0.05f, 0.25f, 0.05f, 1.0f};
         clearValues[1].depthStencil = {1.0f, 0};
 
-        VkClearValue clearColor = {0.05f, 0.25f, 0.05f, 1.0f};
-
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
 
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        for (int j = 0; j < arPipelines.size(); ++j) {
+        for (int j = 0; j < meshes.size(); ++j) {
             vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, arPipelines[j].pipeline);
 
             VkBuffer vertexBuffers[] = {models[j].vertexBuffer};
@@ -227,19 +225,10 @@ void VulkanRenderer::recordCommand() {
 
             vkCmdBindIndexBuffer(commandBuffers[i], models[j].indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-            // TODO rework
-            if (j == 1 || j == 0) {
-                /*vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                        arPipelines[j].pipelineLayout, 0, 1, &arDescriptors[j].descriptorSets[1], 0,
-                                        nullptr);*/
-                vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                        arPipelines[j].pipelineLayout, 0, 2, arDescriptors[j].descriptorSets.data(), 0,
-                                        nullptr);
-            } else
-
-                vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                        arPipelines[j].pipelineLayout, 0, 1, &arDescriptors[j].descriptorSets[0], 0,
-                                        nullptr);
+            vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                    arPipelines[j].pipelineLayout, 0, arDescriptors[j].descriptorSets.size(),
+                                    arDescriptors[j].descriptorSets.data(), 0,
+                                    nullptr);
 
 
             vkCmdDrawIndexed(commandBuffers[i], models[j].indexCount, 1, 0, 0, 0);
@@ -283,30 +272,21 @@ void VulkanRenderer::updateBuffer(uint32_t imageIndex) {
     for (int i = 0; i < meshes.size(); ++i) {
 
         uboModelVar.model = meshes[i].getModel();
-        // Copy VP data TODO REMOVE or rewrite
-        if (i == 1 || i == 0) {
-            // Copy color data
-            void *data;
-            vkMapMemory(arEngine.mainDevice.device, arDescriptors[i].bufferMemory[0], 0, sizeof(uboModel), 0, &data);
-            memcpy(data, &uboModelVar, sizeof(uboModel));
-            vkUnmapMemory(arEngine.mainDevice.device, arDescriptors[i].bufferMemory[0]);
+        // Copy vertex data
+        void *data;
+        vkMapMemory(arEngine.mainDevice.device, arDescriptors[i].bufferMemory[0], 0, arDescriptors[i].dataSizes[0],
+                    0, &data);
+        memcpy(data, &uboModelVar, arDescriptors[i].dataSizes[0]);
+        vkUnmapMemory(arEngine.mainDevice.device, arDescriptors[i].bufferMemory[0]);
 
-            void *data2;
-            vkMapMemory(arEngine.mainDevice.device, arDescriptors[i].bufferMemory[1], 0, sizeof(FragmentColor), 0,
-                        &data2);
-            memcpy(data2, &fragmentColor, sizeof(FragmentColor));
-            vkUnmapMemory(arEngine.mainDevice.device, arDescriptors[i].bufferMemory[1]);
-
-        } else {
-            void *data;
-            vkMapMemory(arEngine.mainDevice.device, arDescriptors[i].bufferMemory[0], 0, sizeof(uboModel), 0, &data);
-            memcpy(data, &uboModelVar, sizeof(uboModel));
-            vkUnmapMemory(arEngine.mainDevice.device, arDescriptors[i].bufferMemory[0]);
-        }
+        if (arDescriptors[i].bufferMemory.size() == 1) break; // TODO clean up this to be done dynamically
+        void *data2;
+        vkMapMemory(arEngine.mainDevice.device, arDescriptors[i].bufferMemory[1], 0, arDescriptors[i].dataSizes[1],
+                    0, &data2);
+        memcpy(data2, &fragmentColor, arDescriptors[i].dataSizes[1]);
+        vkUnmapMemory(arEngine.mainDevice.device, arDescriptors[i].bufferMemory[1]);
 
     }
-
-
 }
 
 
@@ -318,9 +298,12 @@ void VulkanRenderer::updateCamera(glm::mat4 newView, glm::mat4 newProjection) {
 // TODO can be combined with updateLightPos if a wrapper is written around those two
 void VulkanRenderer::updateModel(glm::mat4 newModel, int index) {
     meshes[index].setModel(newModel);
+    printf("Update model passing index %d\n", index);
+
 }
 
 void VulkanRenderer::updateLightPos(glm::vec3 newPos, glm::mat4 transMat, int index) {
+    printf("Update light passing index %d\n", index);
 
     meshes[index].setModel(glm::translate(transMat, newPos));
     fragmentColor.lightPos = glm::vec4(newPos, 1.0f);
@@ -358,6 +341,7 @@ void VulkanRenderer::updateDisparityVideoTexture() {
 }
 
 void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> modelSettings) {
+    modelSettings.pop_back();
     models.resize(modelSettings.size()); // Number of objects
     arPipelines.resize(modelSettings.size());
     arDescriptors.resize(modelSettings.size());
@@ -365,87 +349,11 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
     textureImageBuffer.resize(modelSettings.size());
 // Load in each model
     for (int i = 0; i < modelSettings.size(); ++i) {
-        // Create Mesh
-        ArModel arModel;
-        arModel.transferCommandPool = arEngine.commandPool;
-        arModel.transferQueue = arEngine.graphicsQueue;
-        arModel.modelName = "standard/" + modelSettings[i].at("type") + ".obj";
-        MeshModel meshModel;
 
-        meshes.push_back(meshModel.loadModel(arEngine.mainDevice, &arModel, true));
-        models[i] = arModel;
-
-        // Create number of descriptors according to scene file
-        arDescriptors[i].descriptorSets.resize(std::stoi(modelSettings[i].at("descriptorSets")));
-        arDescriptors[i].descriptorSetLayouts.resize(std::stoi(modelSettings[i].at("descriptorSetLayouts")));
-        uboBuffers.resize(arDescriptors[i].descriptorSets.size());
-        arDescriptors[i].buffer.resize(arDescriptors[i].descriptorSets.size());
-        arDescriptors[i].bufferMemory.resize(arDescriptors[i].descriptorSets.size());
-
-        VkDeviceSize vpBufferSize = sizeof(uboModel);
-
-        // Create buffers
-        for (int j = 0; j < arDescriptors[i].descriptorSets.size(); ++j) {
-            if (j == 1) //TODO set buffer options in scene file
-                vpBufferSize = sizeof(FragmentColor);
-            uboBuffers[j].bufferSize = vpBufferSize;
-            uboBuffers[j].bufferUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-            uboBuffers[j].bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-
-            buffer->createBuffer(&uboBuffers[j]);
-
-            arDescriptors[i].buffer[j] = uboBuffers[j].buffer;
-            arDescriptors[i].bufferMemory[j] = uboBuffers[j].bufferMemory;
-        }
-
-        // Set amount of descriptor set layouts
-        // Create descriptors
-        if (i == 1 || i == 0) { // light descriptor
-            descriptors->lightDescriptors(&arDescriptors[i]);
-        } else { // Default descriptor
-            descriptors->createDescriptors(&arDescriptors[i]);
-            // Create initial texture
-
-            arTextureSampler[i].transferQueue = arEngine.graphicsQueue;
-            arTextureSampler[i].transferCommandPool = arEngine.commandPool;
-            textureImageBuffer[i].bufferProperties =
-                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-            textureImageBuffer[i].bufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-
-            /*
-            videoTexture.transferQueue = arEngine.graphicsQueue;
-            videoTexture.transferCommandPool = arEngine.commandPool;
-            videoTextureBuffer.bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-            videoTextureBuffer.bufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-            videoTexture.width = 1242;
-            videoTexture.height = 375;
-            videoTexture.channels = 1;
-            // Create texture image
-            if ( i == 3) // i == 3 then it is Disparity block
-            {
-                textures->createTextureImage(&videoTexture, &videoTextureBuffer);
-            }
-*/
-
-            textures->createTexture(modelSettings[i].at("texture") + modelSettings[i].at("texture_format"), &arTextureSampler[i], &textureImageBuffer[i]);
-            // Create Texture sampler and add to descriptor set
-            descriptors->createDescriptorsSampler(&arDescriptors[i], arTextureSampler[i]);
-
-        }
-        // Should be called for specific objects during loading
-        // Initialize pipeline structs
-
-        arPipelines[i].device = arEngine.mainDevice.device;
-        arPipelines[i].swapchainImageFormat = arEngine.swapchainFormat;
-        arPipelines[i].swapchainExtent = arEngine.swapchainExtent;
-
-        // Create pipeline
-        ArShadersPath shadersPath;
-        shadersPath.vertexShader = "../shaders/" + modelSettings[i].at("vertex_shader");
-        shadersPath.fragmentShader = "../shaders/" + modelSettings[i].at("fragment_shader");
-        pipeline.arLightPipeline(renderPass, arDescriptors[i].descriptorSetLayouts, shadersPath, &arPipelines[i]);
-        fragmentColor.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
-        fragmentColor.objectColor = glm::vec4(0.5f, 0.5f, 0.31f, 0.0f);
+        if (modelSettings[i].at("type") == "sphere")
+            loadTypeOneObjects();
+        else
+            loadTypeTwoObjects();
 
     }
     // update command buffers
@@ -453,21 +361,70 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
 
     // --- Translate models ---
     glm::mat4 trans(1.0f);
-    for (int i = 0; i < models.size(); ++i) {
-        updateModel(glm::translate(trans, glm::vec3(i * 2, 0.0f, 0.0f)), i);
-    }
     // Glasses
-    updateModel(glm::translate(trans, glm::vec3(0.0f, 0.0f, 3)), 0);
+    updateLightPos(glm::vec3(0.0f, 0.20f, -6.0f), trans, 0);
     // lightbox
-    updateLightPos(glm::vec3(5.0f, -2.0f, 3.0f), trans, 2);
-    // Big box
-    glm::mat4 model(1.0f);
-    model = glm::translate(model, glm::vec3(6, 0.0f, -4.0f));
-    model = glm::scale(model, glm::vec3(10.0f, 3.0f, 1.0f));
-    updateModel(model, 3);
-
 }
 
+
+void VulkanRenderer::loadTypeOneObjects(){
+    // Create Mesh
+    // Create Mesh
+    ArModel arModel;
+    arModel.transferCommandPool = arEngine.commandPool;
+    arModel.transferQueue = arEngine.graphicsQueue;
+    arModel.modelName = "standard/sphere.obj";
+    MeshModel meshModel;
+    meshes.push_back(meshModel.loadModel(arEngine.mainDevice, &arModel, true));
+    models[0] = arModel;
+
+    // Create number of descriptors according to scene file
+    arDescriptors[0].descriptorSets.resize(2);
+    arDescriptors[0].descriptorSetLayouts.resize(2);
+
+    std::vector<ArBuffer> uboBuffers;
+    uboBuffers.resize(arDescriptors[0].descriptorSets.size());
+    arDescriptors[0].buffer.resize(arDescriptors[0].descriptorSets.size());
+    arDescriptors[0].bufferMemory.resize(arDescriptors[0].descriptorSets.size());
+    arDescriptors[0].dataSizes.resize(arDescriptors[0].descriptorSets.size());
+    arDescriptors[0].dataSizes[0] = sizeof(uboModel);
+    arDescriptors[0].dataSizes[1] = sizeof(FragmentColor);
+    // Create buffers
+    for (int j = 0; j < arDescriptors[0].descriptorSets.size(); ++j) {
+
+        uboBuffers[j].bufferSize = arDescriptors[0].dataSizes[j];
+        uboBuffers[j].bufferUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        uboBuffers[j].bufferProperties =
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+        buffer->createBuffer(&uboBuffers[j]);
+
+        arDescriptors[0].buffer[j] = uboBuffers[j].buffer;
+        arDescriptors[0].bufferMemory[j] = uboBuffers[j].bufferMemory;
+    }
+
+    // Set amount of descriptor set layouts
+    // Create descriptors
+    descriptors->lightDescriptors(&arDescriptors[0]);
+
+
+    // Should be called for specific objects during loading
+    // Initialize pipeline structs
+
+    arPipelines[0].device = arEngine.mainDevice.device;
+    arPipelines[0].swapchainImageFormat = arEngine.swapchainFormat;
+    arPipelines[0].swapchainExtent = arEngine.swapchainExtent;
+
+    // Create pipeline
+    ArShadersPath shadersPath;
+    shadersPath.vertexShader = "../shaders/defaultVert";
+    shadersPath.fragmentShader = "../shaders/phongLightFrag";
+    pipeline.arLightPipeline(renderPass, arDescriptors[0].descriptorSetLayouts, shadersPath, &arPipelines[0]);
+    fragmentColor.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
+    fragmentColor.objectColor = glm::vec4(0.5f, 0.5f, 0.31f, 0.0f);
+
+
+}
 void VulkanRenderer::vulkanComputeShaders() {
     // Load shaders
 
@@ -476,6 +433,10 @@ void VulkanRenderer::vulkanComputeShaders() {
     // - descriptor buffers
 
     // Create pipelinelayout
+
+}
+
+void VulkanRenderer::loadTypeTwoObjects() {
 
 }
 

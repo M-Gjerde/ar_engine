@@ -64,10 +64,9 @@ private:
 
     // Buffer
     Buffer *buffer{};
-    std::vector<ArBuffer> uboBuffers;
 
     // Objects
-    std::vector<Mesh> meshes;
+    std::vector<Mesh> meshes{};
     std::vector<ArModel> models{};
 
     // Descriptors
@@ -107,7 +106,9 @@ private:
     void updateBuffer(uint32_t imageIndex);
 
 
+    void loadTypeOneObjects();
 
+    void loadTypeTwoObjects();
 };
 
 

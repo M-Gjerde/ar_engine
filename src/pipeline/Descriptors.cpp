@@ -82,7 +82,7 @@ void Descriptors::fragmentSetLayout() {
     uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;              // Shader stage to bind to
     uboLayoutBinding.pImmutableSamplers = nullptr;                          // For texture: can make sampler data unchangeable (immutable) by specyfing layout but the imageView it samples from can still be changed
 
-    // Texture layout binding
+    // Color layout binding
     VkDescriptorSetLayoutBinding colorLayoutBinding{};
     colorLayoutBinding.binding = 1;
     colorLayoutBinding.descriptorCount = 1;
@@ -92,29 +92,25 @@ void Descriptors::fragmentSetLayout() {
 
     std::vector<VkDescriptorSetLayoutBinding> layoutBindings = {uboLayoutBinding};
     // Create descriptor set layout with given bindings
-    VkDescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-    layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutCreateInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());     // Number of binding infos
-    layoutCreateInfo.pBindings = layoutBindings.data();                               // Array of binding infos
+    std::vector<VkDescriptorSetLayoutCreateInfo> layoutCreateInfos;
+    layoutCreateInfos.resize(3); //TODO This may break the program if more descriptorsSetLayouts wants to be created
+    layoutCreateInfos[0].sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutCreateInfos[0].bindingCount = static_cast<uint32_t>(layoutBindings.size());     // Number of binding infos
+    layoutCreateInfos[0].pBindings = layoutBindings.data();                               // Array of binding infos
 
-    // Create descriptor set layout
-    VkResult result = vkCreateDescriptorSetLayout(device, &layoutCreateInfo, nullptr,
-                                                  &mArDescriptor.descriptorSetLayouts[0]);
-    if (result != VK_SUCCESS)
-        throw std::runtime_error("Failed to create Descriptor set layout");
-
-
-    std::vector<VkDescriptorSetLayoutBinding> layoutBindings2 = {colorLayoutBinding};
     // Create descriptor set layout with given bindings
-    layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutCreateInfo.bindingCount = static_cast<uint32_t>(layoutBindings2.size());     // Number of binding infos
-    layoutCreateInfo.pBindings = layoutBindings2.data();                               // Array of binding infos
+    std::vector<VkDescriptorSetLayoutBinding> layoutBindings2 = {colorLayoutBinding};
+    layoutCreateInfos[1].sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutCreateInfos[1].bindingCount = static_cast<uint32_t>(layoutBindings2.size());     // Number of binding infos
+    layoutCreateInfos[1].pBindings = layoutBindings2.data();                               // Array of binding infos
 
-    // Create descriptor set layout
-    result = vkCreateDescriptorSetLayout(device, &layoutCreateInfo, nullptr,
-                                         &mArDescriptor.descriptorSetLayouts[1]);
-    if (result != VK_SUCCESS)
-        throw std::runtime_error("Failed to create Descriptor set layout");
+    for (int i = 0; i < mArDescriptor.descriptorSetLayouts.size(); ++i) {
+        VkResult result = vkCreateDescriptorSetLayout(device, &layoutCreateInfos[i], nullptr,
+                                                      &mArDescriptor.descriptorSetLayouts[i]);
+        if (result != VK_SUCCESS)
+            throw std::runtime_error("Failed to create Descriptor set layout");
+    }
+
 
 }
 
@@ -299,16 +295,17 @@ void Descriptors::createDescriptorSets() {
 
 void Descriptors::cleanUp(ArDescriptor arDescriptor) {
 
-    for (auto &descriptorSetLayout : arDescriptor.descriptorSetLayouts) {
-        vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
-    }
-    vkDestroyDescriptorPool(device, arDescriptor.descriptorPool, nullptr);
-
     for (int i = 0; i < arDescriptor.buffer.size(); ++i) {
         vkFreeMemory(device, arDescriptor.bufferMemory[i], nullptr);
         vkDestroyBuffer(device, arDescriptor.buffer[i], nullptr);
 
     }
+
+    for (int i = 0; i < arDescriptor.descriptorSetLayouts.size(); ++i) {
+        vkDestroyDescriptorSetLayout(device, arDescriptor.descriptorSetLayouts[i], nullptr);
+    }
+
+    vkDestroyDescriptorPool(device, arDescriptor.descriptorPool, nullptr);
 
 }
 
