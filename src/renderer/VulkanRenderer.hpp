@@ -38,17 +38,19 @@ public:
     void updateDisparityVideoTexture(); // TODO TEST METHOD
     void vulkanComputeShaders(); //TODO Test method
 
+    void loadTypeOneObject(); // TODO Test Method
+
     void draw();
 
     void cleanup();
 
     ~VulkanRenderer();
 
-
-    // TODO Think of better handles than this
-    bool textureUpdateToggle = false;
-
     void drawScene(std::vector<std::map<std::string, std::string>> vector);
+
+    void updateScene();
+
+    void deleteLastObject();
 
 private:
     // Vulkan components
@@ -106,9 +108,8 @@ private:
     void updateBuffer(uint32_t imageIndex);
 
 
-    void loadTypeOneObjects();
+    void loadTypeTwoObject();
 
-    void loadTypeTwoObjects();
 };
 
 

@@ -14,7 +14,7 @@ public:
 
     explicit Descriptors(const ArEngine& engine);
 
-    void createDescriptors(ArDescriptor *pDescriptor);
+    void createDescriptors(ArDescriptorInfo descriptorInfo, ArDescriptor *pDescriptor);
     void createDescriptorsSampler(ArDescriptor *pDescriptor, ArTextureImage pTextureSampler);
 
     void cleanUp(ArDescriptor arDescriptor);
@@ -26,9 +26,9 @@ private:
     ArDescriptor mArDescriptor;
     ArTextureImage arTextureSampler{};
 
-    void createSetLayout();
-    void createSetPool();
-    void createDescriptorSets();
+    void createSetLayout(ArDescriptorInfo info, ArDescriptor *pDescriptor);
+    void createSetPool(ArDescriptorInfo info, ArDescriptor *pDescriptor);
+    void createDescriptorSets(ArDescriptorInfo info, ArDescriptor *pDescriptor);
 
     void updateTextureSamplerDescriptor();
 

@@ -7,10 +7,12 @@
 
 
 #define GLFW_INCLUDE_VULKAN
+
 #include <GLFW/glfw3.h>
 #include <vector>
 #include "triangle.h"
 #include <string>
+
 struct ArShadersPath {
     std::string vertexShader;
     std::string fragmentShader;
@@ -30,16 +32,25 @@ struct ArModel {
     std::string modelName;
 };
 
-struct ArDescriptor{
+struct ArDescriptor {
     VkDescriptorPool descriptorPool;
     std::vector<VkDescriptorSet> descriptorSets;
     std::vector<VkBuffer> buffer;
     std::vector<VkDeviceMemory> bufferMemory;
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
     std::vector<size_t> dataSizes;
-
-
 };
+
+struct ArDescriptorInfo {
+    uint32_t binding;
+    VkDescriptorType descriptorType;
+    uint32_t descriptorCount;
+    VkShaderStageFlags stageFlags;
+
+    VkDescriptorSetLayoutCreateFlags layoutCreateFlags;
+    uint32_t bindingCount;
+};
+
 
 struct ArTextureImage {
     VkImageView textureImageView;
@@ -51,7 +62,7 @@ struct ArTextureImage {
     int width;
     int height;
     int channels;
-    void* data;
+    void *data;
 };
 
 struct ArBuffer {
@@ -60,6 +71,9 @@ struct ArBuffer {
     VkMemoryPropertyFlags bufferProperties;
     VkBuffer buffer;
     VkDeviceMemory bufferMemory;
+    VkSharingMode sharingMode;
+    uint32_t queueFamilyIndexCount;
+    const uint32_t *pQueueFamilyIndices;
 };
 
 
@@ -76,6 +90,7 @@ struct ArEngine {
     MainDevice mainDevice;
     VkQueue graphicsQueue;
     VkQueue presentQueue;
+    VkQueue computeQueue;
     VkSwapchainKHR swapchain;
     std::vector<VkImage> swapchainImages;
     std::vector<VkImageView> swapChainImageViews;

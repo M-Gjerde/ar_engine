@@ -267,4 +267,43 @@ void Pipeline::cleanUp(ArPipeline arPipeline) const {
 
 }
 
+void Pipeline::computePipeline(std::vector<VkDescriptorSetLayout> descriptorSetLayouts, const ArShadersPath& shaderPath,
+                               ArPipeline *pipeline) {
+
+    auto vertShaderCode = readFile("../shaders/experimental/computeShader.spv");
+
+    VkShaderModule vertShaderModule = createShaderModule(pipeline->device, vertShaderCode);
+    //SHADER SETUP
+
+    // Vertex shader info
+    VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+    vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertShaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    vertShaderStageInfo.module = vertShaderModule;
+    vertShaderStageInfo.pName = "main";
+
+
+    VkPipelineLayoutCreateInfo pipelineLayout{};
+    pipelineLayout.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayout.setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size());
+    pipelineLayout.pSetLayouts = descriptorSetLayouts.data();
+    pipelineLayout.pushConstantRangeCount = 0;
+    pipelineLayout.pPushConstantRanges = nullptr;
+
+    VkResult result = vkCreatePipelineLayout(pipeline->device, &pipelineLayout, nullptr, &pipeline->pipelineLayout);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to create compute pipelines");
+
+    VkComputePipelineCreateInfo computePipelineCreateInfo {};
+
+    computePipelineCreateInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    computePipelineCreateInfo.stage = vertShaderStageInfo;
+    computePipelineCreateInfo.layout = pipeline->pipelineLayout;
+
+    result = vkCreateComputePipelines(pipeline->device, VK_NULL_HANDLE, 1, &computePipelineCreateInfo, nullptr, &pipeline->pipeline);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to create compute pipelines");
+
+}
+
 

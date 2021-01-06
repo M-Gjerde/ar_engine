@@ -4,4 +4,4 @@ glslc ./PhongLight.frag -o phongLightFrag.spv
 glslc ./lamp.vert -o lampVert.spv
 glslc ./lamp.frag -o lampFrag.spv
 
-glslc ./experimental/computeShader.vert -o computeShader.spv
+glslc ./experimental/computeShader.comp -o ./experimental/computeShader.spv

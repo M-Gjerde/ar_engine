@@ -52,7 +52,7 @@ void Textures::createTextureImage(std::string fileName, ArTextureImage *arTextur
     stbi_uc *pixels;
     std::string filePath = "../textures/" + fileName;
 
-    pixels = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha); //TODO METHOD
+    pixels = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     texChannels = 4; // 1+ beacuse of alpha
     format = VK_FORMAT_R8G8B8A8_UNORM;
 
@@ -60,6 +60,7 @@ void Textures::createTextureImage(std::string fileName, ArTextureImage *arTextur
 
     // Creating staging buffer
     imageBuffer->bufferSize = texWidth * texHeight * texChannels;
+    imageBuffer->sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     images->createBuffer(imageBuffer);
 
     // Copy data to buffer
@@ -130,6 +131,7 @@ void Textures::createTextureImage(ArTextureImage *arTexture, ArBuffer *textureBu
 
     // Creating staging buffer
     textureBuffer->bufferSize = imageSize;
+    textureBuffer->sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     images->createBuffer(textureBuffer);
 
     arTexture->textureImageView = images->createImageView(arTexture->textureImage, format, VK_IMAGE_ASPECT_COLOR_BIT);

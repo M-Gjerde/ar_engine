@@ -22,7 +22,9 @@ void Buffer::createBuffer(ArBuffer *buffer) {
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = buffer->bufferSize;                                   // Size of buffer (size of 1 vertex * number of vertices) Size in memory
     bufferInfo.usage = buffer->bufferUsage;           // Types of buffer, however we want vertex buffer
-    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;             // Similar to swap chain images, can share vertex buffers
+    bufferInfo.sharingMode = buffer->sharingMode;             // Similar to swap chain images, can share vertex buffers
+    bufferInfo.pQueueFamilyIndices = buffer->pQueueFamilyIndices;
+    bufferInfo.queueFamilyIndexCount = buffer->queueFamilyIndexCount;
 
     // Create buffer
     VkResult result = vkCreateBuffer(device, &bufferInfo, nullptr, &buffer->buffer);

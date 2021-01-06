@@ -87,7 +87,7 @@ Mesh MeshModel::loadModel(MainDevice mainDevice, ArModel *arModel, bool generate
                             normal.x = nx;
                             normal.y = ny;
                             normal.z = nz;
-                            vertex.normal = -normal; //TODO Something wrong with normals
+                            vertex.normal = -normal;
                             break;
                     }
                 }
@@ -102,9 +102,11 @@ Mesh MeshModel::loadModel(MainDevice mainDevice, ArModel *arModel, bool generate
     modelBuffers[0].bufferSize = sizeof(arModel->vertices[0]) * arModel->vertices.size();
     modelBuffers[0].bufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     modelBuffers[0].bufferProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    modelBuffers[0].sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     modelBuffers[1].bufferSize = sizeof(arModel->indices[0]) *  arModel->vertices.size();
     modelBuffers[1].bufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     modelBuffers[1].bufferProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    modelBuffers[1].sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     // Create mesh from model
     Mesh mesh(mainDevice, arModel, modelBuffers);

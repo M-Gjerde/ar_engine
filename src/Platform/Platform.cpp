@@ -146,6 +146,8 @@ Platform::QueueFamilyIndices Platform::findQueueFamilies(VkPhysicalDevice device
         if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             indices.graphicsFamily = i;
         }
+        if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)
+            indices.computeFamily = i;
 
         if (indices.isComplete()) {
             break;
@@ -200,7 +202,7 @@ void Platform::createLogicalDevice() {
     // Also get queue handles
     vkGetDeviceQueue(arEngine.mainDevice.device, indices.graphicsFamily.value(), 0, &arEngine.graphicsQueue);
     vkGetDeviceQueue(arEngine.mainDevice.device, indices.presentFamily.value(), 0, &arEngine.presentQueue);
-
+    vkGetDeviceQueue(arEngine.mainDevice.device, indices.computeFamily.value(), 0, &arEngine.computeQueue);
 }
 
 void Platform::createSwapchain() {
@@ -258,11 +260,6 @@ bool Platform::hasDeviceExtensionsSupport() {
     std::vector<VkExtensionProperties> availableExtensions(extensionCount);
     vkEnumerateDeviceExtensionProperties(arEngine.mainDevice.physicalDevice, nullptr, &extensionCount,
                                          availableExtensions.data());
-
-    // TODO REMOVE IF NEEDED
-    for (auto & availableExtension : availableExtensions) {
-        //printf("Name: %s\n", availableExtension.extensionName);
-    }
 
     std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
 

@@ -47,6 +47,7 @@ void Mesh::createVertexBuffer() {
     stagingBuffer.bufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     stagingBuffer.bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     stagingBuffer.bufferSize = vertexBuffer.bufferSize;
+    stagingBuffer.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     // Create Staging buffer and allocate memory to it
     createBuffer(&stagingBuffer);
@@ -79,6 +80,7 @@ void Mesh::createIndexBuffer() {
     stagingBuffer.bufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     stagingBuffer.bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     stagingBuffer.bufferSize = indexBuffer.bufferSize;
+    stagingBuffer.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     // Create Staging buffer and allocate memory to it
     createBuffer(&stagingBuffer);

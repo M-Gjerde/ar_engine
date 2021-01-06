@@ -24,10 +24,6 @@ int VulkanRenderer::init(GLFWwindow *newWindow) {
 
         textures = new Textures(images);
 
-
-        //createSimpleMesh();
-        // TODO REWRITE
-
         createFrameBuffersAndRenderPass();
 
 
@@ -45,11 +41,6 @@ int VulkanRenderer::init(GLFWwindow *newWindow) {
 void VulkanRenderer::cleanup() {
     vkDeviceWaitIdle(arEngine.mainDevice.device); // wait for GPU to finish rendering before we clean up resources
 
-
-    // TODO clean this code
-    // textures->cleanUp(videoTexture, videoTextureBuffer);
-    //textures->cleanUp(arTextureSampler[3], textureImageBuffer[3]);
-    //textures->cleanUp(arTextureSampler[2], textureImageBuffer[2]);
 
     images->cleanUp(); // Clean up depth images
 
@@ -104,8 +95,6 @@ void VulkanRenderer::draw() {
 
     // TODO check if this should be done different
     updateBuffer(imageIndex);
-    if (textureUpdateToggle)
-        updateDisparityVideoTexture();
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -341,34 +330,38 @@ void VulkanRenderer::updateDisparityVideoTexture() {
 }
 
 void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> modelSettings) {
-    modelSettings.pop_back();
-    models.resize(modelSettings.size()); // Number of objects
-    arPipelines.resize(modelSettings.size());
-    arDescriptors.resize(modelSettings.size());
-    arTextureSampler.resize(modelSettings.size());
-    textureImageBuffer.resize(modelSettings.size());
 // Load in each model
     for (int i = 0; i < modelSettings.size(); ++i) {
 
         if (modelSettings[i].at("type") == "sphere")
-            loadTypeOneObjects();
+            loadTypeOneObject();
         else
-            loadTypeTwoObjects();
+            loadTypeTwoObject();
 
     }
+    updateScene();
+}
+
+void VulkanRenderer::updateScene() {
     // update command buffers
     recordCommand();
 
     // --- Translate models ---
     glm::mat4 trans(1.0f);
     // Glasses
-    updateLightPos(glm::vec3(0.0f, 0.20f, -6.0f), trans, 0);
+    for (int i = 0; i < meshes.size(); ++i) {
+        updateLightPos(glm::vec3(0.0f, 0.20f, i * -3.0f), trans, i);
+    }
     // lightbox
 }
 
+void VulkanRenderer::deleteLastObject() {
+    meshes.pop_back();
+    // TODO Clean up resources used with this object as well
+}
 
-void VulkanRenderer::loadTypeOneObjects(){
-    // Create Mesh
+
+void VulkanRenderer::loadTypeOneObject() {
     // Create Mesh
     ArModel arModel;
     arModel.transferCommandPool = arEngine.commandPool;
@@ -376,67 +369,252 @@ void VulkanRenderer::loadTypeOneObjects(){
     arModel.modelName = "standard/sphere.obj";
     MeshModel meshModel;
     meshes.push_back(meshModel.loadModel(arEngine.mainDevice, &arModel, true));
-    models[0] = arModel;
+    models.push_back(arModel);
 
     // Create number of descriptors according to scene file
-    arDescriptors[0].descriptorSets.resize(2);
-    arDescriptors[0].descriptorSetLayouts.resize(2);
+    ArDescriptor arDescriptor;
+    arDescriptor.dataSizes.resize(2);
+    arDescriptor.dataSizes[0] = sizeof(uboModel);
+    arDescriptor.dataSizes[1] = sizeof(FragmentColor);
 
-    std::vector<ArBuffer> uboBuffers;
-    uboBuffers.resize(arDescriptors[0].descriptorSets.size());
-    arDescriptors[0].buffer.resize(arDescriptors[0].descriptorSets.size());
-    arDescriptors[0].bufferMemory.resize(arDescriptors[0].descriptorSets.size());
-    arDescriptors[0].dataSizes.resize(arDescriptors[0].descriptorSets.size());
-    arDescriptors[0].dataSizes[0] = sizeof(uboModel);
-    arDescriptors[0].dataSizes[1] = sizeof(FragmentColor);
-    // Create buffers
-    for (int j = 0; j < arDescriptors[0].descriptorSets.size(); ++j) {
+    arDescriptor.descriptorSets.resize(2);
+    arDescriptor.descriptorSetLayouts.resize(2);
 
-        uboBuffers[j].bufferSize = arDescriptors[0].dataSizes[j];
-        uboBuffers[j].bufferUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        uboBuffers[j].bufferProperties =
+    std::vector<ArBuffer> buffers(2);
+
+    // Create and fill buffers
+    for (int j = 0; j < 2; ++j) {
+        buffers[j].bufferSize = arDescriptor.dataSizes[j];
+        buffers[j].bufferUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        buffers[j].sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        buffers[j].bufferProperties =
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-
-        buffer->createBuffer(&uboBuffers[j]);
-
-        arDescriptors[0].buffer[j] = uboBuffers[j].buffer;
-        arDescriptors[0].bufferMemory[j] = uboBuffers[j].bufferMemory;
+        buffer->createBuffer(&buffers[j]);
+        arDescriptor.buffer.push_back(buffers[j].buffer);
+        arDescriptor.bufferMemory.push_back(buffers[j].bufferMemory);
     }
 
-    // Set amount of descriptor set layouts
-    // Create descriptors
-    descriptors->lightDescriptors(&arDescriptors[0]);
+    descriptors->lightDescriptors(&arDescriptor);
 
-
-    // Should be called for specific objects during loading
-    // Initialize pipeline structs
-
-    arPipelines[0].device = arEngine.mainDevice.device;
-    arPipelines[0].swapchainImageFormat = arEngine.swapchainFormat;
-    arPipelines[0].swapchainExtent = arEngine.swapchainExtent;
+    ArPipeline arPipeline{};
+    arPipeline.device = arEngine.mainDevice.device;
+    arPipeline.swapchainImageFormat = arEngine.swapchainFormat;
+    arPipeline.swapchainExtent = arEngine.swapchainExtent;
 
     // Create pipeline
     ArShadersPath shadersPath;
     shadersPath.vertexShader = "../shaders/defaultVert";
     shadersPath.fragmentShader = "../shaders/phongLightFrag";
-    pipeline.arLightPipeline(renderPass, arDescriptors[0].descriptorSetLayouts, shadersPath, &arPipelines[0]);
+    pipeline.arLightPipeline(renderPass, arDescriptor.descriptorSetLayouts, shadersPath, &arPipeline);
     fragmentColor.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
     fragmentColor.objectColor = glm::vec4(0.5f, 0.5f, 0.31f, 0.0f);
 
+    arDescriptors.push_back(arDescriptor);
+    arPipelines.push_back(arPipeline);
 
 }
+
+void VulkanRenderer::loadTypeTwoObject() {
+
+}
+
+#define NUM_PARTICLES (1024*1024) // total number of particles to move
+#define NUM_WORK_ITEMS_PER_GROUP 64 // # work-items per work-group
+#define NUM_X_WORK_GROUPS ( NUM_PARTICLES / NUM_WORK_ITEMS_PER_GROUP )
+struct pos {
+    glm::vec4 pos; // positions
+};
+struct vel {
+    glm::vec4 vel; // velocities
+};
+struct col {
+    glm::vec4 col; // colors
+};
+
+#define TOP 2147483647. // 2^31 - 1
+
+float
+Ranf(float low, float high) {
+    auto r = (float) rand();
+    return low + r * (high - low) / (float) RAND_MAX;
+}
+
 void VulkanRenderer::vulkanComputeShaders() {
-    // Load shaders
 
-    // Create descriptor sets
+    // Create DescriptorBuffers
+    ArBuffer posBuffer{};
+    posBuffer.bufferSize = NUM_PARTICLES * sizeof(glm::vec4);
+    posBuffer.bufferUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    posBuffer.bufferProperties =
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    posBuffer.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    buffer->createBuffer(&posBuffer);
 
-    // - descriptor buffers
+    // Create VulkanDataBuffer
+    ArBuffer newBuffer{};
+    newBuffer.bufferSize = NUM_PARTICLES * sizeof(glm::vec4);
+    newBuffer.bufferUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    newBuffer.bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    newBuffer.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    buffer->createBuffer(&newBuffer);
 
-    // Create pipelinelayout
+    // Create DescriptorSets
+
+    ArDescriptorInfo descriptorInfo{};
+    descriptorInfo.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    descriptorInfo.descriptorCount = 1;
+    descriptorInfo.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    descriptorInfo.binding = 0;
+    descriptorInfo.bindingCount = 1;
+
+    ArDescriptor arDescriptor{};
+    arDescriptor.descriptorSets.resize(1);
+    arDescriptor.descriptorSetLayouts.resize(1);
+    arDescriptor.buffer.push_back(posBuffer.buffer);
+    arDescriptor.bufferMemory.push_back(posBuffer.bufferMemory);
+
+    descriptors->createDescriptors(descriptorInfo, &arDescriptor);
+
+    ArPipeline computePipeline{};
+    computePipeline.device = arEngine.mainDevice.device;
+
+    pipeline.computePipeline(arDescriptor.descriptorSetLayouts, ArShadersPath(), &computePipeline);
+
+
+    struct pos *positions{};
+    vkMapMemory(arEngine.mainDevice.device, arDescriptor.bufferMemory[0], 0, VK_WHOLE_SIZE, 0,
+                reinterpret_cast<void **>(&positions));
+    for (int i = 0; i < NUM_PARTICLES; i++) {
+        positions[i].pos.x = 10;
+        positions[i].pos.y = Ranf(0, 1);
+        positions[i].pos.z = Ranf(0, 1);
+        positions[i].pos.w = 1.;
+    }
+    vkUnmapMemory(arEngine.mainDevice.device, arDescriptor.bufferMemory[0]);
+
+    // --------- COMMAND BUFFERS ----------
+
+    /*
+     We are getting closer to the end. In order to send commands to the device(GPU),
+     we must first record commands into a command buffer.
+     To allocate a command buffer, we must first create a command pool. So let us do that.
+     */
+    VkCommandPool commandPool;
+    VkCommandBuffer commandBuffer;
+    VkCommandPoolCreateInfo commandPoolCreateInfo = {};
+    commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    commandPoolCreateInfo.flags = 0;
+    // the queue family of this command pool. All command buffers allocated from this command pool,
+    // must be submitted to queues of this family ONLY.
+    commandPoolCreateInfo.queueFamilyIndex = 0;
+    VkResult result = vkCreateCommandPool(arEngine.mainDevice.device, &commandPoolCreateInfo, NULL, &commandPool);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to create command pool");
+    /*
+    Now allocate a command buffer from the command pool.
+    */
+    VkCommandBufferAllocateInfo commandBufferAllocateInfo = {};
+    commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    commandBufferAllocateInfo.commandPool = commandPool; // specify the command pool to allocate from.
+    // if the command buffer is primary, it can be directly submitted to queues.
+    // A secondary buffer has to be called from some primary command buffer, and cannot be directly
+    // submitted to a queue. To keep things simple, we use a primary command buffer.
+    commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    commandBufferAllocateInfo.commandBufferCount = 1; // allocate a single command buffer.
+    result = vkAllocateCommandBuffers(arEngine.mainDevice.device, &commandBufferAllocateInfo,
+                                      &commandBuffer); // allocate command buffer.
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to allocate command buffers");
+    /*
+    Now we shall start recording commands into the newly allocated command buffer.
+    */
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT; // the buffer is only submitted and used once in this application.
+    result = vkBeginCommandBuffer(commandBuffer, &beginInfo); // start recording commands.
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to begin command buffers");
+    /*
+    We need to bind a pipeline, AND a descriptor set before we dispatch.
+    The validation layer will NOT give warnings if you forget these, so be very careful not to forget them.
+    */
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline.pipeline);
+
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline.pipelineLayout, 0, 1,
+                            &arDescriptor.descriptorSets[0], 0, NULL);
+
+#define WIDTH 3200
+#define HEIGHT 2400
+#define WORKGROUP_SIZE 32
+
+    /*
+    Calling vkCmdDispatch basically starts the compute pipeline, and executes the compute shader.
+    The number of workgroups is specified in the arguments.
+    If you are already familiar with compute shaders from OpenGL, this should be nothing new to you.
+    */
+    vkCmdDispatch(commandBuffer, (uint32_t) ceil(WIDTH / float(WORKGROUP_SIZE)),
+                  (uint32_t) ceil(HEIGHT / float(WORKGROUP_SIZE)), 1);
+
+    result = vkEndCommandBuffer(commandBuffer); // end recording commands.
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to end command buffers");
+
+    /*
+Now we shall finally submit the recorded command buffer to a queue.
+*/
+
+    VkSubmitInfo submitInfo = {};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1; // submit a single command buffer
+    submitInfo.pCommandBuffers = &commandBuffer; // the command buffer to submit.
+
+    /*
+      We create a fence.
+    */
+    VkFence fence;
+    VkFenceCreateInfo fenceCreateInfo = {};
+    fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceCreateInfo.flags = 0;
+    result = vkCreateFence(arEngine.mainDevice.device, &fenceCreateInfo, NULL, &fence);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to create fence");
+
+    /*
+    We submit the command buffer on the queue, at the same time giving a fence.
+    */
+    result = vkQueueSubmit(arEngine.graphicsQueue, 1, &submitInfo, fence);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to submit queue");
+
+    /*
+    The command will not have finished executing until the fence is signalled.
+    So we wait here.
+    We will directly after this read our buffer from the GPU,
+    and we will not be sure that the command has finished executing unless we wait for the fence.
+    Hence, we use a fence here.
+    */
+    result = vkWaitForFences(arEngine.mainDevice.device, 1, &fence, VK_TRUE, 100000000000);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to wait for fence");
+
+    vkDestroyFence(arEngine.mainDevice.device, fence, NULL);
+
+
+    // ----------- Retrieve data from compute pipeline
+
+    void* mappedMemory = NULL;
+    // Map the buffer memory, so that we can read from it on the CPU.
+    vkMapMemory(arEngine.mainDevice.device, arDescriptor.bufferMemory[0], 0, VK_WHOLE_SIZE, 0, &mappedMemory);
+    pos * pmappedMemory = (pos *)mappedMemory;
+    // Get the color data from the buffer, and cast it to bytes.
+    // We save the data to a vector.
+    std::vector<double> image;
+    image.reserve(WIDTH * HEIGHT * 4);
+    image.push_back(pmappedMemory[0].pos.x);
+
+    // Done reading, so unmap.
+    vkUnmapMemory(arEngine.mainDevice.device, arDescriptor.bufferMemory[0]);
 
 }
 
-void VulkanRenderer::loadTypeTwoObjects() {
-
-}
 

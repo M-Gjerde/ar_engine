@@ -48,15 +48,20 @@ float forward = 5, right = 0, rotation = 0;
 void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         std::cout << "exiting..." << std::endl;
-        //disparity.stopProgram();
-
         glfwSetWindowShouldClose(window, true);
     }
 
     // execute vulkan compute sequence
     if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
-
+        vulkanRenderer.loadTypeOneObject();
+        vulkanRenderer.updateScene();
         vulkanRenderer.vulkanComputeShaders();
+    }
+
+    // delete objects sequence
+    if (key == GLFW_KEY_D && action == GLFW_PRESS) {
+        vulkanRenderer.deleteLastObject();
+        vulkanRenderer.updateScene();
 
     }
 
@@ -80,24 +85,6 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
         vulkanRenderer.updateModel(rotateMat, 0);
     }
 
-    if (key == GLFW_KEY_E) {
-        rotation++;
-        glm::mat4 rot = glm::rotate(lightTrans, glm::radians(rotation), glm::vec3(1.0f, 0.0f, 0.0f));
-
-        vulkanRenderer.updateModel(rot, 1);
-
-
-        vulkanRenderer.updateModel(glm::translate(rot, glm::vec3(0.0f, 0.0f, -5.0f)), 0);
-
-    }
-    if (key == GLFW_KEY_Q) {
-        rotation--;
-        glm::mat4 rot = glm::rotate(lightTrans, glm::radians(rotation), glm::vec3(1.0f, 0.0f, 0.0f));
-
-        vulkanRenderer.updateModel(rot, 1);
-        vulkanRenderer.updateModel(glm::translate(rot, glm::vec3(0.0f, 0.0f, -5.0f)), 0);
-
-    }
 
 
     if (key == GLFW_KEY_RIGHT)
