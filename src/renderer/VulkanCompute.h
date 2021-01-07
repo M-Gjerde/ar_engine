@@ -29,8 +29,6 @@ private:
     VkCommandPool commandPool{};
     ArPipeline computePipeline{};
 
-    stbi_uc *imageOne;
-
     void loadImageData();
 
 };

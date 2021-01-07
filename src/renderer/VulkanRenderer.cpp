@@ -481,9 +481,6 @@ void VulkanRenderer::vulkanComputeShaders() {
     for (int i = 0; i < imageSize; ++i) {
         *pixels = pmappedMemory->x;
         if (i > imageSize - 10) printf("Result: %d\n", *pixels);
-        if (i == 0) printf("Final index: %f\n", pmappedMemory->x);
-
-
         pixels++;
         pmappedMemory++;
     }

@@ -162,23 +162,32 @@ void VulkanCompute::loadComputeData(ArCompute arCompute) {
     int texWidth, texHeight, texChannels;
     std::string filePath = "../textures/Aloe/view1.png";
 
-    imageOne = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
+    stbi_uc* imageOne = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
     if (!imageOne) throw std::runtime_error("failed to load texture image: view1.png");
+    filePath = "../textures/Aloe/view5.png";
+    stbi_uc* imageTwo = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
+    if (!imageTwo) throw std::runtime_error("failed to load texture image: view1.png");
 
     int width = 1282, height = 1110;
     int imageSize = width * height;
 
-    auto * pixelValue = new glm::vec4[imageSize];
+    auto * imgOnePixel = new glm::vec4[imageSize];
+    auto * imgTwoPixel = new glm::vec4[imageSize];
 
-    auto orig = pixelValue;
+    auto origOne = imgOnePixel;
+    auto origTwo = imgTwoPixel;
+
     for (int i = 0; i < imageSize; ++i) {
-        pixelValue->x = *imageOne;
-        if (i > imageSize - 10)
-            printf("Pixel value: %f\n", pixelValue->x);
+        imgOnePixel->x = *imageOne;
+        imgTwoPixel->x = *imageTwo;
         imageOne++;
-        pixelValue++;
+        imageTwo++;
+        imgTwoPixel++;
+        imgOnePixel++;
     }
-    pixelValue = orig;
+    imgOnePixel = origOne;
+    imgTwoPixel = origTwo;
+
     printf("\n");
 
 
@@ -186,16 +195,17 @@ void VulkanCompute::loadComputeData(ArCompute arCompute) {
     vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[0], 0, VK_WHOLE_SIZE, 0,
                 &data);
 
-    memcpy(data, pixelValue, imageSize * sizeof(glm::vec4));
-
-    auto *copiedMem = (glm::vec4  *) data;
-    for (int i = 0; i < imageSize; ++i) {
-        if (i > imageSize - 10)
-            printf("Pixel value: %f\n", copiedMem->x);
-        copiedMem++;
-    }
+    memcpy(data, imgOnePixel, imageSize * sizeof(glm::vec4));
 
     vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[0]);
+
+    data = nullptr;
+    vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[1], 0, VK_WHOLE_SIZE, 0,
+                &data);
+
+    memcpy(data, imgTwoPixel, imageSize * sizeof(glm::vec4));
+
+    vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[1]);
 
 }
 
