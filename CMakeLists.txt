@@ -11,7 +11,6 @@ find_package(glm REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(OpenCV REQUIRED HINTS /home/magnus/libraries/opencv-master/build)
-#find_package(OpenCL REQUIRED)
 
 
 ## Stereovision extension
@@ -48,10 +47,11 @@ add_library(VulkanRenderer
         src/pipeline/Textures.cpp
         src/pipeline/Textures.h
         src/include/stb_image.h
+        src/include/stbi_image_write.h
         src/pipeline/MeshModel.cpp
         src/pipeline/MeshModel.h
         src/Platform/LoadSettings.cpp
-        src/Platform/LoadSettings.h)
+        src/Platform/LoadSettings.h src/renderer/VulkanCompute.cpp src/renderer/VulkanCompute.h)
 
 target_link_libraries(VulkanRenderer
         #stereoVision

@@ -15,7 +15,7 @@
 #include "../pipeline/Mesh.h"
 #include "../pipeline/Images.h"
 #include "../pipeline/Textures.h"
-//#include "../stereo/Disparity.h"
+#include "VulkanCompute.h"
 #include <stdexcept>
 #include <vector>
 #include <iostream>
@@ -64,6 +64,11 @@ private:
     ArDepthResource arDepthResource;
     VkRenderPass renderPass;
 
+    // Compute pipeline
+    VulkanCompute *vulkanCompute;
+    ArCompute arCompute;
+    VkFence computeFence;
+
     // Buffer
     Buffer *buffer{};
 
@@ -110,6 +115,9 @@ private:
 
     void loadTypeTwoObject();
 
+    void initComputePipeline();
+
+    void loadComputeData();
 };
 
 

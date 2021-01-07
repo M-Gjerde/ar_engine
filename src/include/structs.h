@@ -115,5 +115,10 @@ struct ArDepthResource {
     VkExtent2D swapChainExtent;
 };
 
+struct ArCompute {
+    VkCommandBuffer commandBuffer;
+    ArDescriptor descriptor;
+};
+
 
 #endif //AR_ENGINE_STRUCTS_H

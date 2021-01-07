@@ -295,7 +295,6 @@ void Pipeline::computePipeline(std::vector<VkDescriptorSetLayout> descriptorSetL
         throw std::runtime_error("Failed to create compute pipelines");
 
     VkComputePipelineCreateInfo computePipelineCreateInfo {};
-
     computePipelineCreateInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
     computePipelineCreateInfo.stage = vertShaderStageInfo;
     computePipelineCreateInfo.layout = pipeline->pipelineLayout;
@@ -304,6 +303,7 @@ void Pipeline::computePipeline(std::vector<VkDescriptorSetLayout> descriptorSetL
     if (result != VK_SUCCESS)
         throw std::runtime_error("Failed to create compute pipelines");
 
+    vkDestroyShaderModule(pipeline->device, vertShaderModule, nullptr);
 }
 
 

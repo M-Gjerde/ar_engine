@@ -53,15 +53,15 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
 
     // execute vulkan compute sequence
     if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
-        vulkanRenderer.loadTypeOneObject();
-        vulkanRenderer.updateScene();
+        //vulkanRenderer.loadTypeOneObject();
+        //vulkanRenderer.updateScene();
         vulkanRenderer.vulkanComputeShaders();
     }
 
     // delete objects sequence
     if (key == GLFW_KEY_D && action == GLFW_PRESS) {
-        vulkanRenderer.deleteLastObject();
-        vulkanRenderer.updateScene();
+        //vulkanRenderer.deleteLastObject();
+        //vulkanRenderer.updateScene();
 
     }
 

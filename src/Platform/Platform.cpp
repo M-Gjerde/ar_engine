@@ -13,7 +13,8 @@ Platform::Platform(GLFWwindow *window, ArEngine *_arEngine) {
     createLogicalDevice();
     createSwapchain();
     createSwapchainImageViews();
-    createCommandPool();
+    // Create commandPool for graphics queue
+    createCommandPool(&arEngine.commandPool, findQueueFamilies(arEngine.mainDevice.physicalDevice).graphicsFamily.value());
     *_arEngine = arEngine;
 }
 
@@ -355,15 +356,15 @@ void Platform::createSwapchainImageViews() {
     }
 }
 
-void Platform::createCommandPool() {
+void Platform::createCommandPool(VkCommandPool *commandPool, uint32_t queueFamilyIndex) {
     QueueFamilyIndices queueFamilyIndices = findQueueFamilies(arEngine.mainDevice.physicalDevice);
 
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+    poolInfo.queueFamilyIndex = queueFamilyIndex;
     poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // Optional
 
-    if (vkCreateCommandPool(arEngine.mainDevice.device, &poolInfo, nullptr, &arEngine.commandPool) != VK_SUCCESS) {
+    if (vkCreateCommandPool(arEngine.mainDevice.device, &poolInfo, nullptr, commandPool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create command pool!");
     }
 

@@ -35,6 +35,8 @@ public:
     };
 
     Platform(GLFWwindow *window, ArEngine *arEngine);
+    void createCommandPool(VkCommandPool *commandPool, uint32_t queueFamilyIndex);
+    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) const;
     ~Platform();
 
     void cleanUp();
@@ -56,11 +58,9 @@ private:
     void createSwapchain();
     void createLogicalDevice();
     void createSwapchainImageViews();
-    void createCommandPool();
 
     // Helper functions
     [[nodiscard]] VkPhysicalDevice_T * selectPhysicalDevice() const;
-    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) const;
     bool hasDeviceExtensionsSupport();
     void pickPhysicalDevice();
 
