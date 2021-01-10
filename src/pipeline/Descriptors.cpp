@@ -83,11 +83,11 @@ void Descriptors::fragmentSetLayout() {
     VkDescriptorSetLayoutBinding colorLayoutBinding{};
     colorLayoutBinding.binding = 1;
     colorLayoutBinding.descriptorCount = 1;
-    colorLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    colorLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     colorLayoutBinding.pImmutableSamplers = nullptr;
     colorLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    std::vector<VkDescriptorSetLayoutBinding> layoutBindings = {uboLayoutBinding};
+    std::vector<VkDescriptorSetLayoutBinding> layoutBindings = {uboLayoutBinding, colorLayoutBinding};
     // Create descriptor set layout with given bindings
     std::vector<VkDescriptorSetLayoutCreateInfo> layoutCreateInfos;
     layoutCreateInfos.resize(3); //TODO This may break the program if more descriptorsSetLayouts wants to be created
@@ -167,7 +167,10 @@ void Descriptors::fragmentDescriptorSet() {
     colorSetWrite.pBufferInfo = &colorBufferInfo;                        // Information about buffer data to bind
 
 
-    std::vector<VkWriteDescriptorSet> writeDescriptorSetlist = {vpSetWrite, colorSetWrite};
+    std::vector<VkWriteDescriptorSet> writeDescriptorSetlist;
+    writeDescriptorSetlist.push_back(vpSetWrite);
+    if(mArDescriptor.dataSizes.size() > 1)
+        writeDescriptorSetlist.push_back(colorSetWrite);
     // Update the descriptor sets with new buffer/binding info
     vkUpdateDescriptorSets(device, static_cast<uint32_t>(writeDescriptorSetlist.size()), writeDescriptorSetlist.data(),
                            0, nullptr);

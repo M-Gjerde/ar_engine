@@ -343,10 +343,11 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
 
         if (modelSettings[i].at("type") == "sphere")
             loadTypeOneObject();
-        else
-            loadTypeTwoObject();
-
+        else if (modelSettings[i].at("type") == "cube")
+            //loadTypeTwoObject();
+            printf("");
     }
+
     updateScene();
 }
 
@@ -384,7 +385,8 @@ void VulkanRenderer::loadTypeOneObject() {
     arDescriptor.dataSizes.resize(2);
     arDescriptor.dataSizes[0] = sizeof(uboModel);
     arDescriptor.dataSizes[1] = sizeof(FragmentColor);
-
+    // TODO Create a descriptor creator class
+    
     arDescriptor.descriptorSets.resize(2);
     arDescriptor.descriptorSetLayouts.resize(2);
 
@@ -423,6 +425,53 @@ void VulkanRenderer::loadTypeOneObject() {
 }
 
 void VulkanRenderer::loadTypeTwoObject() {
+
+    // Create Mesh
+    ArModel arModel;
+    arModel.transferCommandPool = arEngine.commandPool;
+    arModel.transferQueue = arEngine.graphicsQueue;
+    arModel.modelName = "standard/cube.obj";
+    MeshModel meshModel;
+    meshes.push_back(meshModel.loadModel(arEngine.mainDevice, &arModel, true));
+    models.push_back(arModel);
+
+    // Create number of descriptors according to scene file
+    ArDescriptor arDescriptor;
+    arDescriptor.dataSizes.resize(1);
+    arDescriptor.dataSizes[0] = sizeof(uboModel);
+
+    arDescriptor.descriptorSets.resize(1);
+    arDescriptor.descriptorSetLayouts.resize(1);
+
+    std::vector<ArBuffer> buffers(1);
+
+    // Create and fill buffers
+    for (int j = 0; j < 1; ++j) {
+        buffers[j].bufferSize = arDescriptor.dataSizes[j];
+        buffers[j].bufferUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        buffers[j].sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        buffers[j].bufferProperties =
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        buffer->createBuffer(&buffers[j]);
+        arDescriptor.buffer.push_back(buffers[j].buffer);
+        arDescriptor.bufferMemory.push_back(buffers[j].bufferMemory);
+    }
+
+    descriptors->lightDescriptors(&arDescriptor);
+
+    ArPipeline arPipeline{};
+    arPipeline.device = arEngine.mainDevice.device;
+    arPipeline.swapchainImageFormat = arEngine.swapchainFormat;
+    arPipeline.swapchainExtent = arEngine.swapchainExtent;
+
+    // Create pipeline
+    ArShadersPath shadersPath;
+    shadersPath.vertexShader = "../shaders/defaultVert";
+    shadersPath.fragmentShader = "../shaders/defaultFrag";
+    pipeline.arLightPipeline(renderPass, arDescriptor.descriptorSetLayouts, shadersPath, &arPipeline);
+
+    arDescriptors.push_back(arDescriptor);
+    arPipelines.push_back(arPipeline);
 
 }
 

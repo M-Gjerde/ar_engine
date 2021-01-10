@@ -19,6 +19,16 @@
         "type": "cube",
         "texture": "default",
         "texture_format": ".png",
+        "vertex_shader": "defaultVert",
+        "fragment_shader": "phongLightFrag",
+        "descriptorSets": "1",
+        "descriptorSetLayouts": "1"
+
+      },
+      {
+        "type": "cube2",
+        "texture": "default",
+        "texture_format": ".png",
         "vertex_shader": "lampVert",
         "fragment_shader": "lampFrag",
         "descriptorSets": "1",
