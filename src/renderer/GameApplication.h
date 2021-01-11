@@ -51,6 +51,8 @@ public:
         // Load scene objects according to settings file
         auto settingsMap = loadSettings.getSceneObjects();
         vulkanRenderer.drawScene(settingsMap);
+
+        vulkanRenderer.vulkanComputeShaders();
     }
 
     virtual void keyCallback(GLFWwindow *glfWwindow, int key, int scancode, int action, int mods) {};
@@ -63,8 +65,9 @@ public:
     void gameLoop() {
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
-            update();
-            vulkanRenderer.draw();
+            //vulkanRenderer.draw();
+            //update();
+            break;
         }
 
         vulkanRenderer.cleanup();

@@ -39,7 +39,7 @@ void AppExtension::update() {
     }
 */
 
-    vulkanRenderer.updateSpecularLightCamera(camera.cameraPos);
+    //vulkanRenderer.updateSpecularLightCamera(camera.cameraPos);
 }
 
 

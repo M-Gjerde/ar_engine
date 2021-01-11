@@ -14,7 +14,7 @@ void Descriptors::createDescriptors(ArDescriptorInfo descriptorInfo, ArDescripto
     //createSetLayouts(descriptorInfo, pDescriptor);
     createDescriptorsSetLayout(descriptorInfo, pDescriptor);
     createSetPool(descriptorInfo, pDescriptor);
-    createDescriptorSets(pDescriptor);
+    createDescriptorSets(descriptorInfo, pDescriptor);
 }
 
 void Descriptors::lightDescriptors(ArDescriptor *pDescriptor) {
@@ -38,6 +38,7 @@ void Descriptors::createDescriptorsSampler(ArDescriptor *pDescriptor, ArTextureI
     *pDescriptor = mArDescriptor;
 }
 
+/*
 void Descriptors::createLightPool() {
 
     // CREATE UNIFORM DESCRIPTOR POOL
@@ -47,11 +48,11 @@ void Descriptors::createLightPool() {
     vpPoolSize.descriptorCount = static_cast<uint32_t>(mArDescriptor.descriptorSets.size());
 
 
-    /*
+
     VkDescriptorPoolSize modelPoolSize = {};
     modelPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     modelPoolSize.descriptorCount = static_cast<uint32_t>(modelDynamicUniformBuffer.size());
-*/
+
     std::vector<VkDescriptorPoolSize> poolList = {vpPoolSize};
 
     // Data to create descriptor pool
@@ -68,8 +69,8 @@ void Descriptors::createLightPool() {
         throw std::runtime_error("Failed to create a Descriptor Pool");
 
 }
-
-// TODO Possible remake of this. Make this dynamic if possible
+// TODO Possible remake of this. Make this dynamic if possible*/
+/*
 void Descriptors::fragmentSetLayout() {
     // UNIFORM VALUES DESCRIPTOR SET LAYOUT
     // VP binding info Create descriptor layout bindings
@@ -108,11 +109,7 @@ void Descriptors::fragmentSetLayout() {
         if (result != VK_SUCCESS)
             throw std::runtime_error("Failed to create Descriptor set layout");
     }
-
-
 }
-
-
 void Descriptors::fragmentDescriptorSet() {
 
     //std::vector<VkDescriptorSetLayout> setLayouts = {mArDescriptor.descriptorSetLayout, mArDescriptor.descriptorSetLayout2};
@@ -178,11 +175,12 @@ void Descriptors::fragmentDescriptorSet() {
 
 
 }
+*/
 
 void Descriptors::createDescriptorsSetLayout(ArDescriptorInfo info, ArDescriptor *pDescriptor) {
 
     std::vector<VkDescriptorSetLayoutBinding> uboLayoutBinding(info.descriptorCount);
-    std::vector<VkDescriptorSetLayoutCreateInfo> layoutCreateInfo(info.descriptorSetLayoutCount);
+    std::vector<VkDescriptorSetLayoutCreateInfo> layoutCreateInfo;
 
     // Crate multiple descriptors in one set
     // TODO Create assertions
@@ -206,6 +204,8 @@ void Descriptors::createDescriptorsSetLayout(ArDescriptorInfo info, ArDescriptor
             layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
             layoutInfo.bindingCount = index;                                              // Number of binding infos
             layoutInfo.pBindings = uboLayoutBinding.data();                               // Array of binding infos
+            layoutInfo.pNext = nullptr;
+            layoutInfo.flags = 0;
             layoutCreateInfo.push_back(layoutInfo);                                       // Save layout set
 
             // increment to next descriptor set and reset index
@@ -213,21 +213,30 @@ void Descriptors::createDescriptorsSetLayout(ArDescriptorInfo info, ArDescriptor
             index = 0;
         }
     }
-
+    // Assign data for descriptor set layouts | Initiate memory location
     for (int i = 0; i < info.descriptorSetLayoutCount; ++i) {
-        // Create descriptor set layout
+        pDescriptor->pDescriptorSetLayouts = new VkDescriptorSetLayout();
+    }
+    // record 1st pointer position
+    VkDescriptorSetLayout *orig = &pDescriptor->pDescriptorSetLayouts[0];
+// Create descriptor set layout
+    for (int i = 0; i < info.descriptorSetLayoutCount; ++i) {
         if (vkCreateDescriptorSetLayout(device, &layoutCreateInfo[i], nullptr,
                                         pDescriptor->pDescriptorSetLayouts) != VK_SUCCESS)
             throw std::runtime_error("Failed to create a descriptor set layout");
+
+        // Increment  pointer, if finished then exit creating layouts
+        if (i == info.descriptorSetLayoutCount - 1) break;
         pDescriptor->pDescriptorSetLayouts++;
     }
-
+    // reset pointer to 1st position
+    pDescriptor->pDescriptorSetLayouts = orig;
 
 }
 
 
 void Descriptors::createSetPool(ArDescriptorInfo info, ArDescriptor *pDescriptor) {
-
+    // TODO CREATE VARIATIONS FOR POOL TYPE
     // CREATE UNIFORM DESCRIPTOR POOL
     // Type of descriptors + how many DESCRIPTORS, not Descriptor sets (combined makes the pool size)
     VkDescriptorPoolSize descriptorPoolSize = {};
@@ -252,65 +261,52 @@ void Descriptors::createDescriptorSets(ArDescriptorInfo info, ArDescriptor *pDes
     //Descriptor set allocation info
     VkDescriptorSetAllocateInfo setAllocateInfo = {};
     setAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    setAllocateInfo.descriptorPool = pDescriptor->descriptorPool;                                         // Pool to allocate descriptor set from
-    setAllocateInfo.descriptorSetCount = 1; // Number of sets to allocate
-    setAllocateInfo.pSetLayouts = pDescriptor->descriptorSetLayouts.data();                               // Layouts to use to allocates sets(1:1 relationship)
+    setAllocateInfo.descriptorPool = pDescriptor->descriptorPool;                                   // Pool to allocate descriptor set from
+    setAllocateInfo.descriptorSetCount = info.descriptorSetCount;                                   // Number of sets to allocate
+    setAllocateInfo.pSetLayouts = pDescriptor->pDescriptorSetLayouts;                               // Layouts to use to allocates sets(1:1 relationship)
 
+    // TODO possible remake of this. Resizing and setting pDescriptor parameters here seems odd
+    pDescriptor->descriptorSets.resize(info.descriptorSetCount);
+    pDescriptor->descriptorSetLayoutCount = info.descriptorSetLayoutCount;
     // Allocate descriptor sets (multiple)
-
     VkResult result = vkAllocateDescriptorSets(device, &setAllocateInfo, pDescriptor->descriptorSets.data());
     if (result != VK_SUCCESS)
         throw std::runtime_error("Failed to allocate descriptor sets");
 
 
-    // Update all of descriptor set buffer bindings for FIRST DESCRIPTOR SET
-    for (size_t i = 0; i < 2; i++) {
-        // Buffer info and data offset info
-        // VIEW PROJECTION DESCRIPTOR
-        VkDescriptorBufferInfo vpBufferInfo = {};
-        vpBufferInfo.buffer = pDescriptor->buffer[i];                               // Buffer to get data from
-        vpBufferInfo.offset = 0;                                                    // Offset into the data
-        vpBufferInfo.range = pDescriptor->dataSizes[0];                 // Size of the data that is going to be bound to the descriptor set
+    int loop = 0;
+    for (int i = 0; i < info.descriptorSetCount; ++i) {
+        std::vector<VkWriteDescriptorSet> setWrites;
+        std::vector<VkDescriptorBufferInfo> bufferInfos(*info.pDescriptorSplitCount);
+        for (int index = 0; index < *info.pDescriptorSplitCount; ++index) {
+            // Buffer info and data offset info
+            // VIEW PROJECTION DESCRIPTOR
+            bufferInfos[index].buffer = pDescriptor->buffer[loop];                       // Buffer to get data from
+            bufferInfos[index].offset = 0;                                               // Offset into the data
+            bufferInfos[index].range = info.dataSizes[loop];                             // Size of the data that is going to be bound to the descriptor set
 
-        // Data about connection between binding and buffer
-        VkWriteDescriptorSet vpSetWrite = {};
-        vpSetWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        vpSetWrite.dstSet = pDescriptor->descriptorSets[0];            // Descriptor set to update
-        vpSetWrite.dstBinding = i;                                     // Binding to update (matches with binding on layout/shader
-        vpSetWrite.dstArrayElement = 0;                                // Index in the array we want to update
-        vpSetWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER; // Type of descriptor we are updating
-        vpSetWrite.descriptorCount = 1;                                // Amount to update
-        vpSetWrite.pBufferInfo = &vpBufferInfo;                        // Information about buffer data to bind
+            // Data about connection between binding and buffer
+            VkWriteDescriptorSet writeDescriptorSet = {};
+            writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            writeDescriptorSet.dstSet = pDescriptor->descriptorSets[i];            // Descriptor set to update
+            writeDescriptorSet.dstBinding = index;                                 // Binding to update (matches with binding on layout/shader
+            writeDescriptorSet.dstArrayElement = 0;                                // Index in the array we want to update
+            writeDescriptorSet.descriptorType = *info.pDescriptorType;             // Type of descriptor we are updating
+            writeDescriptorSet.descriptorCount = 1;                                // Amount to update
+            writeDescriptorSet.pBufferInfo = &bufferInfos[index];                          // Information about buffer data to bind
+            setWrites.push_back(writeDescriptorSet);
 
-        std::vector<VkWriteDescriptorSet> writeDescriptorSetlist = {vpSetWrite};
+            info.pDescriptorType++;
+            ++loop;
+        }
+
         // Update the descriptor sets with new buffer/binding info
-        vkUpdateDescriptorSets(device, static_cast<uint32_t>(writeDescriptorSetlist.size()),
-                               writeDescriptorSetlist.data(), 0, nullptr);
+        vkUpdateDescriptorSets(device, static_cast<uint32_t>(setWrites.size()),
+                               setWrites.data(), 0, nullptr);
 
+        info.pDescriptorSplitCount++;
     }
 
-    // UPDATE SECOND DESCRIPTOR SET
-    // Buffer info and data offset info
-    // VIEW PROJECTION DESCRIPTOR
-    VkDescriptorBufferInfo vpBufferInfo = {};
-    vpBufferInfo.buffer = pDescriptor->buffer[2];                               // Buffer to get data from
-    vpBufferInfo.offset = 0;                                                    // Offset into the data
-    vpBufferInfo.range = pDescriptor->dataSizes[0];                      // Size of the data that is going to be bound to the descriptor set
-
-    // Data about connection between binding and buffer
-    VkWriteDescriptorSet vpSetWrite = {};
-    vpSetWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    vpSetWrite.dstSet = pDescriptor->descriptorSets[1];            // Descriptor set to update
-    vpSetWrite.dstBinding = 0;                                     // Binding to update (matches with binding on layout/shader
-    vpSetWrite.dstArrayElement = 0;                                // Index in the array we want to update
-    vpSetWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER; // Type of descriptor we are updating
-    vpSetWrite.descriptorCount = 1;                                // Amount to update
-    vpSetWrite.pBufferInfo = &vpBufferInfo;                        // Information about buffer data to bind
-
-    std::vector<VkWriteDescriptorSet> writeDescriptorSetlist = {vpSetWrite};
-    // Update the descriptor sets with new buffer/binding info
-    vkUpdateDescriptorSets(device, static_cast<uint32_t>(writeDescriptorSetlist.size()),
-                           writeDescriptorSetlist.data(), 0, nullptr);
 }
 
 void Descriptors::cleanUp(ArDescriptor arDescriptor) {
@@ -321,9 +317,9 @@ void Descriptors::cleanUp(ArDescriptor arDescriptor) {
 
     }
 
-    for (int i = 0; i < arDescriptor.descriptorSetLayouts.size(); ++i) {
-        vkDestroyDescriptorSetLayout(device, arDescriptor.descriptorSetLayouts[i], nullptr);
-    }
+    //for (int i = 0; i < arDescriptor.descriptorSetLayouts.size(); ++i) {
+    //    vkDestroyDescriptorSetLayout(device, arDescriptor.descriptorSetLayouts[i], nullptr);
+    // }
 
     vkDestroyDescriptorPool(device, arDescriptor.descriptorPool, nullptr);
 
@@ -358,3 +354,20 @@ void Descriptors::updateTextureSamplerDescriptor() {
                                writeDescriptorSetlist.data(), 0, nullptr);
     }
 }
+
+void Descriptors::createLightPool() {
+
+}
+
+void Descriptors::createSetPool(std::vector<ArDescriptorInfo> info, ArDescriptor *pDescriptor) {
+
+}
+
+void Descriptors::fragmentDescriptorSet() {
+
+}
+
+void Descriptors::fragmentSetLayout() {
+
+}
+

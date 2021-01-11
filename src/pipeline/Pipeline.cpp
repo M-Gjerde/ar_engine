@@ -267,7 +267,7 @@ void Pipeline::cleanUp(ArPipeline arPipeline) const {
 
 }
 
-void Pipeline::computePipeline(std::vector<VkDescriptorSetLayout> descriptorSetLayouts, const ArShadersPath& shaderPath,
+void Pipeline::computePipeline(ArDescriptor arDescriptor, const ArShadersPath& shaderPath,
                                ArPipeline *pipeline) {
 
     auto vertShaderCode = readFile("../shaders/experimental/computeShader.spv");
@@ -285,8 +285,8 @@ void Pipeline::computePipeline(std::vector<VkDescriptorSetLayout> descriptorSetL
 
     VkPipelineLayoutCreateInfo pipelineLayout{};
     pipelineLayout.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayout.setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size());
-    pipelineLayout.pSetLayouts = descriptorSetLayouts.data();
+    pipelineLayout.setLayoutCount = arDescriptor.descriptorSetLayoutCount;
+    pipelineLayout.pSetLayouts = arDescriptor.pDescriptorSetLayouts;
     pipelineLayout.pushConstantRangeCount = 0;
     pipelineLayout.pPushConstantRanges = nullptr;
 

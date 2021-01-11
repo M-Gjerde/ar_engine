@@ -51,6 +51,7 @@ struct ArDescriptorInfo {
     VkShaderStageFlags stageFlags;      // stageFlags for descriptors
     uint32_t descriptorSetLayoutCount;  // How many descriptor layouts
     uint32_t descriptorSetCount;
+    uint32_t *dataSizes;
 };
 
 

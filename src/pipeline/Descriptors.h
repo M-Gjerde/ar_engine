@@ -40,8 +40,6 @@ private:
 
     void createSetPool(std::vector<ArDescriptorInfo> info, ArDescriptor *pDescriptor);
 
-    void createDescriptorSets(ArDescriptor *pDescriptor);
-
     void createDescriptorsSetLayout(ArDescriptorInfo info, ArDescriptor *pDescriptor);
 
     void createDescriptorSets(ArDescriptorInfo info, ArDescriptor *pDescriptor);

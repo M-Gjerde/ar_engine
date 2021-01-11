@@ -28,8 +28,10 @@ public:
 
     void cleanUp(ArPipeline arPipeline) const;
 
-    void computePipeline(std::vector<VkDescriptorSetLayout> descriptorSetLayouts, const ArShadersPath &shaderPath,
-                         ArPipeline *pipeline);
+
+    void
+    computePipeline(ArDescriptor arDescriptor, const ArShadersPath &shaderPath, ArPipeline *pipeline);
+
 private:
 
     VkShaderModule createShaderModule(VkDevice device, const std::vector<char> &code);

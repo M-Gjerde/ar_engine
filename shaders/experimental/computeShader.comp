@@ -30,7 +30,7 @@ void main()
     float sum = 0;
     float kernelSize = 49;
     float minAverage = 255;
-    int pixelDisparity = 0;
+    float pixelDisparity = 0;
     int disparityLevel = 256;
     float readPosLeft = 0, readPosRight = 0;
 
@@ -47,6 +47,7 @@ void main()
                 }
            }
 
+
             float average = sum / kernelSize;
             if (average < minAverage){
                 minAverage = average;
@@ -59,8 +60,9 @@ void main()
         imgOut.imgData[index].val.x = pixelDisparity;
         pixelDisparity = 0;
         minAverage = 100;// Reset min for avg
+
     } else {
-        imgOut.imgData[index].val.x = 127;
+        imgOut.imgData[index].val.x = 60;
     }
 
 }

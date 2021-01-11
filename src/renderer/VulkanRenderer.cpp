@@ -348,7 +348,7 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
             printf("");
     }
 
-    updateScene();
+    //updateScene();
 }
 
 void VulkanRenderer::updateScene() {
@@ -388,7 +388,7 @@ void VulkanRenderer::loadTypeOneObject() {
     // TODO Create a descriptor creator class
     
     arDescriptor.descriptorSets.resize(2);
-    arDescriptor.descriptorSetLayouts.resize(2);
+    //arDescriptor.descriptorSetLayouts.resize(2);
 
     std::vector<ArBuffer> buffers(2);
 
@@ -415,7 +415,7 @@ void VulkanRenderer::loadTypeOneObject() {
     ArShadersPath shadersPath;
     shadersPath.vertexShader = "../shaders/defaultVert";
     shadersPath.fragmentShader = "../shaders/phongLightFrag";
-    pipeline.arLightPipeline(renderPass, arDescriptor.descriptorSetLayouts, shadersPath, &arPipeline);
+    //pipeline.arLightPipeline(renderPass, arDescriptor.descriptorSetLayouts, shadersPath, &arPipeline);
     fragmentColor.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
     fragmentColor.objectColor = glm::vec4(0.5f, 0.5f, 0.31f, 0.0f);
 
@@ -441,7 +441,7 @@ void VulkanRenderer::loadTypeTwoObject() {
     arDescriptor.dataSizes[0] = sizeof(uboModel);
 
     arDescriptor.descriptorSets.resize(1);
-    arDescriptor.descriptorSetLayouts.resize(1);
+    //arDescriptor.descriptorSetLayouts.resize(1);
 
     std::vector<ArBuffer> buffers(1);
 
@@ -468,7 +468,7 @@ void VulkanRenderer::loadTypeTwoObject() {
     ArShadersPath shadersPath;
     shadersPath.vertexShader = "../shaders/defaultVert";
     shadersPath.fragmentShader = "../shaders/defaultFrag";
-    pipeline.arLightPipeline(renderPass, arDescriptor.descriptorSetLayouts, shadersPath, &arPipeline);
+    //pipeline.arLightPipeline(renderPass, arDescriptor.descriptorSetLayouts, shadersPath, &arPipeline);
 
     arDescriptors.push_back(arDescriptor);
     arPipelines.push_back(arPipeline);
@@ -489,7 +489,6 @@ void VulkanRenderer::initComputePipeline() {
 }
 
 void VulkanRenderer::loadComputeData() {
-
     vulkanCompute->loadComputeData(arCompute);
 
 }
