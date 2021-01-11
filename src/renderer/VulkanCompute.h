@@ -25,7 +25,7 @@ public:
 private:
 
     ArEngine arEngine;
-    ArDescriptor arDescriptor{};
+    std::vector<ArDescriptor> arDescriptors;
     VkCommandPool commandPool{};
     ArPipeline computePipeline{};
 

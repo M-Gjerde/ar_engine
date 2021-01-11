@@ -14,14 +14,14 @@ public:
 
     explicit Descriptors(const ArEngine& engine);
 
-    void createSetLayout(std::vector<ArDescriptorInfo> info, ArDescriptor *pDescriptor);
+    void createSetLayouts(std::vector<ArDescriptorInfo> info, ArDescriptor *pDescriptor);
     void createDescriptorsSampler(ArDescriptor *pDescriptor, ArTextureImage pTextureSampler);
 
     void cleanUp(ArDescriptor arDescriptor);
 
     void lightDescriptors(ArDescriptor *pDescriptor);
 
-    void createDescriptors(std::vector<ArDescriptorInfo> descriptorInfo, ArDescriptor *pDescriptor);
+    void createDescriptors(ArDescriptorInfo descriptorInfo, ArDescriptor *pDescriptor);
 
 private:
     VkDevice device;
@@ -41,6 +41,10 @@ private:
     void createSetPool(std::vector<ArDescriptorInfo> info, ArDescriptor *pDescriptor);
 
     void createDescriptorSets(ArDescriptor *pDescriptor);
+
+    void createDescriptorsSetLayout(ArDescriptorInfo info, ArDescriptor *pDescriptor);
+
+    void createDescriptorSets(ArDescriptorInfo info, ArDescriptor *pDescriptor);
 };
 
 

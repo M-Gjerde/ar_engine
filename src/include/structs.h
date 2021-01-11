@@ -12,6 +12,7 @@
 #include <vector>
 #include "triangle.h"
 #include <string>
+#include <array>
 
 struct ArShadersPath {
     std::string vertexShader;
@@ -37,18 +38,19 @@ struct ArDescriptor {
     std::vector<VkDescriptorSet> descriptorSets;
     std::vector<VkBuffer> buffer;
     std::vector<VkDeviceMemory> bufferMemory;
-    std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
+    uint32_t descriptorSetLayoutCount;
+    VkDescriptorSetLayout *pDescriptorSetLayouts;
     std::vector<size_t> dataSizes;
 };
 
 struct ArDescriptorInfo {
-    uint32_t binding;
-    VkDescriptorType descriptorType;
-    uint32_t descriptorCount;
-    VkShaderStageFlags stageFlags;
-
-    VkDescriptorSetLayoutCreateFlags layoutCreateFlags;
-    uint32_t bindingCount;
+    const uint32_t *pBindings;
+    VkDescriptorType *pDescriptorType;  // Array of different types 1:1 relationship
+    uint32_t descriptorCount;           // Should be equal to all the numbers of pDescriptorSplitCount array summed
+    uint32_t *pDescriptorSplitCount;
+    VkShaderStageFlags stageFlags;      // stageFlags for descriptors
+    uint32_t descriptorSetLayoutCount;  // How many descriptor layouts
+    uint32_t descriptorSetCount;
 };
 
 

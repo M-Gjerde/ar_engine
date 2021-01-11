@@ -4,10 +4,13 @@
 
 #include "VulkanCompute.h"
 #include "../include/stb_image.h"
+
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+
 #include "../include/stbi_image_write.h"
 
 #include <utility>
+#include <array>
 
 
 VulkanCompute::VulkanCompute(ArEngine mArEngine) {
@@ -64,24 +67,23 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     pBuffer->createBuffer(&outputBuffer);
 
     // Create DescriptorSets
-    std::vector<ArDescriptorInfo> inputDescriptorInfo(3);
-    inputDescriptorInfo[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    inputDescriptorInfo[0].descriptorCount = 1;
-    inputDescriptorInfo[0].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-    inputDescriptorInfo[0].binding = 0;
-    inputDescriptorInfo[0].bindingCount = 1;
+    arDescriptors.resize(2);
+    // Create descriptor set one
+    ArDescriptorInfo descriptorInfo{};
+    std::array<uint32_t , 2> descriptorCounts = {2, 1};
+    descriptorInfo.descriptorCount = 3;
+    descriptorInfo.pDescriptorSplitCount = descriptorCounts.data();
+    std::array<uint32_t, 3> bindings = {0, 1, 0};
+    std::array<VkDescriptorType, 3> types = {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER};
+    descriptorInfo.pDescriptorType = types.data();
+    descriptorInfo.pBindings = bindings.data();
+    descriptorInfo.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 
-    inputDescriptorInfo[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    inputDescriptorInfo[1].descriptorCount = 1;
-    inputDescriptorInfo[1].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-    inputDescriptorInfo[1].binding = 1;
-    inputDescriptorInfo[1].bindingCount = 1;
+    descriptorInfo.descriptorSetLayoutCount = 2;
+    descriptorInfo.descriptorSetCount = 2;
+    // Create descriptor set two
 
-    inputDescriptorInfo[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    inputDescriptorInfo[2].descriptorCount = 1;
-    inputDescriptorInfo[2].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-    inputDescriptorInfo[2].binding = 0;
-    inputDescriptorInfo[2].bindingCount = 1;
+    pDescriptors->createDescriptors(descriptorInfo, &arDescriptors[0]);
 
     arDescriptor.descriptorSets.resize(2);
     arDescriptor.descriptorSetLayouts.resize(2);
@@ -103,7 +105,8 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
 
     VkCommandBuffer commandBuffer;
     pPlatform->createCommandPool(&commandPool,
-                                 pPlatform->findQueueFamilies(arEngine.mainDevice.physicalDevice).computeFamily.value());
+                                 pPlatform->findQueueFamilies(
+                                         arEngine.mainDevice.physicalDevice).computeFamily.value());
 
 
     /*
@@ -135,7 +138,8 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     */
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline.pipeline);
 
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline.pipelineLayout, 0, arDescriptor.descriptorSets.size(),
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline.pipelineLayout, 0,
+                            arDescriptor.descriptorSets.size(),
                             arDescriptor.descriptorSets.data(), 0, NULL);
 
     /*
@@ -162,17 +166,17 @@ void VulkanCompute::loadComputeData(ArCompute arCompute) {
     int texWidth, texHeight, texChannels;
     std::string filePath = "../textures/Aloe/view1.png";
 
-    stbi_uc* imageOne = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
+    stbi_uc *imageOne = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
     if (!imageOne) throw std::runtime_error("failed to load texture image: view1.png");
     filePath = "../textures/Aloe/view5.png";
-    stbi_uc* imageTwo = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
+    stbi_uc *imageTwo = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
     if (!imageTwo) throw std::runtime_error("failed to load texture image: view1.png");
 
     int width = 1282, height = 1110;
     int imageSize = width * height;
 
-    auto * imgOnePixel = new glm::vec4[imageSize];
-    auto * imgTwoPixel = new glm::vec4[imageSize];
+    auto *imgOnePixel = new glm::vec4[imageSize];
+    auto *imgTwoPixel = new glm::vec4[imageSize];
 
     auto origOne = imgOnePixel;
     auto origTwo = imgTwoPixel;
@@ -191,7 +195,7 @@ void VulkanCompute::loadComputeData(ArCompute arCompute) {
     printf("\n");
 
 
-    void* data;
+    void *data;
     vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[0], 0, VK_WHOLE_SIZE, 0,
                 &data);
 
@@ -210,7 +214,6 @@ void VulkanCompute::loadComputeData(ArCompute arCompute) {
 }
 
 void VulkanCompute::loadImageData() {
-
 
 
 }
