@@ -122,7 +122,9 @@ void VulkanRenderer::draw() {
 
     vkResetFences(arEngine.mainDevice.device, 1, &inFlightFences[currentFrame]);
 
-    if (vkQueueSubmit(arEngine.graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
+    VkResult result = vkQueueSubmit(arEngine.graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]);
+    if (result != VK_SUCCESS) {
+        printf("result: %d\n", result);
         throw std::runtime_error("failed to submit draw command buffer!");
     }
 
@@ -277,7 +279,6 @@ void VulkanRenderer::updateBuffer(uint32_t imageIndex) {
         vkUnmapMemory(arEngine.mainDevice.device, arDescriptors[i].bufferMemory[0]);
 
 
-
         if (arDescriptors[i].bufferMemory.size() == 1) break; // TODO clean up this to be done dynamically
         void *data2;
         vkMapMemory(arEngine.mainDevice.device, arDescriptors[i].bufferMemory[1], 0, arDescriptors[i].dataSizes[1],
@@ -347,7 +348,6 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
             loadTypeOneObject();
         else if (modelSettings[i].at("type") == "cube")
             loadTypeTwoObject();
-            printf("");
     }
 
     updateScene();
@@ -387,7 +387,7 @@ void VulkanRenderer::loadTypeOneObject() {
     ArDescriptorInfo descriptorInfo{};
     descriptorInfo.descriptorSetCount = 2;
     descriptorInfo.descriptorSetLayoutCount = 2;
-    std::array<uint32_t , 2> sizes = {sizeof(uboModel), sizeof(FragmentColor)};
+    std::array<uint32_t, 2> sizes = {sizeof(uboModel), sizeof(FragmentColor)};
     descriptorInfo.dataSizes = sizes.data();
 
     // TODO Rewrite usage of vectors like this
@@ -396,7 +396,7 @@ void VulkanRenderer::loadTypeOneObject() {
     arDescriptor.dataSizes[1] = sizeof(FragmentColor);
 
     descriptorInfo.descriptorCount = 2;
-    std::array<uint32_t , 2> descriptorCounts = {1, 1};
+    std::array<uint32_t, 2> descriptorCounts = {1, 1};
     descriptorInfo.pDescriptorSplitCount = descriptorCounts.data();
     std::array<uint32_t, 2> bindings = {0, 1};
     descriptorInfo.pBindings = bindings.data();
@@ -455,7 +455,7 @@ void VulkanRenderer::loadTypeTwoObject() {
     ArDescriptorInfo descriptorInfo{};
     descriptorInfo.descriptorSetCount = 1;
     descriptorInfo.descriptorSetLayoutCount = 1;
-    std::array<uint32_t , 1> sizes = {sizeof(uboModel)};
+    std::array<uint32_t, 1> sizes = {sizeof(uboModel)};
     descriptorInfo.dataSizes = sizes.data();
 
     // TODO Rewrite usage of vectors like this
@@ -463,7 +463,7 @@ void VulkanRenderer::loadTypeTwoObject() {
     arDescriptor.dataSizes[0] = sizeof(uboModel);
 
     descriptorInfo.descriptorCount = 1;
-    std::array<uint32_t , 1> descriptorCounts = {1};
+    std::array<uint32_t, 1> descriptorCounts = {1};
     descriptorInfo.pDescriptorSplitCount = descriptorCounts.data();
     std::array<uint32_t, 1> bindings = {0};
     descriptorInfo.pBindings = bindings.data();
@@ -516,6 +516,7 @@ void VulkanRenderer::initComputePipeline() {
     if (result != VK_SUCCESS)
         throw std::runtime_error("Failed to create fence");
 
+    vkResetFences(arEngine.mainDevice.device, 1, &computeFence);
 }
 
 void VulkanRenderer::loadComputeData() {
@@ -535,13 +536,16 @@ void VulkanRenderer::vulkanComputeShaders() {
 
 
     VkResult result = vkQueueSubmit(arEngine.graphicsQueue, 1, &submitInfo, computeFence);
-    if (result != VK_SUCCESS)
-        throw std::runtime_error("Failed to submit queue");
+    if (result != VK_SUCCESS) {
+        printf("result: %d\n", result);
+        throw std::runtime_error("Failed to wait for fence");
+    }
 
     result = vkWaitForFences(arEngine.mainDevice.device, 1, &computeFence, VK_TRUE, 100000000000);
-    if (result != VK_SUCCESS)
+    if (result != VK_SUCCESS) {
+        printf("result: %d\n", result);
         throw std::runtime_error("Failed to wait for fence");
-
+    }
     auto endTime = (double) (clock() - Start) / CLOCKS_PER_SEC;
     printf("Time taken: %.7fs\n", endTime);
 
@@ -550,10 +554,11 @@ void VulkanRenderer::vulkanComputeShaders() {
     int imageSize = width * height;
     void *mappedMemory = nullptr;
     // Map the buffer memory, so that we can read from it on the CPU.
-    vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[2], 0, imageSize * sizeof(glm::vec4), 0, &mappedMemory);
+    vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[2], 0, imageSize * sizeof(glm::vec4), 0,
+                &mappedMemory);
     auto *pmappedMemory = (glm::vec4 *) mappedMemory;
 
-    auto* pixels = new stbi_uc[imageSize];
+    auto *pixels = new stbi_uc[imageSize];
     auto original = pixels;
     for (int i = 0; i < imageSize; ++i) {
         *pixels = pmappedMemory->x;
