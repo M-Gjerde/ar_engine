@@ -11,7 +11,7 @@ Pipeline::Pipeline() = default;
 Pipeline::~Pipeline() = default;
 
 void
-Pipeline::arLightPipeline(VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> descriptorSetLayouts, const ArShadersPath& shaderPath,
+Pipeline::arLightPipeline(VkRenderPass renderPass, ArDescriptor arDescriptor, const ArShadersPath& shaderPath,
                           ArPipeline *pipeline) {
 
     auto vertShaderCode = readFile(shaderPath.vertexShader + ".spv");
@@ -146,8 +146,8 @@ Pipeline::arLightPipeline(VkRenderPass renderPass, std::vector<VkDescriptorSetLa
     // CREATE PIPELINE LAYOUT
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size());
-    pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
+    pipelineLayoutInfo.setLayoutCount = arDescriptor.descriptorSetLayoutCount;
+    pipelineLayoutInfo.pSetLayouts = arDescriptor.pDescriptorSetLayouts;
 
 
     if (vkCreatePipelineLayout(pipeline->device, &pipelineLayoutInfo, nullptr, &pipeline->pipelineLayout) !=

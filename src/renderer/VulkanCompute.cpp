@@ -85,7 +85,8 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     descriptorInfo.pBindings = bindings.data();
     std::array<VkDescriptorType, 3> types = {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER};
     descriptorInfo.pDescriptorType = types.data();
-    descriptorInfo.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    std::vector<VkShaderStageFlags> stageFlags(3, VK_SHADER_STAGE_COMPUTE_BIT);
+    descriptorInfo.stageFlags = stageFlags.data();
 
     descriptorInfo.descriptorSetLayoutCount = 2;
     descriptorInfo.descriptorSetCount = 2;

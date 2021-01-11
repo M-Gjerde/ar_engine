@@ -179,58 +179,53 @@ void Descriptors::fragmentDescriptorSet() {
 
 void Descriptors::createDescriptorsSetLayout(ArDescriptorInfo info, ArDescriptor *pDescriptor) {
 
-    std::vector<VkDescriptorSetLayoutBinding> uboLayoutBinding(info.descriptorCount);
-    std::vector<VkDescriptorSetLayoutCreateInfo> layoutCreateInfo;
-
-    // Crate multiple descriptors in one set
-    // TODO Create assertions
-    uint32_t index = 0;
-    while (index < *info.pDescriptorSplitCount) {
-        // UNIFORM VALUES DESCRIPTOR SET LAYOUT
-        uboLayoutBinding[index].binding = *info.pBindings;                                // Binding point in shader (designated by binding number in shader)
-        uboLayoutBinding[index].descriptorType = *info.pDescriptorType;                   // Type of descriptor(uniform, dynamic uniform, image sampler, etc..)
-        uboLayoutBinding[index].descriptorCount = 1;                                      // Number of descriptors for binding // Default 1 descriptor per binding
-        uboLayoutBinding[index].stageFlags = info.stageFlags;                             // Shader stage to bind to
-        uboLayoutBinding[index].pImmutableSamplers = nullptr;                             // For texture: can make sampler data unchangeable (immutable) by specyfing layout but the imageView it samples from can still be changed
-
-        // Increment pointers
-        info.pBindings++;
-        info.pDescriptorType++;
-        index++;
-
-        // rerun loop with next set of descriptors if there are more than one descriptor set
-        if (index == *info.pDescriptorSplitCount && info.descriptorCount > 1) {
-            VkDescriptorSetLayoutCreateInfo layoutInfo;
-            layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-            layoutInfo.bindingCount = index;                                              // Number of binding infos
-            layoutInfo.pBindings = uboLayoutBinding.data();                               // Array of binding infos
-            layoutInfo.pNext = nullptr;
-            layoutInfo.flags = 0;
-            layoutCreateInfo.push_back(layoutInfo);                                       // Save layout set
-
-            // increment to next descriptor set and reset index
-            info.pDescriptorSplitCount++;
-            index = 0;
-        }
-    }
-    // Assign data for descriptor set layouts | Initiate memory location
+    // allocate memory for Layouts
     for (int i = 0; i < info.descriptorSetLayoutCount; ++i) {
         pDescriptor->pDescriptorSetLayouts = new VkDescriptorSetLayout();
     }
-    // record 1st pointer position
-    VkDescriptorSetLayout *orig = &pDescriptor->pDescriptorSetLayouts[0];
-// Create descriptor set layout
-    for (int i = 0; i < info.descriptorSetLayoutCount; ++i) {
-        if (vkCreateDescriptorSetLayout(device, &layoutCreateInfo[i], nullptr,
+    // copy pointer 1st position
+    VkDescriptorSetLayout *pOrig = &pDescriptor->pDescriptorSetLayouts[0];
+
+    // Crate multiple descriptors in one set
+    // TODO Create assertions
+    for (int i = 0; i < info.descriptorSetCount; ++i) {
+        std::vector<VkDescriptorSetLayoutBinding> layoutBinding(*info.pDescriptorSplitCount);
+
+        for (int index = 0; index < *info.pDescriptorSplitCount; ++index) {
+            // UNIFORM VALUES DESCRIPTOR SET LAYOUT
+            layoutBinding[index].binding = *info.pBindings;                                // Binding point in shader (designated by binding number in shader)
+            layoutBinding[index].descriptorType = *info.pDescriptorType;                   // Type of descriptor(uniform, dynamic uniform, image sampler, etc..)
+            layoutBinding[index].descriptorCount = 1;                                      // Number of descriptors for binding // Default 1 descriptor per binding
+            layoutBinding[index].stageFlags = *info.stageFlags;                            // Shader stage to bind to
+            layoutBinding[index].pImmutableSamplers = nullptr;                             // For texture: can make sampler data unchangeable (immutable) by specyfing layout but the imageView it samples from can still be changed
+
+            // Increment pointers
+            info.pBindings++;
+            info.pDescriptorType++;
+            info.stageFlags++;
+        }
+
+        VkDescriptorSetLayoutCreateInfo layoutInfo;
+        layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        layoutInfo.bindingCount = *info.pDescriptorSplitCount;                        // Number of binding infos
+        layoutInfo.pBindings = layoutBinding.data();                               // Array of binding infos
+        layoutInfo.pNext = nullptr;
+        layoutInfo.flags = 0;
+        // alloc memory
+
+        if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr,
                                         pDescriptor->pDescriptorSetLayouts) != VK_SUCCESS)
             throw std::runtime_error("Failed to create a descriptor set layout");
-
-        // Increment  pointer, if finished then exit creating layouts
-        if (i == info.descriptorSetLayoutCount - 1) break;
-        pDescriptor->pDescriptorSetLayouts++;
+        // for more layouts increment layout pointer
+        if (i != info.descriptorSetLayoutCount - 1) {
+            pDescriptor->pDescriptorSetLayouts++;
+            // increment to next descriptor set
+            info.pDescriptorSplitCount++;
+        }
     }
-    // reset pointer to 1st position
-    pDescriptor->pDescriptorSetLayouts = orig;
+    // reset pointer to first layout
+    pDescriptor->pDescriptorSetLayouts = pOrig;
+
 
 }
 
@@ -289,13 +284,13 @@ void Descriptors::createDescriptorSets(ArDescriptorInfo info, ArDescriptor *pDes
             VkWriteDescriptorSet writeDescriptorSet = {};
             writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             writeDescriptorSet.dstSet = pDescriptor->descriptorSets[i];            // Descriptor set to update
-            writeDescriptorSet.dstBinding = index;                                 // Binding to update (matches with binding on layout/shader
+            writeDescriptorSet.dstBinding = *info.pBindings;                       // Binding to update (matches with binding on layout/shader
             writeDescriptorSet.dstArrayElement = 0;                                // Index in the array we want to update
             writeDescriptorSet.descriptorType = *info.pDescriptorType;             // Type of descriptor we are updating
             writeDescriptorSet.descriptorCount = 1;                                // Amount to update
             writeDescriptorSet.pBufferInfo = &bufferInfos[index];                          // Information about buffer data to bind
             setWrites.push_back(writeDescriptorSet);
-
+            info.pBindings++;
             info.pDescriptorType++;
             ++loop;
         }
@@ -356,10 +351,6 @@ void Descriptors::updateTextureSamplerDescriptor() {
 }
 
 void Descriptors::createLightPool() {
-
-}
-
-void Descriptors::createSetPool(std::vector<ArDescriptorInfo> info, ArDescriptor *pDescriptor) {
 
 }
 

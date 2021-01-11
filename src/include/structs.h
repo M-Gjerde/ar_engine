@@ -40,7 +40,7 @@ struct ArDescriptor {
     std::vector<VkDeviceMemory> bufferMemory;
     uint32_t descriptorSetLayoutCount;
     VkDescriptorSetLayout *pDescriptorSetLayouts;
-    std::vector<size_t> dataSizes;
+    std::vector<uint32_t> dataSizes;
 };
 
 struct ArDescriptorInfo {
@@ -48,7 +48,7 @@ struct ArDescriptorInfo {
     VkDescriptorType *pDescriptorType;  // Array of different types 1:1 relationship
     uint32_t descriptorCount;           // Should be equal to all the numbers of pDescriptorSplitCount array summed
     uint32_t *pDescriptorSplitCount;
-    VkShaderStageFlags stageFlags;      // stageFlags for descriptors
+    VkShaderStageFlags* stageFlags;      // stageFlags for descriptors
     uint32_t descriptorSetLayoutCount;  // How many descriptor layouts
     uint32_t descriptorSetCount;
     uint32_t *dataSizes;

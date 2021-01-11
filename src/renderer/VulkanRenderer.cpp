@@ -276,6 +276,8 @@ void VulkanRenderer::updateBuffer(uint32_t imageIndex) {
         memcpy(data, &uboModelVar, arDescriptors[i].dataSizes[0]);
         vkUnmapMemory(arEngine.mainDevice.device, arDescriptors[i].bufferMemory[0]);
 
+
+
         if (arDescriptors[i].bufferMemory.size() == 1) break; // TODO clean up this to be done dynamically
         void *data2;
         vkMapMemory(arEngine.mainDevice.device, arDescriptors[i].bufferMemory[1], 0, arDescriptors[i].dataSizes[1],
@@ -348,7 +350,7 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
             printf("");
     }
 
-    //updateScene();
+    updateScene();
 }
 
 void VulkanRenderer::updateScene() {
@@ -380,21 +382,36 @@ void VulkanRenderer::loadTypeOneObject() {
     meshes.push_back(meshModel.loadModel(arEngine.mainDevice, &arModel, true));
     models.push_back(arModel);
 
-    // Create number of descriptors according to scene file
+
+
+    // Create descriptors
     ArDescriptor arDescriptor;
+    ArDescriptorInfo descriptorInfo{};
+    descriptorInfo.descriptorSetCount = 2;
+    descriptorInfo.descriptorSetLayoutCount = 2;
+    std::array<uint32_t , 2> sizes = {sizeof(uboModel), sizeof(FragmentColor)};
+    descriptorInfo.dataSizes = sizes.data();
+
+    // TODO Rewrite usage of vectors like this
     arDescriptor.dataSizes.resize(2);
     arDescriptor.dataSizes[0] = sizeof(uboModel);
     arDescriptor.dataSizes[1] = sizeof(FragmentColor);
-    // TODO Create a descriptor creator class
-    
-    arDescriptor.descriptorSets.resize(2);
-    //arDescriptor.descriptorSetLayouts.resize(2);
+
+    descriptorInfo.descriptorCount = 2;
+    std::array<uint32_t , 2> descriptorCounts = {1, 1};
+    descriptorInfo.pDescriptorSplitCount = descriptorCounts.data();
+    std::array<uint32_t, 2> bindings = {0, 1};
+    descriptorInfo.pBindings = bindings.data();
+    std::array<VkDescriptorType, 2> types = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER};
+    descriptorInfo.pDescriptorType = types.data();
+    std::array<VkShaderStageFlags, 2> stageFlags = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
+    descriptorInfo.stageFlags = stageFlags.data();
+
 
     std::vector<ArBuffer> buffers(2);
-
     // Create and fill buffers
     for (int j = 0; j < 2; ++j) {
-        buffers[j].bufferSize = arDescriptor.dataSizes[j];
+        buffers[j].bufferSize = sizes[j];
         buffers[j].bufferUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         buffers[j].sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         buffers[j].bufferProperties =
@@ -404,7 +421,7 @@ void VulkanRenderer::loadTypeOneObject() {
         arDescriptor.bufferMemory.push_back(buffers[j].bufferMemory);
     }
 
-    descriptors->lightDescriptors(&arDescriptor);
+    descriptors->createDescriptors(descriptorInfo, &arDescriptor);
 
     ArPipeline arPipeline{};
     arPipeline.device = arEngine.mainDevice.device;
@@ -415,7 +432,7 @@ void VulkanRenderer::loadTypeOneObject() {
     ArShadersPath shadersPath;
     shadersPath.vertexShader = "../shaders/defaultVert";
     shadersPath.fragmentShader = "../shaders/phongLightFrag";
-    //pipeline.arLightPipeline(renderPass, arDescriptor.descriptorSetLayouts, shadersPath, &arPipeline);
+    pipeline.arLightPipeline(renderPass, arDescriptor, shadersPath, &arPipeline);
     fragmentColor.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
     fragmentColor.objectColor = glm::vec4(0.5f, 0.5f, 0.31f, 0.0f);
 
@@ -437,8 +454,7 @@ void VulkanRenderer::loadTypeTwoObject() {
 
     // Create number of descriptors according to scene file
     ArDescriptor arDescriptor;
-    arDescriptor.dataSizes.resize(1);
-    arDescriptor.dataSizes[0] = sizeof(uboModel);
+
 
     arDescriptor.descriptorSets.resize(1);
     //arDescriptor.descriptorSetLayouts.resize(1);

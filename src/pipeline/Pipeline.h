@@ -23,7 +23,7 @@ public:
 
     void createRenderPass(VkDevice device, VkFormat depthFormat, VkFormat colorFormat, VkRenderPass *pRenderPass);
 
-    void arLightPipeline(VkRenderPass renderPass, std::vector<VkDescriptorSetLayout> descriptorSetLayouts,
+    void arLightPipeline(VkRenderPass renderPass, ArDescriptor arDescriptor,
                          const ArShadersPath &shaderPath, ArPipeline *pipeline);
 
     void cleanUp(ArPipeline arPipeline) const;
