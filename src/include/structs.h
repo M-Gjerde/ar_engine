@@ -34,7 +34,7 @@ struct ArModel {
 };
 
 struct ArDescriptor {
-    VkDescriptorPool descriptorPool;
+    VkDescriptorPool pDescriptorPool;
     std::vector<VkDescriptorSet> descriptorSets;
     std::vector<VkBuffer> buffer;
     std::vector<VkDeviceMemory> bufferMemory;

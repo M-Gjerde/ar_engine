@@ -27,13 +27,15 @@ void VulkanCompute::cleanup() {
 
     }
 
-    /*for (int i = 0; i < arDescriptor.descriptorSetLayouts.size(); ++i) {
-        vkDestroyDescriptorSetLayout(arEngine.mainDevice.device, arDescriptor.descriptorSetLayouts[i], nullptr);
+    for (int i = 0; i < arDescriptor.descriptorSetLayoutCount; ++i) {
+        vkDestroyDescriptorSetLayout(arEngine.mainDevice.device, arDescriptor.pDescriptorSetLayouts[i], nullptr);
     }
-*/
+
     vkDestroyPipelineLayout(arEngine.mainDevice.device, computePipeline.pipelineLayout, nullptr);
     vkDestroyPipeline(arEngine.mainDevice.device, computePipeline.pipeline, nullptr);
-    vkDestroyDescriptorPool(arEngine.mainDevice.device, arDescriptor.descriptorPool, nullptr);
+
+    vkDestroyDescriptorPool(arEngine.mainDevice.device, arDescriptor.pDescriptorPool, nullptr);
+
     vkDestroyCommandPool(arEngine.mainDevice.device, commandPool, nullptr);
 
 }

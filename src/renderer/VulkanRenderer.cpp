@@ -346,7 +346,7 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
         if (modelSettings[i].at("type") == "sphere")
             loadTypeOneObject();
         else if (modelSettings[i].at("type") == "cube")
-            //loadTypeTwoObject();
+            loadTypeTwoObject();
             printf("");
     }
 
@@ -381,8 +381,6 @@ void VulkanRenderer::loadTypeOneObject() {
     MeshModel meshModel;
     meshes.push_back(meshModel.loadModel(arEngine.mainDevice, &arModel, true));
     models.push_back(arModel);
-
-
 
     // Create descriptors
     ArDescriptor arDescriptor;
@@ -452,18 +450,33 @@ void VulkanRenderer::loadTypeTwoObject() {
     meshes.push_back(meshModel.loadModel(arEngine.mainDevice, &arModel, true));
     models.push_back(arModel);
 
-    // Create number of descriptors according to scene file
+    // Create descriptors
     ArDescriptor arDescriptor;
+    ArDescriptorInfo descriptorInfo{};
+    descriptorInfo.descriptorSetCount = 1;
+    descriptorInfo.descriptorSetLayoutCount = 1;
+    std::array<uint32_t , 1> sizes = {sizeof(uboModel)};
+    descriptorInfo.dataSizes = sizes.data();
 
+    // TODO Rewrite usage of vectors like this
+    arDescriptor.dataSizes.resize(1);
+    arDescriptor.dataSizes[0] = sizeof(uboModel);
 
-    arDescriptor.descriptorSets.resize(1);
-    //arDescriptor.descriptorSetLayouts.resize(1);
+    descriptorInfo.descriptorCount = 1;
+    std::array<uint32_t , 1> descriptorCounts = {1};
+    descriptorInfo.pDescriptorSplitCount = descriptorCounts.data();
+    std::array<uint32_t, 1> bindings = {0};
+    descriptorInfo.pBindings = bindings.data();
+    std::array<VkDescriptorType, 1> types = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER};
+    descriptorInfo.pDescriptorType = types.data();
+    std::array<VkShaderStageFlags, 1> stageFlags = {VK_SHADER_STAGE_VERTEX_BIT};
+    descriptorInfo.stageFlags = stageFlags.data();
+
 
     std::vector<ArBuffer> buffers(1);
-
     // Create and fill buffers
     for (int j = 0; j < 1; ++j) {
-        buffers[j].bufferSize = arDescriptor.dataSizes[j];
+        buffers[j].bufferSize = sizes[j];
         buffers[j].bufferUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         buffers[j].sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         buffers[j].bufferProperties =
@@ -473,7 +486,8 @@ void VulkanRenderer::loadTypeTwoObject() {
         arDescriptor.bufferMemory.push_back(buffers[j].bufferMemory);
     }
 
-    descriptors->lightDescriptors(&arDescriptor);
+    descriptors->createDescriptors(descriptorInfo, &arDescriptor);
+
 
     ArPipeline arPipeline{};
     arPipeline.device = arEngine.mainDevice.device;
@@ -482,9 +496,9 @@ void VulkanRenderer::loadTypeTwoObject() {
 
     // Create pipeline
     ArShadersPath shadersPath;
-    shadersPath.vertexShader = "../shaders/defaultVert";
-    shadersPath.fragmentShader = "../shaders/defaultFrag";
-    //pipeline.arLightPipeline(renderPass, arDescriptor.descriptorSetLayouts, shadersPath, &arPipeline);
+    shadersPath.vertexShader = "../shaders/lampVert";
+    shadersPath.fragmentShader = "../shaders/lampFrag";
+    pipeline.arLightPipeline(renderPass, arDescriptor, shadersPath, &arPipeline);
 
     arDescriptors.push_back(arDescriptor);
     arPipelines.push_back(arPipeline);
@@ -512,7 +526,6 @@ void VulkanRenderer::loadComputeData() {
 void VulkanRenderer::vulkanComputeShaders() {
 
     vkResetFences(arEngine.mainDevice.device, 1, &computeFence);
-
 
     clock_t Start = clock();
     VkSubmitInfo submitInfo = {};
