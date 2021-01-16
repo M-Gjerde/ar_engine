@@ -8,6 +8,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 
 #include "../include/stbi_image_write.h"
+#include "../objects/BufferObject.h"
 
 #include <utility>
 #include <array>
@@ -42,17 +43,20 @@ void VulkanCompute::cleanup() {
 
 ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDescriptors, Platform *pPlatform,
                                               Pipeline pipeline) {
-
+    int width = 427, height = 370;
+    int imageSize = (width * height);
     // Buffer size
-    uint32_t bufferSize = 1282 * 1110 * sizeof(glm::vec4);
+    uint32_t bufferSize = (imageSize * sizeof(glm::vec4));
     // Create DescriptorBuffers
     ArBuffer inputBufferOne{};
+
     inputBufferOne.bufferSize = bufferSize;
     inputBufferOne.bufferUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     inputBufferOne.bufferProperties =
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     inputBufferOne.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     pBuffer->createBuffer(&inputBufferOne);
+
 
     ArBuffer inputBufferTwo{};
     inputBufferTwo.bufferSize = bufferSize;
@@ -70,6 +74,7 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     outputBuffer.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     pBuffer->createBuffer(&outputBuffer);
 
+    arDescriptor.bufferObject.push_back(inputBufferOne);
     arDescriptor.buffer.push_back(inputBufferOne.buffer);
     arDescriptor.bufferMemory.push_back(inputBufferOne.bufferMemory);
     arDescriptor.buffer.push_back(inputBufferTwo.buffer);
@@ -81,14 +86,15 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     // Create descriptor sets
     ArDescriptorInfo descriptorInfo{};
     descriptorInfo.descriptorCount = 3;
-    std::array<uint32_t , 2> descriptorCounts = {2, 1};
+    std::array<uint32_t , 3> descriptorCounts = {2, 1};
     descriptorInfo.pDescriptorSplitCount = descriptorCounts.data();
-    std::array<uint32_t, 3> bindings = {0, 1, 0};
+    std::array<uint32_t, 3> bindings = {0,1, 0};
     descriptorInfo.pBindings = bindings.data();
-    std::array<VkDescriptorType, 3> types = {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER};
+    std::array<VkDescriptorType, 3> types = {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER};
     descriptorInfo.pDescriptorType = types.data();
     std::vector<VkShaderStageFlags> stageFlags(3, VK_SHADER_STAGE_COMPUTE_BIT);
     descriptorInfo.stageFlags = stageFlags.data();
+    descriptorInfo.descriptorPoolCount = 1;
 
     descriptorInfo.descriptorSetLayoutCount = 2;
     descriptorInfo.descriptorSetCount = 2;
@@ -97,6 +103,7 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     // Create descriptor set two
 
     pDescriptors->createDescriptors(descriptorInfo, &arDescriptor);
+
 
     computePipeline.device = arEngine.mainDevice.device;
     pipeline.computePipeline(arDescriptor, ArShadersPath(), &computePipeline);
@@ -128,7 +135,7 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     // ---- Begin Record Command buffers ----
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT; // the buffer is only submitted and used once in this application.
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
     result = vkBeginCommandBuffer(commandBuffer, &beginInfo); // start recording commands.
     if (result != VK_SUCCESS)
         throw std::runtime_error("Failed to begin command buffers");
@@ -147,7 +154,7 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     The number of workgroups is specified in the arguments.
     If you are already familiar with compute shaders from OpenGL, this should be nothing new to you.
     */
-    vkCmdDispatch(commandBuffer, (uint32_t) 5559, (uint32_t) 1, 1);
+    vkCmdDispatch(commandBuffer, (uint32_t) 155, (uint32_t) 1, 1);
 
     result = vkEndCommandBuffer(commandBuffer); // end recording commands.
     if (result != VK_SUCCESS)
@@ -160,20 +167,22 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
 }
 
 
-void VulkanCompute::loadComputeData(ArCompute arCompute) {
+void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
 
     // Load image using stb_image.h
     int texWidth, texHeight, texChannels;
-    std::string filePath = "../textures/Aloe/view1.png";
+    std::string filePath = "../textures/Aloe_thirdsize/view1.png";
 
     stbi_uc *imageOne = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
     if (!imageOne) throw std::runtime_error("failed to load texture image: view1.png");
-    filePath = "../textures/Aloe/view5.png";
+    filePath = "../textures/Aloe_thirdsize/view5.png";
     stbi_uc *imageTwo = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
     if (!imageTwo) throw std::runtime_error("failed to load texture image: view5.png");
 
-    int width = 1282, height = 1110;
-    int imageSize = width * height;
+    int width = 427, height = 370;
+    int imageSize = (width * height);
+    //int width = 1282, height = 1110;
+
 
     auto *imgOnePixel = new glm::vec4[imageSize];
     auto *imgTwoPixel = new glm::vec4[imageSize];
@@ -196,12 +205,33 @@ void VulkanCompute::loadComputeData(ArCompute arCompute) {
 
 
     void *data;
+
     vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[0], 0, imageSize * sizeof(glm::vec4), 0,
                 &data);
 
     memcpy(data, imgOnePixel, imageSize * sizeof(glm::vec4));
 
     vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[0]);
+
+// TODO RESEARCH DEVICE LOCAL GPU MEMORY
+
+/*    ArBuffer stagingBuffer{};
+    stagingBuffer.bufferSize = imageSize * sizeof(glm::vec4);
+    stagingBuffer.bufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    stagingBuffer.bufferProperties =
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+    stagingBuffer.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    pBuffer->createBuffer(&stagingBuffer);
+
+    ArModel arModel;
+    arModel.transferCommandPool = arEngine.commandPool;
+    arModel.transferQueue = arEngine.graphicsQueue;
+
+    pBuffer->copyBuffer(arModel, stagingBuffer, arCompute.descriptor.bufferObject[0]);
+
+    vkFreeMemory(arEngine.mainDevice.device, stagingBuffer.bufferMemory, nullptr);
+    vkDestroyBuffer(arEngine.mainDevice.device, stagingBuffer.buffer, nullptr);
+    */
 
     data = nullptr;
     vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[1], 0, imageSize * sizeof(glm::vec4), 0,

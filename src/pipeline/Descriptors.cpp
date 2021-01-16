@@ -70,7 +70,7 @@ void Descriptors::createDescriptorsSetLayout(ArDescriptorInfo info, ArDescriptor
         VkDescriptorSetLayoutCreateInfo layoutInfo;
         layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         layoutInfo.bindingCount = *info.pDescriptorSplitCount;                        // Number of binding infos
-        layoutInfo.pBindings = layoutBinding.data();                               // Array of binding infos
+        layoutInfo.pBindings = layoutBinding.data();                                  // Array of binding infos
         layoutInfo.pNext = nullptr;
         layoutInfo.flags = 0;
         // alloc memory
@@ -87,8 +87,6 @@ void Descriptors::createDescriptorsSetLayout(ArDescriptorInfo info, ArDescriptor
     }
     // reset pointer to first layout
     pDescriptor->pDescriptorSetLayouts = pOrig;
-
-
 }
 
 
@@ -96,16 +94,25 @@ void Descriptors::createSetPool(ArDescriptorInfo info, ArDescriptor *pDescriptor
     // TODO CREATE VARIATIONS FOR POOL TYPE
     // CREATE UNIFORM DESCRIPTOR POOL
     // Type of descriptors + how many DESCRIPTORS, not Descriptor sets (combined makes the pool size)
-    VkDescriptorPoolSize descriptorPoolSize;
-    descriptorPoolSize.type = *info.pDescriptorType;
-    descriptorPoolSize.descriptorCount = info.descriptorCount;
+    std::vector<VkDescriptorPoolSize> descriptorPoolSize(info.descriptorPoolCount);
+    for (int i = 0; i < info.descriptorPoolCount; ++i) {
+        descriptorPoolSize[i].type = *info.pDescriptorType;
+        descriptorPoolSize[i].descriptorCount = reinterpret_cast<uint32_t>(info.descriptorCount); // TODO CREATE ONLY NECESSARY POOL SIZE
+
+        // Increment pointer to next type
+        for (int j = 0; j < *info.pDescriptorSplitCount; ++j) {
+            info.pDescriptorType++;
+        }
+        info.pDescriptorSplitCount++;
+    }
+
 
 
     VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = {};
     descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     descriptorPoolCreateInfo.maxSets = info.descriptorCount;                                        // We are not going to allocate more
-    descriptorPoolCreateInfo.poolSizeCount = 1;                                                     // Number of pools
-    descriptorPoolCreateInfo.pPoolSizes = &descriptorPoolSize;
+    descriptorPoolCreateInfo.poolSizeCount = static_cast<uint32_t>(descriptorPoolSize.size());      // Number of pools
+    descriptorPoolCreateInfo.pPoolSizes = descriptorPoolSize.data();
 
     // create descriptor pool.
     VkResult result = vkCreateDescriptorPool(device, &descriptorPoolCreateInfo, NULL, &pDescriptor->pDescriptorPool);

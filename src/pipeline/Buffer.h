@@ -23,7 +23,7 @@ public:
 
     virtual void createBuffer(ArBuffer *buffer);
 
-    void copyBuffer(ArModel modelInfo, ArBuffer srcBuffer, ArBuffer dstBuffer);
+    void copyBuffer(const ArModel& modelInfo, ArBuffer srcBuffer, ArBuffer dstBuffer);
 
     uint32_t findMemoryTypeIndex(int32_t typeFilter, VkMemoryPropertyFlags properties);
 

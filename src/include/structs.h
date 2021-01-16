@@ -33,18 +33,10 @@ struct ArModel {
     std::string modelName;
 };
 
-struct ArDescriptor {
-    VkDescriptorPool pDescriptorPool;
-    std::vector<VkDescriptorSet> descriptorSets;
-    std::vector<VkBuffer> buffer;
-    std::vector<VkDeviceMemory> bufferMemory;
-    uint32_t descriptorSetLayoutCount;
-    VkDescriptorSetLayout *pDescriptorSetLayouts;
-    std::vector<uint32_t> dataSizes;
-};
 
 struct ArDescriptorInfo {
     const uint32_t *pBindings;
+    uint32_t descriptorPoolCount;
     VkDescriptorType *pDescriptorType;  // Array of different types 1:1 relationship
     uint32_t descriptorCount;           // Should be equal to all the numbers of pDescriptorSplitCount array summed
     uint32_t *pDescriptorSplitCount;
@@ -118,10 +110,23 @@ struct ArDepthResource {
     VkExtent2D swapChainExtent;
 };
 
+struct ArDescriptor {
+    VkDescriptorPool pDescriptorPool;
+    std::vector<VkDescriptorSet> descriptorSets;
+    std::vector<ArBuffer> bufferObject;
+    std::vector<VkBuffer> buffer;
+    std::vector<VkDeviceMemory> bufferMemory;
+    uint32_t descriptorSetLayoutCount;
+    VkDescriptorSetLayout *pDescriptorSetLayouts;
+    std::vector<uint32_t> dataSizes;
+};
+
+
 struct ArCompute {
     VkCommandBuffer commandBuffer;
     ArDescriptor descriptor;
 };
+
 
 
 #endif //AR_ENGINE_STRUCTS_H

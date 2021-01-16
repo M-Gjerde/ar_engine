@@ -1,19 +1,17 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-
-//TODO input two image objects and output a BLOB image
-layout (local_size_x = 256, local_size_y = 1, local_size_z = 1 ) in;
+layout (local_size_x = 1024, local_size_y = 1, local_size_z = 1 ) in;
 
 struct Pixel {
     vec4 val;
 };
 
-layout(set = 0, binding = 0) buffer imageOne {
+layout(set = 0, binding = 0) readonly buffer  imageOne {
         Pixel imgData[];
 }imgOne;
 
-layout(set = 0, binding = 1) buffer imageTwo {
+layout(set = 0, binding = 1) readonly buffer imageTwo {
     Pixel imgData[];
 } imgTwo;
 
@@ -24,24 +22,26 @@ layout(set = 1, binding = 0) buffer imageOut {
 
 void main()
 {
-    ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
     uint index = gl_GlobalInvocationID.x;
 
     float sum = 0;
-    float kernelSize = 49;
+    float kernelSize = 25;
     float minAverage = 255;
     float pixelDisparity = 0;
     int disparityLevel = 256;
     float readPosLeft = 0, readPosRight = 0;
 
-    if (index > 1282 && index < 1423020 - disparityLevel){
+    int lowLimit = 2, highLimit = 3;
+    int stride = 427;
+
+    if (index > stride && index < 157990 - disparityLevel){
         // Disparity level. Match this pixel
         for (int d = 0; d < disparityLevel; ++d){
             // kernel
-            for (int row = -1282 * 3; row < 1282 * 4; row+=1282){
-                for (int col = -3; col < 4; ++col){
-                    readPosRight = imgOne.imgData[index + row + d].val.x;
-                    readPosLeft = imgTwo.imgData[index + row].val.x;
+            for (int row = -stride * lowLimit; row < stride * highLimit; row+=stride){
+                for (int col = -lowLimit; col < highLimit; ++col){
+                    readPosRight = imgOne.imgData[index + row + d + col].val.x;
+                    readPosLeft = imgTwo.imgData[index + row + col].val.x;
 
                     sum += abs(readPosLeft - readPosRight);
                 }
@@ -61,8 +61,8 @@ void main()
         pixelDisparity = 0;
         minAverage = 100;// Reset min for avg
 
-    } else {
-        imgOut.imgData[index].val.x = 60;
-    }
+    } else
+        return;
+
 
 }

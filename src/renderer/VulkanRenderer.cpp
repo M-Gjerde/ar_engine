@@ -7,6 +7,7 @@
 
 #include <array>
 #include <glm/gtc/matrix_transform.hpp>
+#include <chrono>
 #include "VulkanRenderer.hpp"
 #include "../pipeline/MeshModel.h"
 #include "../include/stbi_image_write.h"
@@ -35,7 +36,7 @@ int VulkanRenderer::init(GLFWwindow *newWindow) {
 
         initComputePipeline();
         loadComputeData();
-        printf("Initiated compute pipeline\n");
+        printf("Initiated compute pipeline\n\n");
 
     } catch (std::runtime_error &err) {
         printf("Error: %s\n", err.what());
@@ -221,7 +222,6 @@ void VulkanRenderer::recordCommand() {
             VkBuffer vertexBuffers[] = {models[j].vertexBuffer};
             VkDeviceSize offsets[] = {0};
             vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
-
             vkCmdBindIndexBuffer(commandBuffers[i], models[j].indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
             vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -298,13 +298,9 @@ void VulkanRenderer::updateCamera(glm::mat4 newView, glm::mat4 newProjection) {
 // TODO can be combined with updateLightPos if a wrapper is written around those two
 void VulkanRenderer::updateModel(glm::mat4 newModel, int index) {
     meshes[index].setModel(newModel);
-    printf("Update model passing index %d\n", index);
-
 }
 
 void VulkanRenderer::updateLightPos(glm::vec3 newPos, glm::mat4 transMat, int index) {
-    printf("Update light passing index %d\n", index);
-
     meshes[index].setModel(glm::translate(transMat, newPos));
     fragmentColor.lightPos = glm::vec4(newPos, 1.0f);
     fragmentColor.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
@@ -387,6 +383,7 @@ void VulkanRenderer::loadTypeOneObject() {
     ArDescriptorInfo descriptorInfo{};
     descriptorInfo.descriptorSetCount = 2;
     descriptorInfo.descriptorSetLayoutCount = 2;
+    descriptorInfo.descriptorPoolCount = 1;
     std::array<uint32_t, 2> sizes = {sizeof(uboModel), sizeof(FragmentColor)};
     descriptorInfo.dataSizes = sizes.data();
 
@@ -455,6 +452,7 @@ void VulkanRenderer::loadTypeTwoObject() {
     ArDescriptorInfo descriptorInfo{};
     descriptorInfo.descriptorSetCount = 1;
     descriptorInfo.descriptorSetLayoutCount = 1;
+    descriptorInfo.descriptorPoolCount = 1;
     std::array<uint32_t, 1> sizes = {sizeof(uboModel)};
     descriptorInfo.dataSizes = sizes.data();
 
@@ -520,38 +518,40 @@ void VulkanRenderer::initComputePipeline() {
 }
 
 void VulkanRenderer::loadComputeData() {
-    vulkanCompute->loadComputeData(arCompute);
+    vulkanCompute->loadComputeData(arCompute, buffer);
 
 }
 
 void VulkanRenderer::vulkanComputeShaders() {
-
+    auto start = std::chrono::high_resolution_clock::now();
     vkResetFences(arEngine.mainDevice.device, 1, &computeFence);
 
-    clock_t Start = clock();
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1; // submit a single command buffer
     submitInfo.pCommandBuffers = &arCompute.commandBuffer; // the command buffer to submit.
 
-
-    VkResult result = vkQueueSubmit(arEngine.graphicsQueue, 1, &submitInfo, computeFence);
+    VkResult result = vkQueueSubmit(arEngine.computeQueue, 1, &submitInfo, computeFence);
     if (result != VK_SUCCESS) {
         printf("result: %d\n", result);
         throw std::runtime_error("Failed to wait for fence");
     }
 
-    result = vkWaitForFences(arEngine.mainDevice.device, 1, &computeFence, VK_TRUE, 100000000000);
+    printf("Waiting for fences\n");
+    result = vkWaitForFences(arEngine.mainDevice.device, 1, &computeFence, VK_TRUE, UINT64_MAX);
     if (result != VK_SUCCESS) {
         printf("result: %d\n", result);
         throw std::runtime_error("Failed to wait for fence");
     }
-    auto endTime = (double) (clock() - Start) / CLOCKS_PER_SEC;
-    printf("Time taken: %.7fs\n", endTime);
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto endTime = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    printf("Queue submit Time taken: %ld ms\n", endTime.count() / 1000);
 
     // --- Retrieve data from compute pipeline ---
-    int width = 1282, height = 1110;
-    int imageSize = width * height;
+    //int width = 1282, height = 1110;
+    int width = 427, height = 370;
+    int imageSize = (width * height);
+
     void *mappedMemory = nullptr;
     // Map the buffer memory, so that we can read from it on the CPU.
     vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[2], 0, imageSize * sizeof(glm::vec4), 0,
@@ -562,7 +562,6 @@ void VulkanRenderer::vulkanComputeShaders() {
     auto original = pixels;
     for (int i = 0; i < imageSize; ++i) {
         *pixels = pmappedMemory->x;
-        if (i > imageSize - 10) printf("Result: %d\n", *pixels);
         pixels++;
         pmappedMemory++;
     }
@@ -571,11 +570,6 @@ void VulkanRenderer::vulkanComputeShaders() {
     stbi_write_png("../stbpng.png", width, height, 1, pixels, width * 1);
 
     vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[2]);
-
-
-    endTime = (double) (clock() - Start) / CLOCKS_PER_SEC;
-    printf("Time taken: %.7fs\n", endTime);
-
 
 }
 

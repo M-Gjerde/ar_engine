@@ -52,6 +52,8 @@ public:
         auto settingsMap = loadSettings.getSceneObjects();
         vulkanRenderer.drawScene(settingsMap);
 
+        vulkanRenderer.vulkanComputeShaders();
+
     }
 
     virtual void keyCallback(GLFWwindow *glfWwindow, int key, int scancode, int action, int mods) {};

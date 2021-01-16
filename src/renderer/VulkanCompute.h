@@ -19,7 +19,7 @@ public:
     ~VulkanCompute() = default;
 
     ArCompute setupComputePipeline(Buffer *pBuffer, Descriptors *pDescriptors, Platform *pPlatform, Pipeline pipeline);
-    void loadComputeData(ArCompute arCompute);
+    void loadComputeData(ArCompute arCompute, Buffer *pBuffer);
     void cleanup();
 
 private:

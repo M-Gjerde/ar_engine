@@ -51,7 +51,7 @@ add_library(VulkanRenderer
         src/pipeline/MeshModel.cpp
         src/pipeline/MeshModel.h
         src/Platform/LoadSettings.cpp
-        src/Platform/LoadSettings.h src/renderer/VulkanCompute.cpp src/renderer/VulkanCompute.h)
+        src/Platform/LoadSettings.h src/renderer/VulkanCompute.cpp src/renderer/VulkanCompute.h src/objects/BufferObject.cpp src/objects/BufferObject.h)
 
 target_link_libraries(VulkanRenderer
         #stereoVision

@@ -68,7 +68,7 @@ inline uint32_t Buffer::findMemoryTypeIndex(int32_t typeFilter, VkMemoryProperty
 
 }
 
-void Buffer::copyBuffer(ArModel modelInfo, ArBuffer srcBuffer, ArBuffer dstBuffer) {
+void Buffer::copyBuffer(const ArModel& modelInfo, ArBuffer srcBuffer, ArBuffer dstBuffer) {
 
 
     // Create buffer
