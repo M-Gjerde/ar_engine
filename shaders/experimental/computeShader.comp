@@ -1,22 +1,22 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-layout (local_size_x = 1024, local_size_y = 1, local_size_z = 1 ) in;
+layout (local_size_x = 32, local_size_y = 1, local_size_z = 1 ) in;
 
 struct Pixel {
     vec4 val;
 };
 
 layout(set = 0, binding = 0) readonly buffer  imageOne {
-        Pixel imgData[];
+        vec4 imgData[];
 }imgOne;
 
 layout(set = 0, binding = 1) readonly buffer imageTwo {
-    Pixel imgData[];
+    vec4 imgData[];
 } imgTwo;
 
 layout(set = 1, binding = 0) buffer imageOut {
-    Pixel imgData[];
+    vec4 imgData[];
 } imgOut;
 
 
@@ -28,7 +28,7 @@ void main()
     float kernelSize = 25;
     float minAverage = 255;
     float pixelDisparity = 0;
-    int disparityLevel = 256;
+    int disparityLevel = 128;
     float readPosLeft = 0, readPosRight = 0;
 
     int lowLimit = 2, highLimit = 3;
@@ -40,8 +40,8 @@ void main()
             // kernel
             for (int row = -stride * lowLimit; row < stride * highLimit; row+=stride){
                 for (int col = -lowLimit; col < highLimit; ++col){
-                    readPosRight = imgOne.imgData[index + row + d + col].val.x;
-                    readPosLeft = imgTwo.imgData[index + row + col].val.x;
+                    readPosRight = imgOne.imgData[index + row + d + col].x;//.val.x;
+                    readPosLeft = imgTwo.imgData[index + row + col].x;//.val.x;
 
                     sum += abs(readPosLeft - readPosRight);
                 }
@@ -57,7 +57,7 @@ void main()
             sum = 0;
         }
 
-        imgOut.imgData[index].val.x = pixelDisparity;
+        imgOut.imgData[index].x = pixelDisparity;//.val.x = pixelDisparity;
         pixelDisparity = 0;
         minAverage = 100;// Reset min for avg
 

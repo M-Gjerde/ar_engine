@@ -66,7 +66,8 @@ public:
     void gameLoop() {
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
-            //vulkanRenderer.draw();
+            vulkanRenderer.draw();
+            vulkanRenderer.vulkanComputeShaders();
             update();
         }
 

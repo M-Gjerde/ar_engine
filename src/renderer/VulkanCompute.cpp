@@ -53,7 +53,7 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     inputBufferOne.bufferSize = bufferSize;
     inputBufferOne.bufferUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     inputBufferOne.bufferProperties =
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;;
     inputBufferOne.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     pBuffer->createBuffer(&inputBufferOne);
 
@@ -154,7 +154,7 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     The number of workgroups is specified in the arguments.
     If you are already familiar with compute shaders from OpenGL, this should be nothing new to you.
     */
-    vkCmdDispatch(commandBuffer, (uint32_t) 155, (uint32_t) 1, 1);
+    vkCmdDispatch(commandBuffer, (uint32_t) 4500, (uint32_t) 1, 1);
 
     result = vkEndCommandBuffer(commandBuffer); // end recording commands.
     if (result != VK_SUCCESS)
@@ -214,8 +214,8 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
     vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[0]);
 
 // TODO RESEARCH DEVICE LOCAL GPU MEMORY
-
-/*    ArBuffer stagingBuffer{};
+/*
+    ArBuffer stagingBuffer{};
     stagingBuffer.bufferSize = imageSize * sizeof(glm::vec4);
     stagingBuffer.bufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     stagingBuffer.bufferProperties =
@@ -231,8 +231,8 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
 
     vkFreeMemory(arEngine.mainDevice.device, stagingBuffer.bufferMemory, nullptr);
     vkDestroyBuffer(arEngine.mainDevice.device, stagingBuffer.buffer, nullptr);
-    */
 
+*/
     data = nullptr;
     vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[1], 0, imageSize * sizeof(glm::vec4), 0,
                 &data);
