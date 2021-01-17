@@ -4,8 +4,7 @@ project(ar_engine)
 set(CMAKE_CXX_STANDARD 17)
 
 # Include Vulkan and OpenCL from AMD drivers
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17  ")#-L/opt/amdgpu-pro/lib/x86_64-linux-gnu -lamdocl-orca64")
-
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17  -pthread")#-L/opt/amdgpu-pro/lib/x86_64-linux-gnu -lamdocl-orca64")
 
 find_package(glm REQUIRED)
 find_package(Vulkan REQUIRED)
@@ -51,7 +50,7 @@ add_library(VulkanRenderer
         src/pipeline/MeshModel.cpp
         src/pipeline/MeshModel.h
         src/Platform/LoadSettings.cpp
-        src/Platform/LoadSettings.h src/renderer/VulkanCompute.cpp src/renderer/VulkanCompute.h src/objects/BufferObject.cpp src/objects/BufferObject.h)
+        src/Platform/LoadSettings.h src/renderer/VulkanCompute.cpp src/renderer/VulkanCompute.h src/objects/BufferObject.cpp src/objects/BufferObject.h src/record/ThreadSpawner.cpp src/record/ThreadSpawner.h)
 
 target_link_libraries(VulkanRenderer
         #stereoVision

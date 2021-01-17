@@ -60,14 +60,14 @@ private:
     // Pipelines and drawing stuff
     Pipeline pipeline;
     std::vector<ArPipeline> arPipelines{};
-    Images *images;
-    ArDepthResource arDepthResource;
-    VkRenderPass renderPass;
+    Images *images{};
+    ArDepthResource arDepthResource{};
+    VkRenderPass renderPass{};
 
     // Compute pipeline
-    VulkanCompute *vulkanCompute;
+    VulkanCompute *vulkanCompute{};
     ArCompute arCompute;
-    VkFence computeFence;
+    VkFence computeFence{};
 
     // Buffer
     Buffer *buffer{};
@@ -85,7 +85,7 @@ private:
     FragmentColor fragmentColor{};
 
     // Textures
-    Textures *textures;
+    Textures *textures{};
     std::vector<ArTextureImage> arTextureSampler{};
     std::vector<ArBuffer> textureImageBuffer{};
 

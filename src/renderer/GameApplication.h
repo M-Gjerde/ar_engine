@@ -19,6 +19,7 @@
 #include "VulkanRenderer.hpp"
 #include "../pipeline/Camera.h"
 #include "../Platform/LoadSettings.h"
+#include "../record/ThreadSpawner.h"
 
 class GameApplication {
 
@@ -27,6 +28,8 @@ public:
     VulkanRenderer vulkanRenderer;
     Camera camera;
     LoadSettings loadSettings;
+    ThreadSpawner threadSpawner;
+
     explicit GameApplication(const std::string &title) {
 
         // boilerplate stuff (ie. basic window setup, initialize OpenGL) occurs in abstract class
@@ -67,7 +70,6 @@ public:
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
             vulkanRenderer.draw();
-            vulkanRenderer.vulkanComputeShaders();
             update();
         }
 

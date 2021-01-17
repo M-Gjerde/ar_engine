@@ -3,6 +3,7 @@
 //
 
 #include <zconf.h>
+#include <thread>
 #include "GameApplication.h"
 
 bool rotate = false;
@@ -56,6 +57,18 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
         //vulkanRenderer.loadTypeOneObject();
         //vulkanRenderer.updateScene();
         vulkanRenderer.vulkanComputeShaders();
+    }
+
+    // execute vulkan compute sequence
+    if (key == GLFW_KEY_F && action == GLFW_PRESS) {
+        // Launch video streamer
+        threadSpawner.startStream();
+    }
+
+    // execute vulkan compute sequence
+    if (key == GLFW_KEY_S && action == GLFW_PRESS) {
+        // Launch video streamer
+        threadSpawner.stopStream();
     }
 
     // delete objects sequence
