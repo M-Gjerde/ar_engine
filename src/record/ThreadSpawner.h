@@ -7,6 +7,10 @@
 
 
 #include <string>
+#include <unistd.h>
+#include <csignal>
+#include <sys/ipc.h>
+#include <sys/shm.h>
 
 class ThreadSpawner {
 
@@ -15,13 +19,25 @@ public:
 
     void startStream();
     void stopStream();
-    bool isStreamRunning();
 
+
+    void readMemory();
 
 private:
     std::string cmd;
     pid_t pidStreamer = -1;
     bool status = false;
+    int memID;
+    uint32_t memorySize = 1280 * 720;
+    struct shMem {
+        unsigned char buffer[1024];
+    };
+
+    void childProcess();
+
+    void initV4l2();
+    void captureFrame();
+    bool isStreamRunning();
 
 };
 

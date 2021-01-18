@@ -9,13 +9,6 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17  -pthread")#-L/opt/amdgpu-pro
 find_package(glm REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(glfw3 REQUIRED)
-find_package(OpenCV REQUIRED HINTS /home/magnus/libraries/opencv-master/build)
-
-
-## Stereovision extension
-#add_library(stereoVision src/stereo/Disparity.cpp src/stereo/Disparity.h)
-#target_link_libraries(stereoVision PUBLIC ${OpenCV_LIBS}  )
-#target_compile_options(stereoVision PUBLIC -pthread )
 
 ## JSON Parser
 set(JSON_BuildTests OFF CACHE INTERNAL "")
@@ -53,7 +46,6 @@ add_library(VulkanRenderer
         src/Platform/LoadSettings.h src/renderer/VulkanCompute.cpp src/renderer/VulkanCompute.h src/objects/BufferObject.cpp src/objects/BufferObject.h src/record/ThreadSpawner.cpp src/record/ThreadSpawner.h)
 
 target_link_libraries(VulkanRenderer
-        #stereoVision
         vulkan
         nlohmann_json::nlohmann_json
         )

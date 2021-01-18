@@ -74,6 +74,7 @@ public:
         }
 
         vulkanRenderer.cleanup();
+        threadSpawner.stopStream();
         glfwDestroyWindow(window);
         glfwTerminate();
     }

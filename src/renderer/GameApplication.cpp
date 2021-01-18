@@ -59,6 +59,10 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
         vulkanRenderer.vulkanComputeShaders();
     }
 
+    if (key == GLFW_KEY_ENTER && action == GLFW_PRESS) {
+        threadSpawner.readMemory();
+    }
+
     // execute vulkan compute sequence
     if (key == GLFW_KEY_F && action == GLFW_PRESS) {
         // Launch video streamer
