@@ -9,10 +9,15 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17  -pthread")#-L/opt/amdgpu-pro
 find_package(glm REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(glfw3 REQUIRED)
+find_package(OpenCV REQUIRED)
 
 ## JSON Parser
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 add_subdirectory(external/json)
+
+add_library(videoStream src/record/ThreadSpawner.cpp src/record/ThreadSpawner.h)
+
+target_link_libraries(videoStream ${OpenCV_LIBS} -lv4l2)
 
 # Ties vulkanRenderer with helper classes
 add_library(VulkanRenderer
@@ -48,6 +53,7 @@ add_library(VulkanRenderer
 target_link_libraries(VulkanRenderer
         vulkan
         nlohmann_json::nlohmann_json
+        videoStream
         )
 
 add_executable(engine main.cpp external/tinyobj/tiny_obj_loader.h)

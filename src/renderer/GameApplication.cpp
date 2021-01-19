@@ -66,13 +66,13 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
     // execute vulkan compute sequence
     if (key == GLFW_KEY_F && action == GLFW_PRESS) {
         // Launch video streamer
-        threadSpawner.startStream();
+        threadSpawner.startChildProcess();
     }
 
     // execute vulkan compute sequence
     if (key == GLFW_KEY_S && action == GLFW_PRESS) {
         // Launch video streamer
-        threadSpawner.stopStream();
+        threadSpawner.stopChildProcess();
     }
 
     // delete objects sequence
