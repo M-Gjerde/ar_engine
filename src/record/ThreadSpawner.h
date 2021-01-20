@@ -12,6 +12,11 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <libv4l2rds.h>
+#include <stdexcept>
+#include <cstring>
+#include <libv4l2.h>
+#include <mqueue.h>
+#include <sys/mman.h>
 
 class ThreadSpawner {
 
@@ -26,11 +31,9 @@ public:
     void readMemory();
 
 private:
-    std::string cmd;
     pid_t pidStreamer = -1;
     bool status = false;
     int memID;
-    uint32_t memorySize = 1280 * 720;
     struct shMem {
         unsigned char buffer[1024];
     };
@@ -40,41 +43,23 @@ private:
         size_t length;
     };
 
-    struct ArV4l2 {
-        v4l2_format fmt;
-        v4l2_buffer v4l2Buffer[2];
-        v4l2_requestbuffers reqBuffers[2];
-        v4l2_buf_type bufferType;
-
-        fd_set fds[2];
-        int fd[2];
-
-        std::string deviceNames[2] = {"/dev/video0", "/dev/video1"};
-
-        Buffer buffers[2];
-    } arV4L2;
-
     void childProcess();
 
-    void initV4l2();
 
-    void startVideoStream();
 
-    void stopVideoStream();
-
-    void captureFrame();
 
     bool isStreamRunning();
 
     void xioctl(int fh, int request, void *arg);
 
-    void setSensorMode();
+    int run();
+    static int openDevice(char *dev_name);
+    void setMode(uint fd, int mode);
+    void imageProperties(int fd, int width, int height);
+    void setupBuffers(int fd, v4l2_buffer *buf, Buffer *pBuffer);
 
-    void setImageProperties();
-
-    void initBuffers();
-
-    void grabFrame();
+    void startVideoStream(int fd);
+    void stopVideoStream(int fd);
 };
 
 
