@@ -124,6 +124,23 @@ void ThreadSpawner::initV4l2() {
         }
     }
 
+    timeval tv{};
+    int r = -1;
+    // Select devices
+    for (int i = 0; i < 2; ++i) {
+        FD_ZERO(&arV4L2.fds[i]);
+        FD_SET(arV4L2.fd[i], &arV4L2.fds[i]);
+        /* Timeout. */
+        tv.tv_sec = 2;
+        tv.tv_usec = 0;
+        r = select(arV4L2.fd[i] + 1, &arV4L2.fds[i], NULL, NULL, &tv);
+        printf("r: %d\n", r);
+
+        if (r == -1 && (errno = EINTR)) {
+            perror("select");
+            exit(EXIT_FAILURE);
+        }
+    }
 
 }
 
@@ -232,8 +249,8 @@ void ThreadSpawner::grabFrame() {
     timeval tv{};
     clock_t Start = clock();
 
-    cv::namedWindow("window", cv::WINDOW_NORMAL);
-    cv::namedWindow("window2", cv::WINDOW_NORMAL);
+   // cv::namedWindow("window", cv::WINDOW_NORMAL);
+   // cv::namedWindow("window2", cv::WINDOW_NORMAL);
 
     // Select devices
     for (int i = 0; i < 2; ++i) {
@@ -243,6 +260,7 @@ void ThreadSpawner::grabFrame() {
         tv.tv_sec = 2;
         tv.tv_usec = 0;
         r = select(arV4L2.fd[i] + 1, &arV4L2.fds[i], NULL, NULL, &tv);
+        printf("r: %d\n", r);
 
         if (r == -1 && (errno = EINTR)) {
             perror("select");
