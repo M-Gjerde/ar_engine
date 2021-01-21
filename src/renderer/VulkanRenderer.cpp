@@ -516,17 +516,11 @@ void VulkanRenderer::initComputePipeline() {
 
     vkResetFences(arEngine.mainDevice.device, 1, &computeFence);
 }
-bool preview = false;
+
 void VulkanRenderer::loadComputeData() {
-
-
-    if (preview) {
-        vulkanCompute->previewVideoStreams();
-    } else {
-        while (true) {
-            vulkanCompute->loadComputeData(arCompute, buffer);
-            vulkanComputeShaders();
-        }
+    while (true){
+        vulkanCompute->loadComputeData(arCompute, buffer);
+        vulkanComputeShaders();
     }
 
 
@@ -534,6 +528,7 @@ void VulkanRenderer::loadComputeData() {
 
 void VulkanRenderer::startDisparityStream() {
     vulkanCompute->startDisparityStream();
+
 }
 
 void VulkanRenderer::vulkanComputeShaders() {
