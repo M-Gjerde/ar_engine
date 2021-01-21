@@ -127,6 +127,11 @@ struct ArCompute {
     ArDescriptor descriptor;
 };
 
-
+struct ArSharedMemory {
+    unsigned char imgOne[1843300];
+    size_t imgLen1;
+    unsigned char imgTwo[1843300];
+    size_t imgLen2;
+};
 
 #endif //AR_ENGINE_STRUCTS_H

@@ -28,7 +28,6 @@ public:
     VulkanRenderer vulkanRenderer;
     Camera camera;
     LoadSettings loadSettings;
-    ThreadSpawner threadSpawner;
 
     explicit GameApplication(const std::string &title) {
 
@@ -55,8 +54,6 @@ public:
         auto settingsMap = loadSettings.getSceneObjects();
         vulkanRenderer.drawScene(settingsMap);
 
-        vulkanRenderer.vulkanComputeShaders();
-
     }
 
     virtual void keyCallback(GLFWwindow *glfWwindow, int key, int scancode, int action, int mods) {};
@@ -74,7 +71,6 @@ public:
         }
 
         vulkanRenderer.cleanup();
-        threadSpawner.stopChildProcess();
         glfwDestroyWindow(window);
         glfwTerminate();
     }

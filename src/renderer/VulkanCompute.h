@@ -10,6 +10,7 @@
 #include "../pipeline/Descriptors.h"
 #include "../Platform/Platform.h"
 #include "../include/stb_image.h"
+#include "../record/ThreadSpawner.h"
 
 class VulkanCompute {
 
@@ -20,7 +21,11 @@ public:
 
     ArCompute setupComputePipeline(Buffer *pBuffer, Descriptors *pDescriptors, Platform *pPlatform, Pipeline pipeline);
     void loadComputeData(ArCompute arCompute, Buffer *pBuffer);
+    void stopDisparityStream();
+    void startDisparityStream();
     void cleanup();
+
+    void previewVideoStreams();
 
 private:
 
@@ -29,7 +34,8 @@ private:
     VkCommandPool commandPool{};
     ArPipeline computePipeline{};
 
-    void loadImageData();
+    ThreadSpawner threadSpawner;
+
 
 };
 
