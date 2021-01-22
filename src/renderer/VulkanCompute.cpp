@@ -43,7 +43,7 @@ void VulkanCompute::cleanup() {
 
 ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDescriptors, Platform *pPlatform,
                                               Pipeline pipeline) {
-    int width = 427, height = 370;
+    int width = 1280, height = 720;
     int imageSize = (width * height);
     // Buffer size
     uint32_t bufferSize = (imageSize * sizeof(glm::vec4));
@@ -136,7 +136,7 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-    result = vkBeginCommandBuffer(commandBuffer, &beginInfo); // start recording commands.
+    result = vkBeginCommandBuffer(commandBuffer, &beginInfo); // imgOne recording commands.
     if (result != VK_SUCCESS)
         throw std::runtime_error("Failed to begin command buffers");
     /*
@@ -154,7 +154,7 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     The number of workgroups is specified in the arguments.
     If you are already familiar with compute shaders from OpenGL, this should be nothing new to you.
     */
-    vkCmdDispatch(commandBuffer, (uint32_t) 2500, (uint32_t) 1, 1);
+    vkCmdDispatch(commandBuffer, (uint32_t) 10000, (uint32_t) 1, 1);
 
     result = vkEndCommandBuffer(commandBuffer); // end recording commands.
     if (result != VK_SUCCESS)
@@ -169,19 +169,25 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
 
 void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
 
+
+    ArSharedMemory *memP = threadSpawner.readMemory();
+
+    printf("img 1 size: %zu\n", memP->imgLen1);
+    printf("img 1 data: %d\n", *(uint16_t *) memP->imgOne);
+
+    printf("img 2 size: %zu\n", memP->imgLen2);
+    printf("img 2 data: %d\n", *(uint16_t *) memP->imgTwo);
+
     // Load image using stb_image.h
     int texWidth, texHeight, texChannels;
     std::string filePath = "../textures/Aloe_thirdsize/view1.png";
 
-    stbi_uc *imageOne = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
-    if (!imageOne) throw std::runtime_error("failed to load texture image: view1.png");
-    filePath = "../textures/Aloe_thirdsize/view5.png";
-    stbi_uc *imageTwo = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
-    if (!imageTwo) throw std::runtime_error("failed to load texture image: view5.png");
 
     int width = 427, height = 370;
-    int imageSize = (width * height);
+    //int imageSize = (width * height);
     //int width = 1282, height = 1110;
+
+    int imageSize = memP->imgLen1 / 2;
 
 
     auto *imgOnePixel = new glm::vec4[imageSize];
@@ -190,11 +196,19 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
     auto origOne = imgOnePixel;
     auto origTwo = imgTwoPixel;
 
+    auto memPixelOne = (uint16_t *) memP->imgOne;
+    auto memPixelTwo = (uint16_t *) memP->imgTwo;
+
+    int pixMax = 255, pixMin = 0;
+
+
     for (int i = 0; i < imageSize; ++i) {
-        imgOnePixel->x = *imageOne;
-        imgTwoPixel->x = *imageTwo;
-        imageOne++;
-        imageTwo++;
+        //unsigned char newVal = (255 - 0) / (pixMax - pixMin) * (*memPixelOne - pixMax) + 255;
+        //unsigned char newVal2 = (255 - 0) / (pixMax - pixMin) * (*memPixelTwo - pixMax) + 255;
+        imgOnePixel->x = *memPixelOne;
+        imgTwoPixel->x = *memPixelTwo;
+        memPixelOne++;
+        memPixelTwo++;
         imgTwoPixel++;
         imgOnePixel++;
     }
@@ -243,7 +257,12 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
 
 }
 
-void VulkanCompute::loadImageData() {
+void VulkanCompute::stopDisparityStream() {
+    threadSpawner.stopChildProcess();
 
+}
+
+void VulkanCompute::startDisparityStream() {
+    threadSpawner.startChildProcess();
 
 }

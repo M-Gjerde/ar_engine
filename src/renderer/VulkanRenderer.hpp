@@ -16,6 +16,7 @@
 #include "../pipeline/Images.h"
 #include "../pipeline/Textures.h"
 #include "VulkanCompute.h"
+#include "../record/ThreadSpawner.h"
 #include <stdexcept>
 #include <vector>
 #include <iostream>
@@ -52,6 +53,10 @@ public:
 
     void deleteLastObject();
 
+    void loadComputeData();
+
+    void startDisparityStream();
+
 private:
     // Vulkan components
     Platform *platform{};
@@ -71,6 +76,7 @@ private:
 
     // Buffer
     Buffer *buffer{};
+
 
     // Objects
     std::vector<Mesh> meshes{};
@@ -117,7 +123,6 @@ private:
 
     void initComputePipeline();
 
-    void loadComputeData();
 };
 
 

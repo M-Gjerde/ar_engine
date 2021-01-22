@@ -17,6 +17,7 @@
 #include <libv4l2.h>
 #include <mqueue.h>
 #include <sys/mman.h>
+#include "../include/structs.h"
 
 class ThreadSpawner {
 
@@ -26,17 +27,16 @@ public:
     void startChildProcess();
 
     void stopChildProcess();
+    bool isStreamRunning();
 
 
-    void readMemory();
+    ArSharedMemory * readMemory();
 
 private:
     pid_t pidStreamer = -1;
     bool status = false;
     int memID;
-    struct shMem {
-        unsigned char buffer[1024];
-    };
+
 
     struct Buffer {
         void *start;
@@ -48,7 +48,6 @@ private:
 
 
 
-    bool isStreamRunning();
 
     void xioctl(int fh, int request, void *arg);
 
@@ -60,6 +59,10 @@ private:
 
     void startVideoStream(int fd);
     void stopVideoStream(int fd);
+
+    [[nodiscard]] ArSharedMemory *attachMemory() const;
+
+    static void detachMemory(ArSharedMemory *memP);
 };
 
 

@@ -6,6 +6,7 @@
 
 
 #include <sys/ioctl.h>
+#include <array>
 #include "ThreadSpawner.h"
 
 #define WIDTH 1280
@@ -34,6 +35,7 @@ void ThreadSpawner::startChildProcess() {
         return;
     }
 
+
     pidStreamer = fork();
 
     // Parent process
@@ -61,19 +63,15 @@ void ThreadSpawner::stopChildProcess() {
 
 ThreadSpawner::ThreadSpawner() {
     // Create shared memory segment
-    memID = shmget(IPC_PRIVATE, sizeof(shMem), 0666 | IPC_CREAT);
+    memID = shmget(IPC_PRIVATE, sizeof(ArSharedMemory), 0666 | IPC_CREAT);
     if (memID == -1) {
         throw std::runtime_error("Failed to create shared memory segment\n");
     }
 
-    printf("Attaching to shared memory ");
-    auto *memP = (shMem *) shmat(memID, nullptr, 0);
+    auto *memP = (ArSharedMemory *) shmat(memID, nullptr, 0);
     if (memP == (void *) -1) {
         throw std::runtime_error("Failed to attach to shared memory segment");
     }
-
-    printf("Parent pointer addr: %p\n", &memP);
-
 
 }
 
@@ -82,20 +80,6 @@ bool ThreadSpawner::isStreamRunning() {
 }
 
 void ThreadSpawner::childProcess() {
-
-    printf("Attaching to shared memory ");
-    auto *memP = (shMem *) shmat(memID, nullptr, 0);
-    if (memP == (void *) -1) {
-        throw std::runtime_error("Failed to attach to shared memory segment");
-    }
-    printf("pointer addr: %p\n", &memP);
-    memset(memP->buffer, 99, 1024);
-
-    printf("Detaching shared memory\n");
-    if (shmdt(memP) == -1) {
-        throw std::runtime_error("Failed to detach to shared memory");
-    }
-
     run();
 
     while (true);
@@ -103,22 +87,19 @@ void ThreadSpawner::childProcess() {
 }
 
 
-void ThreadSpawner::readMemory() {
+ArSharedMemory * ThreadSpawner::readMemory() {
 
-    auto *memP = (shMem *) shmat(memID, nullptr, 0);
+    auto *memP = (ArSharedMemory *) shmat(memID, nullptr, 0);
     if (memP == (void *) -1) {
         throw std::runtime_error("Failed to attach to shared memory segment");
     }
-    printf("Pointer addr: %p\n", &memP);
 
-    for (int i = 0; i < 1; ++i) {
-        printf("Data at pointer: %d\n", memP->buffer[i]);
-    }
-
-    if (shmdt(memP) == -1) {
+    // TODO DETACH AT SOME OTHER POINT
+   /* if (shmdt(memP) == -1) {
         throw std::runtime_error("Failed to detach to shared memory");
     }
-
+*/
+    return memP;
 }
 
 void ThreadSpawner::startVideoStream(int fd) {
@@ -145,7 +126,7 @@ void ThreadSpawner::setMode(uint fd, int mode) {
     v4l2_ext_control ctrl{};
     memset(&ctrls, 0, sizeof(ctrls));
     memset(&ctrl, 0, sizeof(ctrl));
-    ctrls.ctrl_class = V4L2_CTRL_ID2CLASS(0x009a2008);
+    ctrls.ctrl_class = V4L2_CTRL_ID2CLASS(0x009a2008);  // TODO make dynamic
     ctrls.count = 1;
     ctrls.controls = &ctrl;
     ctrl.id = 0x009a2008; // TODO make dynamic
@@ -182,9 +163,9 @@ void ThreadSpawner::imageProperties(int fd, int width, int height) {
 
 }
 
-void ThreadSpawner::setupBuffers(int fd, v4l2_buffer *buf, Buffer *buffer) {
+void ThreadSpawner::setupBuffers(int fd, v4l2_buffer *buf, Buffer *pBuffer) {
     struct v4l2_requestbuffers req{};
-    Buffer *pBuffer;
+    std::array<Buffer, 3> tempBuff{};
 
 
     // -- TODO EXPLAIN BUFFER STUFF
@@ -196,8 +177,9 @@ void ThreadSpawner::setupBuffers(int fd, v4l2_buffer *buf, Buffer *buffer) {
     xioctl(fd, VIDIOC_REQBUFS, &req);
     int n_buffers;
 
-    pBuffer = static_cast<Buffer *>(calloc(req.count, sizeof(*pBuffer)));
-    buffer = static_cast<Buffer *>(calloc(req.count, sizeof(*buffer)));
+
+    //buffer = static_cast<Buffer *>(calloc(req.count, sizeof(*buffer)));
+    //pBuffer = static_cast<Buffer *>(calloc(req.count, sizeof(*pBuffer)));
 
     for (n_buffers = 0; n_buffers < req.count; ++n_buffers) {
         CLEAR(*buf);
@@ -208,16 +190,19 @@ void ThreadSpawner::setupBuffers(int fd, v4l2_buffer *buf, Buffer *buffer) {
 
         xioctl(fd, VIDIOC_QUERYBUF, buf);
 
-        pBuffer[n_buffers].length = buf->length;
-        pBuffer[n_buffers].start = v4l2_mmap(nullptr, buf->length, PROT_READ | PROT_WRITE, MAP_SHARED, fd,
-                                             buf->m.offset);
+        tempBuff[n_buffers].length = buf->length;
+        tempBuff[n_buffers].start = v4l2_mmap(nullptr, buf->length, PROT_READ | PROT_WRITE, MAP_SHARED, fd,
+                                            buf->m.offset);
 
         if (MAP_FAILED == pBuffer[n_buffers].start) {
             perror("mmap");
             exit(EXIT_FAILURE);
         }
 
-        buffer[n_buffers] = pBuffer[n_buffers];
+        *pBuffer = tempBuff[n_buffers];
+
+        pBuffer++;
+
     }
 
     for (int i = 0; i < n_buffers; ++i) {
@@ -230,6 +215,20 @@ void ThreadSpawner::setupBuffers(int fd, v4l2_buffer *buf, Buffer *buffer) {
 
 }
 
+ArSharedMemory * ThreadSpawner::attachMemory() const{
+    auto *memP = (ArSharedMemory *) shmat(memID, nullptr, 0);
+    if (memP == (void *) -1) {
+        throw std::runtime_error("Failed to attach to shared memory segment");
+    }
+
+    return memP;
+}
+
+void ThreadSpawner::detachMemory(ArSharedMemory * memP){
+    if (shmdt(memP) == -1) {
+        throw std::runtime_error("Failed to detach to shared memory");
+    }
+}
 
 int ThreadSpawner::run() {
     //v4l2_buffer buf{}, buf2{};
@@ -238,8 +237,10 @@ int ThreadSpawner::run() {
     fd_set fds, fds2;
     timeval tv{};
     int r;
-    Buffer *buffer1;
-    Buffer *buffer2;
+    //Buffer buffer1[3];
+    //Buffer buffer2[3];
+    std::array<Buffer, 3> buffer1{};
+    std::array<Buffer, 3> buffer2{};
 
     std::string devName = "/dev/video0";
     std::string devName2 = "/dev/video1";
@@ -252,12 +253,12 @@ int ThreadSpawner::run() {
     }
 
     printf("Setting up buffers\n");
-    setupBuffers(fd[0], &v4l2buffers[0], buffer1);
-    setupBuffers(fd[1], &v4l2buffers[1], buffer2);
-
+    setupBuffers(fd[0], &v4l2buffers[0], buffer1.data());
+    setupBuffers(fd[1], &v4l2buffers[1], buffer2.data());
+    auto k = buffer1[0];
     printf("end setup\n");
     // END
-    // start videoStream
+    // imgOne videoStream
     for (int j : fd) {
         startVideoStream(j);
     }
@@ -296,12 +297,17 @@ int ThreadSpawner::run() {
         v4l2buffers[1].memory = V4L2_MEMORY_MMAP;
         xioctl(fd[1], VIDIOC_DQBUF, &v4l2buffers[1]);
 
-        auto endTime = (double) (clock() - Start) / CLOCKS_PER_SEC;
 
-        auto pixelData = buffer1[v4l2buffers[0].index].start;
-        //auto pixelData2 = buffer2[v4l2buffers[1].index].start;
+        // Attach
+        ArSharedMemory* memP = attachMemory();
+        // Copy data
+        memcpy(memP->imgOne, buffer1[v4l2buffers[0].index].start, buffer1[v4l2buffers[0].index].length);
+        memcpy(memP->imgTwo, buffer2[v4l2buffers[0].index].start, buffer2[v4l2buffers[0].index].length);
+        memP->imgLen1 = buffer1[v4l2buffers[0].index].length;
+        memP->imgLen2 = buffer2[v4l2buffers[1].index].length;
+        // Detach
+        detachMemory(memP);
 
-        size_t imageSize = buffer1[v4l2buffers[0].index].length / 2;
 
         /*
         uint16_t *d = (uint16_t *) pixelData;
@@ -336,11 +342,13 @@ int ThreadSpawner::run() {
 
         if (cv::waitKey(30) == 27) break;
 */
-        endTime = (double) (clock() - Start) / CLOCKS_PER_SEC;
-        printf("Total time taken: %.7fs\n\n", endTime);
+
 
         xioctl(fd[0], VIDIOC_QBUF, &v4l2buffers[0]);
         xioctl(fd[1], VIDIOC_QBUF, &v4l2buffers[1]);
+
+        //endTime = (double) (clock() - Start) / CLOCKS_PER_SEC;
+        //printf("Total time taken: %.7fs\n\n", endTime);
     }
 
     type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -348,11 +356,11 @@ int ThreadSpawner::run() {
     xioctl(fd[1], VIDIOC_STREAMOFF, &type);
 
     /* for (i = 0; i < n_buffers; ++i)
-         v4l2_munmap(buffers[i].start, buffers[i].length);
+         v4l2_munmap(buffers[i].imgOne, buffers[i].imgLen1);
      v4l2_close(fd[0]);
 
      for (i = 0; i < n_buffers2; ++i)
-         v4l2_munmap(buffers2[i].start, buffers2[i].length);
+         v4l2_munmap(buffers2[i].imgOne, buffers2[i].imgLen1);
      v4l2_close(fd[1]);
 
  */

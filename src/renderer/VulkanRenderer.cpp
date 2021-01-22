@@ -35,7 +35,7 @@ int VulkanRenderer::init(GLFWwindow *newWindow) {
         printf("Initiated vulkan\n");
 
         initComputePipeline();
-        loadComputeData();
+
         printf("Initiated compute pipeline\n\n");
 
     } catch (std::runtime_error &err) {
@@ -518,11 +518,22 @@ void VulkanRenderer::initComputePipeline() {
 }
 
 void VulkanRenderer::loadComputeData() {
-    vulkanCompute->loadComputeData(arCompute, buffer);
+    while (true){
+        vulkanCompute->loadComputeData(arCompute, buffer);
+        vulkanComputeShaders();
+    }
+
+
+}
+
+void VulkanRenderer::startDisparityStream() {
+    vulkanCompute->startDisparityStream();
 
 }
 
 void VulkanRenderer::vulkanComputeShaders() {
+
+
     auto start = std::chrono::high_resolution_clock::now();
     vkResetFences(arEngine.mainDevice.device, 1, &computeFence);
 
@@ -549,7 +560,7 @@ void VulkanRenderer::vulkanComputeShaders() {
 
     // --- Retrieve data from compute pipeline ---
     //int width = 1282, height = 1110;
-    int width = 427, height = 370;
+    int width = 1280, height = 720;
     int imageSize = (width * height);
 
     void *mappedMemory = nullptr;

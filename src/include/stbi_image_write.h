@@ -1154,7 +1154,7 @@ STBIWDEF unsigned char *stbi_write_png_to_mem(const unsigned char *pixels, int s
 
    o=out;
    STBIW_MEMMOVE(o,sig,8); o+= 8;
-   stbiw__wp32(o, 13); // header length
+   stbiw__wp32(o, 13); // header imgLen1
    stbiw__wptag(o, "IHDR");
    stbiw__wp32(o, x);
    stbiw__wp32(o, y);

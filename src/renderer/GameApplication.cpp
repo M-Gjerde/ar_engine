@@ -56,29 +56,13 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
     if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
         //vulkanRenderer.loadTypeOneObject();
         //vulkanRenderer.updateScene();
-        vulkanRenderer.vulkanComputeShaders();
+        vulkanRenderer.loadComputeData();
     }
 
-    if (key == GLFW_KEY_ENTER && action == GLFW_PRESS) {
-        threadSpawner.readMemory();
-    }
-
-    // execute vulkan compute sequence
-    if (key == GLFW_KEY_F && action == GLFW_PRESS) {
-        // Launch video streamer
-        threadSpawner.startChildProcess();
-    }
-
-    // execute vulkan compute sequence
-    if (key == GLFW_KEY_S && action == GLFW_PRESS) {
-        // Launch video streamer
-        threadSpawner.stopChildProcess();
-    }
 
     // delete objects sequence
-    if (key == GLFW_KEY_D && action == GLFW_PRESS) {
-        //vulkanRenderer.deleteLastObject();
-        //vulkanRenderer.updateScene();
+    if (key == GLFW_KEY_ENTER && action == GLFW_PRESS) {
+        vulkanRenderer.startDisparityStream();
 
     }
 
