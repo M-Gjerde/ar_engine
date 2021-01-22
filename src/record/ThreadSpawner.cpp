@@ -3,15 +3,14 @@
 //
 
 
-#include <stdexcept>
-#include <cstring>
-#include <libv4l2rds.h>
-#include <libv4l2.h>
-#include <mqueue.h>
-#include <sys/mman.h>
-#include "opencv2/opencv.hpp"
 
+
+#include <sys/ioctl.h>
 #include "ThreadSpawner.h"
+
+#define WIDTH 1280
+#define HEIGHT 720
+#define CLEAR(x) memset(&(x), 0, sizeof(x))
 
 void ThreadSpawner::xioctl(int fh, int request, void *arg) {
     int r;
@@ -97,118 +96,12 @@ void ThreadSpawner::childProcess() {
         throw std::runtime_error("Failed to detach to shared memory");
     }
 
-
-    initV4l2();
-    setSensorMode();
-    setImageProperties();
-    initBuffers();
-
-    startVideoStream();
-    grabFrame();
-    stopVideoStream();
-
+    run();
 
     while (true);
 
 }
 
-void ThreadSpawner::initV4l2() {
-
-    for (int i = 0; i < 2; ++i) {
-        arV4L2.fd[i] = v4l2_open(arV4L2.deviceNames[i].c_str(), O_RDWR | O_NONBLOCK, 0);
-
-        printf("name: %s, fd %d\n", arV4L2.deviceNames[i].c_str(), arV4L2.fd[i]);
-        if (arV4L2.fd[i] < 0) {
-            perror("Cannot open device");
-            exit(EXIT_FAILURE);
-        }
-    }
-
-    timeval tv{};
-    int r = -1;
-    // Select devices
-    for (int i = 0; i < 2; ++i) {
-        FD_ZERO(&arV4L2.fds[i]);
-        FD_SET(arV4L2.fd[i], &arV4L2.fds[i]);
-        /* Timeout. */
-        tv.tv_sec = 2;
-        tv.tv_usec = 0;
-        r = select(arV4L2.fd[i] + 1, &arV4L2.fds[i], NULL, NULL, &tv);
-        printf("r: %d\n", r);
-
-        if (r == -1 && (errno = EINTR)) {
-            perror("select");
-            exit(EXIT_FAILURE);
-        }
-    }
-
-}
-
-void ThreadSpawner::setSensorMode() {
-
-}
-
-void ThreadSpawner::setImageProperties() {
-
-    int width = 1280, height = 720;
-    memset(&arV4L2.fmt, 0, sizeof(arV4L2.fmt));
-    arV4L2.fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    arV4L2.fmt.fmt.pix.width = width;
-    arV4L2.fmt.fmt.pix.height = height;
-    arV4L2.fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_SRGGB10;
-    arV4L2.fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
-
-    for (int i : arV4L2.fd) {
-        xioctl(i, VIDIOC_S_FMT, &arV4L2.fmt);
-        if (arV4L2.fmt.fmt.pix.pixelformat != V4L2_PIX_FMT_SRGGB10) {
-            printf("Libv4l didn't accept RGGB10 format. Can't proceed.\n");
-            exit(EXIT_FAILURE);
-        }
-        if ((arV4L2.fmt.fmt.pix.width != width) || (arV4L2.fmt.fmt.pix.height != height))
-            throw std::runtime_error("Failed to set image properties");
-    }
-
-
-}
-
-void ThreadSpawner::initBuffers() {
-    for (int i = 0; i < 2; ++i) {
-        // Set up request buffers
-        memset(&arV4L2.reqBuffers[i], 0x00, sizeof(arV4L2.reqBuffers[i]));
-        arV4L2.reqBuffers[i].count = 1;
-        arV4L2.reqBuffers[i].type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        arV4L2.reqBuffers[i].memory = V4L2_MEMORY_MMAP;
-        xioctl(arV4L2.fd[i], VIDIOC_REQBUFS, &arV4L2.reqBuffers[i]);
-
-        // TODO CALLOC HERE OF MY BUFFERS
-        //arV4L2.buffers[i] = static_cast<Buffer *>(calloc(arV4L2.reqBuffers[i].count, sizeof(*Buffers)));
-
-        // Further setup of req buffers
-        memset(&arV4L2.v4l2Buffer[i], 0x00, sizeof(arV4L2.v4l2Buffer[i]));
-        arV4L2.v4l2Buffer[i].type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        arV4L2.v4l2Buffer[i].memory = V4L2_MEMORY_MMAP;
-        arV4L2.v4l2Buffer[i].index = i;
-        xioctl(arV4L2.fd[i], VIDIOC_QUERYBUF, &arV4L2.v4l2Buffer[i]);
-
-        // Map buffers from v4l2 buffers
-        arV4L2.buffers[i].length = arV4L2.v4l2Buffer[i].length;
-        arV4L2.buffers[i].start = v4l2_mmap(NULL, arV4L2.v4l2Buffer[i].length, PROT_READ | PROT_WRITE, MAP_SHARED,
-                                            arV4L2.fd[i], arV4L2.v4l2Buffer[i].m.offset);
-
-        if (MAP_FAILED == arV4L2.buffers[i].start) {
-            perror("Failed to v4l2 map buffer");
-            exit(EXIT_FAILURE);
-        }
-
-        // Clear request buffers - I think
-        memset(&arV4L2.reqBuffers[i], 0x00, sizeof(arV4L2.reqBuffers[i]));
-        arV4L2.v4l2Buffer[i].type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        arV4L2.v4l2Buffer[i].memory = V4L2_MEMORY_MMAP;
-        arV4L2.v4l2Buffer[i].index = i;
-        xioctl(arV4L2.fd[i], VIDIOC_QBUF, &arV4L2.v4l2Buffer[i]);
-    }
-
-}
 
 void ThreadSpawner::readMemory() {
 
@@ -228,109 +121,241 @@ void ThreadSpawner::readMemory() {
 
 }
 
-void ThreadSpawner::startVideoStream() {
-    for (int i : arV4L2.fd) {
-        arV4L2.bufferType = V4L2_BUF_TYPE_VBI_CAPTURE;
-        xioctl(i, VIDIOC_STREAMON, &arV4L2.bufferType);
-    }
+void ThreadSpawner::startVideoStream(int fd) {
+    v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    xioctl(fd, VIDIOC_STREAMON, &type);
+}
+
+
+void ThreadSpawner::stopVideoStream(int fd) {
+    v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    xioctl(fd, VIDIOC_STREAMOFF, &type);
 
 }
 
-void ThreadSpawner::stopVideoStream() {
-    for (int i : arV4L2.fd) {
-        arV4L2.bufferType = V4L2_BUF_TYPE_VBI_CAPTURE;
-        xioctl(i, VIDIOC_STREAMOFF, &arV4L2.bufferType);
-    }
+
+struct Buffer {
+    void *start;
+    size_t length;
+};
+
+void ThreadSpawner::setMode(uint fd, int mode) {
+    // -- SET SENSOR MODE IN CODE --
+    v4l2_ext_controls ctrls{};
+    v4l2_ext_control ctrl{};
+    memset(&ctrls, 0, sizeof(ctrls));
+    memset(&ctrl, 0, sizeof(ctrl));
+    ctrls.ctrl_class = V4L2_CTRL_ID2CLASS(0x009a2008);
+    ctrls.count = 1;
+    ctrls.controls = &ctrl;
+    ctrl.id = 0x009a2008; // TODO make dynamic
+    ctrl.value64 = mode;
+
+    xioctl(fd, VIDIOC_S_EXT_CTRLS, &ctrls);
 }
 
-void ThreadSpawner::grabFrame() {
+int ThreadSpawner::openDevice(char *dev_name) {
+    return v4l2_open(dev_name, O_RDWR | O_NONBLOCK, 0);
 
-    int r = -1;
-    timeval tv{};
-    clock_t Start = clock();
+}
 
-   // cv::namedWindow("window", cv::WINDOW_NORMAL);
-   // cv::namedWindow("window2", cv::WINDOW_NORMAL);
 
-    // Select devices
-    for (int i = 0; i < 2; ++i) {
-        FD_ZERO(&arV4L2.fds[i]);
-        FD_SET(arV4L2.fd[i], &arV4L2.fds[i]);
-        /* Timeout. */
-        tv.tv_sec = 2;
-        tv.tv_usec = 0;
-        r = select(arV4L2.fd[i] + 1, &arV4L2.fds[i], NULL, NULL, &tv);
-        printf("r: %d\n", r);
+void ThreadSpawner::imageProperties(int fd, int width, int height) {
+    // -- SET IMAGE PROPERTIES
+    v4l2_format fmt{};
 
-        if (r == -1 && (errno = EINTR)) {
-            perror("select");
+    CLEAR(fmt);
+    fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    fmt.fmt.pix.width = width;
+    fmt.fmt.pix.height = height;
+    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_SRGGB10;
+    fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
+
+    xioctl(fd, VIDIOC_S_FMT, &fmt);
+
+    if (fmt.fmt.pix.pixelformat != V4L2_PIX_FMT_SRGGB10) {
+        printf("Libv4l didn't accept RGGB10 format. Can't proceed.\n");
+        exit(EXIT_FAILURE);
+    }
+    if ((fmt.fmt.pix.width != width) || (fmt.fmt.pix.height != height))
+        printf("Warning: driver is sending image at %dx%d\n", fmt.fmt.pix.width, fmt.fmt.pix.height);
+
+}
+
+void ThreadSpawner::setupBuffers(int fd, v4l2_buffer *buf, Buffer *buffer) {
+    struct v4l2_requestbuffers req{};
+    Buffer *pBuffer;
+
+
+    // -- TODO EXPLAIN BUFFER STUFF
+    CLEAR(req);
+    req.count = 1;
+    req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    req.memory = V4L2_MEMORY_MMAP;
+
+    xioctl(fd, VIDIOC_REQBUFS, &req);
+    int n_buffers;
+
+    pBuffer = static_cast<Buffer *>(calloc(req.count, sizeof(*pBuffer)));
+    buffer = static_cast<Buffer *>(calloc(req.count, sizeof(*buffer)));
+
+    for (n_buffers = 0; n_buffers < req.count; ++n_buffers) {
+        CLEAR(*buf);
+
+        buf->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        buf->memory = V4L2_MEMORY_MMAP;
+        buf->index = n_buffers;
+
+        xioctl(fd, VIDIOC_QUERYBUF, buf);
+
+        pBuffer[n_buffers].length = buf->length;
+        pBuffer[n_buffers].start = v4l2_mmap(nullptr, buf->length, PROT_READ | PROT_WRITE, MAP_SHARED, fd,
+                                             buf->m.offset);
+
+        if (MAP_FAILED == pBuffer[n_buffers].start) {
+            perror("mmap");
             exit(EXIT_FAILURE);
         }
+
+        buffer[n_buffers] = pBuffer[n_buffers];
     }
 
-    // Select buffers
-    for (int i = 0; i < 2; ++i) {
-
-        // Further setup of req buffers
-        memset(&arV4L2.v4l2Buffer[i], 0x00, sizeof(arV4L2.v4l2Buffer[i]));
-        arV4L2.v4l2Buffer[i].type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        arV4L2.v4l2Buffer[i].memory = V4L2_MEMORY_MMAP;
-        xioctl(arV4L2.fd[i], VIDIOC_DQBUF, &arV4L2.v4l2Buffer[i]);
-
+    for (int i = 0; i < n_buffers; ++i) {
+        CLEAR(*buf);
+        buf->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        buf->memory = V4L2_MEMORY_MMAP;
+        buf->index = i;
+        xioctl(fd, VIDIOC_QBUF, buf);
     }
 
-    // Copy data
-    void *pixelData[2];
-    for (int i = 0; i < 2; ++i) {
-        pixelData[i] = arV4L2.buffers[arV4L2.v4l2Buffer[i].index].start;
-    }
-    auto endTime = (double) (clock() - Start) / CLOCKS_PER_SEC;
-    printf("copy time taken: %.7fs \n", endTime);
-
-    // Display images
-    uint16_t *d[2]; // pixeldata
-    size_t imageSize = arV4L2.buffers[arV4L2.v4l2Buffer[0].index].length / 2;
+}
 
 
-    std::vector<uchar> newPixels;
-    std::vector<uchar> newPixels2;
-    newPixels.resize(imageSize);
-    newPixels2.resize(imageSize);
-    int min = 1000, max = 0;
-    int prev = 0;
-    int pixMax = 255, pixMin = 50;
-    for (int j = 0; j < imageSize; ++j) {
-        uchar newVal = (255 - 0) / (pixMax - pixMin) * (*d[0] - pixMax) + 255;
-        uchar newVal2 = (255 - 0) / (pixMax - pixMin) * (*d[1] - pixMax) + 255;
-        newPixels.at(j) = newVal;
-        newPixels2.at(j) = newVal2;
-        //newPixels.push_back(newVal);
-        d[0]++;
-        d[1]++;
+int ThreadSpawner::run() {
+    //v4l2_buffer buf{}, buf2{};
+    v4l2_buffer v4l2buffers[2];
+    enum v4l2_buf_type type;
+    fd_set fds, fds2;
+    timeval tv{};
+    int r;
+    Buffer *buffer1;
+    Buffer *buffer2;
+
+    std::string devName = "/dev/video0";
+    std::string devName2 = "/dev/video1";
+    int fd[2] = {openDevice(const_cast<char *>(devName.c_str())), openDevice(const_cast<char *>(devName2.c_str()))};
+
+    // For each file descriptor
+    for (int j : fd) {
+        setMode(j, 3);
+        imageProperties(j, WIDTH, HEIGHT);
     }
 
+    printf("Setting up buffers\n");
+    setupBuffers(fd[0], &v4l2buffers[0], buffer1);
+    setupBuffers(fd[1], &v4l2buffers[1], buffer2);
 
-    printf("val: %d, size: %zu\n", newPixels[0], newPixels.size());
-    endTime = (double) (clock() - Start) / CLOCKS_PER_SEC;
-    printf("Loop time taken: %.7fs\n", endTime);
-
-    cv::Mat outputImage(1280, 720, CV_8U);
-    cv::Mat outputImage2(1280, 720, CV_8U);
-
-    outputImage.data = newPixels.data();
-    outputImage2.data = newPixels2.data();
-
-
-    cv::imshow("window2", outputImage2);
-    cv::imshow("window", outputImage);
-    cv::waitKey(5);
-
-    endTime = (double) (clock() - Start) / CLOCKS_PER_SEC;
-    printf("Total time taken: %.7fs\n\n", endTime);
-
-    for (int i = 0; i < 2; ++i) {
-        xioctl(arV4L2.fd[i], VIDIOC_QBUF, &arV4L2.v4l2Buffer[i]);
-
+    printf("end setup\n");
+    // END
+    // start videoStream
+    for (int j : fd) {
+        startVideoStream(j);
     }
+    // initialization
+    //cv::namedWindow("window", cv::WINDOW_NORMAL);
+    //cv::namedWindow("window2", cv::WINDOW_NORMAL);
+    while (true) {
+        clock_t Start = clock();
+        do {
+            FD_ZERO(&fds);
+            FD_SET(fd[0], &fds);
+
+            FD_ZERO(&fds2);
+            FD_SET(fd[1], &fds2);
+
+            /* Timeout. */
+            tv.tv_sec = 2;
+            tv.tv_usec = 0;
+
+            r = select(fd[0] + 1, &fds, NULL, NULL, &tv);
+            r = select(fd[1] + 1, &fds2, NULL, NULL, &tv);
+
+        } while ((r == -1 && (errno = EINTR)));
+        if (r == -1) {
+            perror("select");
+            return errno;
+        }
+
+        CLEAR(v4l2buffers[0]);
+        v4l2buffers[0].type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        v4l2buffers[0].memory = V4L2_MEMORY_MMAP;
+        xioctl(fd[0], VIDIOC_DQBUF, &v4l2buffers[0]);
+
+        CLEAR(v4l2buffers[1]);
+        v4l2buffers[1].type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        v4l2buffers[1].memory = V4L2_MEMORY_MMAP;
+        xioctl(fd[1], VIDIOC_DQBUF, &v4l2buffers[1]);
+
+        auto endTime = (double) (clock() - Start) / CLOCKS_PER_SEC;
+
+        auto pixelData = buffer1[v4l2buffers[0].index].start;
+        //auto pixelData2 = buffer2[v4l2buffers[1].index].start;
+
+        size_t imageSize = buffer1[v4l2buffers[0].index].length / 2;
+
+        /*
+        uint16_t *d = (uint16_t *) pixelData;
+        uint16_t *d2 = (uint16_t *) pixelData2;
+        std::vector<uchar> newPixels;
+        std::vector<uchar> newPixels2;
+        newPixels.resize(imageSize);
+        newPixels2.resize(imageSize);
+
+
+        int pixMax = 255, pixMin = 50;
+        for (int j = 0; j < imageSize; ++j) {
+            uchar newVal = (255 - 0) / (pixMax - pixMin) * (*d - pixMax) + 255;
+            uchar newVal2 = (255 - 0) / (pixMax - pixMin) * (*d2 - pixMax) + 255;
+            newPixels.at(j) = newVal;
+            newPixels2.at(j) = newVal2;
+
+            d++;
+            d2++;
+        }
+
+
+
+        cv::Mat outputImage(HEIGHT, WIDTH, CV_8U);
+        cv::Mat outputImage2(HEIGHT, WIDTH, CV_8U);
+
+        outputImage.data = newPixels.data();
+        outputImage2.data = newPixels2.data();
+
+        //cv::imshow("window2", outputImage2);
+        //cv::imshow("window", outputImage);
+
+        if (cv::waitKey(30) == 27) break;
+*/
+        endTime = (double) (clock() - Start) / CLOCKS_PER_SEC;
+        printf("Total time taken: %.7fs\n\n", endTime);
+
+        xioctl(fd[0], VIDIOC_QBUF, &v4l2buffers[0]);
+        xioctl(fd[1], VIDIOC_QBUF, &v4l2buffers[1]);
+    }
+
+    type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    xioctl(fd[0], VIDIOC_STREAMOFF, &type);
+    xioctl(fd[1], VIDIOC_STREAMOFF, &type);
+
+    /* for (i = 0; i < n_buffers; ++i)
+         v4l2_munmap(buffers[i].start, buffers[i].length);
+     v4l2_close(fd[0]);
+
+     for (i = 0; i < n_buffers2; ++i)
+         v4l2_munmap(buffers2[i].start, buffers2[i].length);
+     v4l2_close(fd[1]);
+
+ */
+    return 0;
 }
 
