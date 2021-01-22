@@ -21,7 +21,7 @@ void ThreadSpawner::xioctl(int fh, int request, void *arg) {
     } while (r == -1 && ((errno == EINTR) || (errno == EAGAIN)));
 
     if (r == -1) {
-        fprintf(stderr, "error %d, %s\\n", errno, strerror(errno));
+        fprintf(stderr, "error %d, %s\n", errno, strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -40,7 +40,6 @@ void ThreadSpawner::startChildProcess() {
 
     // Parent process
     if (pidStreamer > 0) {
-        status = true;
         return;
     }
 
@@ -56,51 +55,98 @@ void ThreadSpawner::stopChildProcess() {
         printf("Streamer is not running\n");
     } else {
         kill(pidStreamer, SIGKILL);
-        status = false;
         pidStreamer = -1;
     }
 }
 
 ThreadSpawner::ThreadSpawner() {
     // Create shared memory segment
-    memID = shmget(IPC_PRIVATE, sizeof(ArSharedMemory), 0666 | IPC_CREAT);
-    if (memID == -1) {
+    shVideoMem = shmget(IPC_PRIVATE, sizeof(ArSharedMemory), 0666 | IPC_CREAT);
+    if (shVideoMem == -1) {
         throw std::runtime_error("Failed to create shared memory segment\n");
     }
 
-    auto *memP = (ArSharedMemory *) shmat(memID, nullptr, 0);
-    if (memP == (void *) -1) {
-        throw std::runtime_error("Failed to attach to shared memory segment");
+    auto *vidMemP = (ArSharedMemory *) shmat(shVideoMem, nullptr, 0);
+    if (vidMemP == (void *) -1) {
+        throw std::runtime_error("Failed to attach to video memory segment");
+    }
+
+    shStatusMem = shmget(IPC_PRIVATE, sizeof(Status), 0666 | IPC_CREAT);
+    if (shStatusMem == -1) throw std::runtime_error("Failed to create isRunning memory segment");
+
+    auto *statusMemP = (Status *) shmat(shStatusMem, nullptr, 0);
+    if (statusMemP == (void *) -1) {
+        throw std::runtime_error("Failed to attach to isRunning memory segment");
     }
 
 }
 
-bool ThreadSpawner::isStreamRunning() {
-    return status;
+bool ThreadSpawner::isStreamRunning() const {
+
+    auto *statusMemP = (Status *) shmat(shStatusMem, nullptr, 0);
+    if (statusMemP == (void *) -1) {
+        throw std::runtime_error("Failed to attach to isRunning memory segment");
+    }
+    bool isRunning = statusMemP->isRunning;
+
+    if (shmdt(statusMemP) == -1) {
+        throw std::runtime_error("Failed to detach to shared memory");
+    }
+
+    return isRunning;
 }
 
 void ThreadSpawner::childProcess() {
-    run();
-
-    while (true);
+    setupAndRunVideoStream();
 
 }
 
+Status *ThreadSpawner::getStatusMemoryPointer() const {
 
-ArSharedMemory * ThreadSpawner::readMemory() {
-
-    auto *memP = (ArSharedMemory *) shmat(memID, nullptr, 0);
+    auto *memP = (Status *) shmat(shStatusMem, nullptr, 0);
     if (memP == (void *) -1) {
         throw std::runtime_error("Failed to attach to shared memory segment");
     }
 
     // TODO DETACH AT SOME OTHER POINT
-   /* if (shmdt(memP) == -1) {
-        throw std::runtime_error("Failed to detach to shared memory");
-    }
-*/
+    /* if (shmdt(memP) == -1) {
+         throw std::runtime_error("Failed to detach to shared memory");
+     }
+ */
     return memP;
 }
+
+// TODO Write this with templates to avoid repeating the same code for getStatusMemoryPointer
+ArSharedMemory *ThreadSpawner::getVideoMemoryPointer() const {
+
+    auto *memP = (ArSharedMemory *) shmat(shVideoMem, nullptr, 0);
+    if (memP == (void *) -1) {
+        throw std::runtime_error("Failed to attach to shared memory segment");
+    }
+
+    // TODO DETACH AT SOME OTHER POINT
+    /* if (shmdt(memP) == -1) {
+         throw std::runtime_error("Failed to detach to shared memory");
+     }
+ */
+    return memP;
+}
+
+
+ArSharedMemory *ThreadSpawner::attachMemory() const {
+    auto *memP = (ArSharedMemory *) shmat(shVideoMem, nullptr, 0);
+    if (memP == (void *) -1) {
+        throw std::runtime_error("Failed to attach to shared memory segment");
+    }
+    return memP;
+}
+
+void ThreadSpawner::detachMemory(ArSharedMemory *memP) {
+    if (shmdt(memP) == -1) {
+        throw std::runtime_error("Failed to detach to shared memory");
+    }
+}
+
 
 void ThreadSpawner::startVideoStream(int fd) {
     v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -114,11 +160,6 @@ void ThreadSpawner::stopVideoStream(int fd) {
 
 }
 
-
-struct Buffer {
-    void *start;
-    size_t length;
-};
 
 void ThreadSpawner::setMode(uint fd, int mode) {
     // -- SET SENSOR MODE IN CODE --
@@ -167,7 +208,6 @@ void ThreadSpawner::setupBuffers(int fd, v4l2_buffer *buf, Buffer *pBuffer) {
     struct v4l2_requestbuffers req{};
     std::array<Buffer, 3> tempBuff{};
 
-
     // -- TODO EXPLAIN BUFFER STUFF
     CLEAR(req);
     req.count = 1;
@@ -176,10 +216,6 @@ void ThreadSpawner::setupBuffers(int fd, v4l2_buffer *buf, Buffer *pBuffer) {
 
     xioctl(fd, VIDIOC_REQBUFS, &req);
     int n_buffers;
-
-
-    //buffer = static_cast<Buffer *>(calloc(req.count, sizeof(*buffer)));
-    //pBuffer = static_cast<Buffer *>(calloc(req.count, sizeof(*pBuffer)));
 
     for (n_buffers = 0; n_buffers < req.count; ++n_buffers) {
         CLEAR(*buf);
@@ -192,7 +228,7 @@ void ThreadSpawner::setupBuffers(int fd, v4l2_buffer *buf, Buffer *pBuffer) {
 
         tempBuff[n_buffers].length = buf->length;
         tempBuff[n_buffers].start = v4l2_mmap(nullptr, buf->length, PROT_READ | PROT_WRITE, MAP_SHARED, fd,
-                                            buf->m.offset);
+                                              buf->m.offset);
 
         if (MAP_FAILED == pBuffer[n_buffers].start) {
             perror("mmap");
@@ -215,30 +251,11 @@ void ThreadSpawner::setupBuffers(int fd, v4l2_buffer *buf, Buffer *pBuffer) {
 
 }
 
-ArSharedMemory * ThreadSpawner::attachMemory() const{
-    auto *memP = (ArSharedMemory *) shmat(memID, nullptr, 0);
-    if (memP == (void *) -1) {
-        throw std::runtime_error("Failed to attach to shared memory segment");
-    }
 
-    return memP;
-}
-
-void ThreadSpawner::detachMemory(ArSharedMemory * memP){
-    if (shmdt(memP) == -1) {
-        throw std::runtime_error("Failed to detach to shared memory");
-    }
-}
-
-int ThreadSpawner::run() {
-    //v4l2_buffer buf{}, buf2{};
+int ThreadSpawner::setupAndRunVideoStream() {
     v4l2_buffer v4l2buffers[2];
-    enum v4l2_buf_type type;
     fd_set fds, fds2;
     timeval tv{};
-    int r;
-    //Buffer buffer1[3];
-    //Buffer buffer2[3];
     std::array<Buffer, 3> buffer1{};
     std::array<Buffer, 3> buffer2{};
 
@@ -252,21 +269,27 @@ int ThreadSpawner::run() {
         imageProperties(j, WIDTH, HEIGHT);
     }
 
-    printf("Setting up buffers\n");
     setupBuffers(fd[0], &v4l2buffers[0], buffer1.data());
     setupBuffers(fd[1], &v4l2buffers[1], buffer2.data());
-    auto k = buffer1[0];
-    printf("end setup\n");
-    // END
-    // imgOne videoStream
+
     for (int j : fd) {
         startVideoStream(j);
     }
-    // initialization
-    //cv::namedWindow("window", cv::WINDOW_NORMAL);
-    //cv::namedWindow("window2", cv::WINDOW_NORMAL);
+    int r = -1;
+
+    // --- Update child process STATUS
+    auto *statusMemP = (Status *) shmat(shStatusMem, nullptr, 0);
+    if (statusMemP == (void *) -1) {
+        throw std::runtime_error("Failed to attach to shared memory segment");
+    }
+    statusMemP->isRunning = true;
+    if (shmdt(statusMemP) == -1) {
+        throw std::runtime_error("Failed to detach to shared memory");
+    }
+    // --- END update child process STATUS
+
+
     while (true) {
-        clock_t Start = clock();
         do {
             FD_ZERO(&fds);
             FD_SET(fd[0], &fds);
@@ -299,7 +322,7 @@ int ThreadSpawner::run() {
 
 
         // Attach
-        ArSharedMemory* memP = attachMemory();
+        ArSharedMemory *memP = attachMemory();
         // Copy data
         memcpy(memP->imgOne, buffer1[v4l2buffers[0].index].start, buffer1[v4l2buffers[0].index].length);
         memcpy(memP->imgTwo, buffer2[v4l2buffers[0].index].start, buffer2[v4l2buffers[0].index].length);
@@ -309,61 +332,41 @@ int ThreadSpawner::run() {
         detachMemory(memP);
 
 
-        /*
-        uint16_t *d = (uint16_t *) pixelData;
-        uint16_t *d2 = (uint16_t *) pixelData2;
-        std::vector<uchar> newPixels;
-        std::vector<uchar> newPixels2;
-        newPixels.resize(imageSize);
-        newPixels2.resize(imageSize);
-
-
-        int pixMax = 255, pixMin = 50;
-        for (int j = 0; j < imageSize; ++j) {
-            uchar newVal = (255 - 0) / (pixMax - pixMin) * (*d - pixMax) + 255;
-            uchar newVal2 = (255 - 0) / (pixMax - pixMin) * (*d2 - pixMax) + 255;
-            newPixels.at(j) = newVal;
-            newPixels2.at(j) = newVal2;
-
-            d++;
-            d2++;
-        }
-
-
-
-        cv::Mat outputImage(HEIGHT, WIDTH, CV_8U);
-        cv::Mat outputImage2(HEIGHT, WIDTH, CV_8U);
-
-        outputImage.data = newPixels.data();
-        outputImage2.data = newPixels2.data();
-
-        //cv::imshow("window2", outputImage2);
-        //cv::imshow("window", outputImage);
-
-        if (cv::waitKey(30) == 27) break;
-*/
-
-
         xioctl(fd[0], VIDIOC_QBUF, &v4l2buffers[0]);
         xioctl(fd[1], VIDIOC_QBUF, &v4l2buffers[1]);
 
-        //endTime = (double) (clock() - Start) / CLOCKS_PER_SEC;
-        //printf("Total time taken: %.7fs\n\n", endTime);
     }
 
-    type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    xioctl(fd[0], VIDIOC_STREAMOFF, &type);
-    xioctl(fd[1], VIDIOC_STREAMOFF, &type);
+    for (int i : fd) {
+        stopVideoStream(i);
 
-    /* for (i = 0; i < n_buffers; ++i)
-         v4l2_munmap(buffers[i].imgOne, buffers[i].imgLen1);
+    }
+
+    // TODO V4L2 MunMap
+    /*
+    for (int i = 0; i < buffer1.size(); ++i)
+         v4l2_munmap(buffer1[i].imgOne, buffers[i].imgLen1);
      v4l2_close(fd[0]);
 
-     for (i = 0; i < n_buffers2; ++i)
+     for (int i = 0; i < n_buffers2; ++i)
          v4l2_munmap(buffers2[i].imgOne, buffers2[i].imgLen1);
      v4l2_close(fd[1]);
+*/
 
- */
     return 0;
+}
+
+void ThreadSpawner::waitForExistence() const {
+    clock_t Start = clock();
+    double timeOut_ms = 5000;
+
+    auto memP = getStatusMemoryPointer();
+
+    while (!memP->isRunning) {
+        auto endTime = (double) (clock() - Start) / CLOCKS_PER_SEC * 1000;
+        if (endTime > timeOut_ms) throw std::runtime_error("Failed to start camera process within reasonable time\n");
+
+    }
+
 }
 

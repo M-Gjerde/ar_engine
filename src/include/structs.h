@@ -134,4 +134,9 @@ struct ArSharedMemory {
     size_t imgLen2;
 };
 
+struct Status {
+    bool isRunning = false;
+};
+
+
 #endif //AR_ENGINE_STRUCTS_H

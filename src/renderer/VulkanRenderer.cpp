@@ -518,11 +518,8 @@ void VulkanRenderer::initComputePipeline() {
 }
 
 void VulkanRenderer::loadComputeData() {
-    while (true){
         vulkanCompute->loadComputeData(arCompute, buffer);
         vulkanComputeShaders();
-    }
-
 
 }
 

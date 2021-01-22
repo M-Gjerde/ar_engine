@@ -170,7 +170,7 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
 void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
 
 
-    ArSharedMemory *memP = threadSpawner.readMemory();
+    ArSharedMemory *memP = threadSpawner.getVideoMemoryPointer();
 
     printf("img 1 size: %zu\n", memP->imgLen1);
     printf("img 1 data: %d\n", *(uint16_t *) memP->imgOne);
@@ -264,5 +264,6 @@ void VulkanCompute::stopDisparityStream() {
 
 void VulkanCompute::startDisparityStream() {
     threadSpawner.startChildProcess();
+    threadSpawner.waitForExistence();
 
 }

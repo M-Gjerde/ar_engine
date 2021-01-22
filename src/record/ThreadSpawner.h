@@ -27,21 +27,24 @@ public:
     void startChildProcess();
 
     void stopChildProcess();
-    bool isStreamRunning();
+    bool isStreamRunning() const;
 
 
-    ArSharedMemory * readMemory();
+    ArSharedMemory * getVideoMemoryPointer() const;
+    Status * getStatusMemoryPointer() const;
+
+    void waitForExistence() const;
 
 private:
     pid_t pidStreamer = -1;
-    bool status = false;
-    int memID;
-
+    int shVideoMem;
+    int shStatusMem;
 
     struct Buffer {
         void *start;
         size_t length;
     };
+
 
     void childProcess();
 
@@ -51,7 +54,7 @@ private:
 
     void xioctl(int fh, int request, void *arg);
 
-    int run();
+    int setupAndRunVideoStream();
     static int openDevice(char *dev_name);
     void setMode(uint fd, int mode);
     void imageProperties(int fd, int width, int height);

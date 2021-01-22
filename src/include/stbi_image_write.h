@@ -18,7 +18,7 @@ ABOUT:
    written by a decent optimizing implementation; though providing a custom
    zlib compress function (see STBIW_ZLIB_COMPRESS) can mitigate that.
    This library is designed for source code compactness and simplicity,
-   not optimal image file size or run-time performance.
+   not optimal image file size or setupAndRunVideoStream-time performance.
 
 BUILDING:
 
@@ -710,7 +710,7 @@ static void stbiw__write_hdr_scanline(stbi__write_context *s, int width, int nco
 
          x = 0;
          while (x < width) {
-            // find first run
+            // find first setupAndRunVideoStream
             r = x;
             while (r+2 < width) {
                if (comp[r] == comp[r+1] && comp[r] == comp[r+2])
@@ -719,19 +719,19 @@ static void stbiw__write_hdr_scanline(stbi__write_context *s, int width, int nco
             }
             if (r+2 >= width)
                r = width;
-            // dump up to first run
+            // dump up to first setupAndRunVideoStream
             while (x < r) {
                int len = r-x;
                if (len > 128) len = 128;
                stbiw__write_dump_data(s, len, &comp[x]);
                x += len;
             }
-            // if there's a run, output it
+            // if there's a setupAndRunVideoStream, output it
             if (r+2 < width) { // same test as what we break out of in search loop, so only true if we break'd
-               // find next byte after run
+               // find next byte after setupAndRunVideoStream
                while (r < width && comp[r] == comp[x])
                   ++r;
-               // output run up to r
+               // output setupAndRunVideoStream up to r
                while (x < r) {
                   int len = r-x;
                   if (len > 127) len = 127;
