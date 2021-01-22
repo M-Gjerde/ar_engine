@@ -522,12 +522,11 @@ void VulkanRenderer::loadComputeData() {
     cv::namedWindow("window", cv::WINDOW_FREERATIO);
     //cv::namedWindow("window2", cv::WINDOW_FREERATIO);
 
-    while (true){
-        if (cv::waitKey(5) == 27) break;
-        //vulkanCompute->loadComputeData(arCompute, buffer);
-        vulkanCompute->loadImagePreviewData(arCompute, buffer);
-        //vulkanComputeShaders();
-    }
+
+    //vulkanCompute->loadComputeData(arCompute, buffer);
+    vulkanCompute->loadImagePreviewData(arCompute, buffer);
+    vulkanComputeShaders();
+    cv::waitKey(0);
 
 
 }
@@ -581,16 +580,15 @@ void VulkanRenderer::vulkanComputeShaders() {
     auto original = pixels;
 
 
-
     int pixMax = 64, pixMin = 0;
     for (int i = 0; i < imageSize; ++i) {
         *pixels = pmappedMemory->x;
 
         // Normalize values between 255 - 0
-        double slope = 1.0 * (255 - 0) / (pixMax - pixMin);
-        auto output = slope * (*pixels);
+        //double slope = 1.0 * (255 - 0) / (pixMax - pixMin);
+        //auto output = slope * (*pixels);
         //uchar newVal =  (255 - 0) / (pixMax - pixMin) * (*pixels - pixMax) + 255;
-        *pixels = output;
+        //*pixels = output;
 
         pixels++;
         pmappedMemory++;

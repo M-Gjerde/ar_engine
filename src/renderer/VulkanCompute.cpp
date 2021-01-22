@@ -158,7 +158,7 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     The number of workgroups is specified in the arguments.
     If you are already familiar with compute shaders from OpenGL, this should be nothing new to you.
     */
-    vkCmdDispatch(commandBuffer, (uint32_t) 10000, (uint32_t) 1, 1);
+    vkCmdDispatch(commandBuffer, (uint32_t) 14000, (uint32_t) 1, 1);
 
     result = vkEndCommandBuffer(commandBuffer); // end recording commands.
     if (result != VK_SUCCESS)
@@ -185,7 +185,7 @@ void VulkanCompute::loadImagePreviewData(ArCompute arCompute, Buffer *pBuffer) c
     stbi_uc* imageTwo = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
     if (!imageTwo) throw std::runtime_error("failed to load texture image: view5.png");
 
-    int width = 427, height = 370;
+    int width = 1280, height = 720;
     int imageSize = width * height;
 
     auto * pixelValue = new glm::vec4[imageSize];
@@ -210,19 +210,11 @@ void VulkanCompute::loadImagePreviewData(ArCompute arCompute, Buffer *pBuffer) c
     imgOnePixel = origOne;
     imgTwoPixel = origTwo;
 
-    printf("\n");
-
 
     void* data;
     vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[0], 0, VK_WHOLE_SIZE, 0,
                 &data);
 
-    memcpy(data, pixelValue, imageSize * sizeof(glm::vec4));
-
-    auto *copiedMem = (glm::vec4  *) data;
-    for (int i = 0; i < imageSize; ++i) {
-        copiedMem++;
-    }
     memcpy(data, imgOnePixel, imageSize * sizeof(glm::vec4));
 
     vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[0]);
