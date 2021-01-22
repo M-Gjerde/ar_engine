@@ -298,7 +298,7 @@ int ThreadSpawner::setupAndRunVideoStream() {
             FD_SET(fd[1], &fds2);
 
             /* Timeout. */
-            tv.tv_sec = 2;
+            tv.tv_sec = 7;
             tv.tv_usec = 0;
 
             r = select(fd[0] + 1, &fds, NULL, NULL, &tv);

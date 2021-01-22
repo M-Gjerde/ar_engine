@@ -12,6 +12,8 @@
 
 #include <utility>
 #include <array>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 
 
 VulkanCompute::VulkanCompute(ArEngine mArEngine) {
@@ -44,6 +46,8 @@ void VulkanCompute::cleanup() {
 ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDescriptors, Platform *pPlatform,
                                               Pipeline pipeline) {
     int width = 1280, height = 720;
+    //int width = 427, height = 370;
+
     int imageSize = (width * height);
     // Buffer size
     uint32_t bufferSize = (imageSize * sizeof(glm::vec4));
@@ -166,26 +170,78 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     return arCompute;
 }
 
+void VulkanCompute::loadImagePreviewData(ArCompute arCompute, Buffer *pBuffer) const{
+
+
+    int texWidth, texHeight, texChannels;
+    //std::string filePath = "../textures/Aloe_thirdsize/view1.png";
+
+    std::string filePath = "../test1.png";
+
+    stbi_uc* imageOne = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
+    if (!imageOne) throw std::runtime_error("failed to load texture image: view1.png");
+    //filePath = "../textures/Aloe_thirdsize/view5.png";
+    filePath = "../test2.png";
+    stbi_uc* imageTwo = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
+    if (!imageTwo) throw std::runtime_error("failed to load texture image: view5.png");
+
+    int width = 427, height = 370;
+    int imageSize = width * height;
+
+    auto * pixelValue = new glm::vec4[imageSize];
+    auto * imgOnePixel = new glm::vec4[imageSize];
+    auto * imgTwoPixel = new glm::vec4[imageSize];
+
+    auto origOne = imgOnePixel;
+    auto origTwo = imgTwoPixel;
+
+    auto orig = pixelValue;
+    for (int i = 0; i < imageSize; ++i) {
+        pixelValue->x = *imageOne;
+        imgOnePixel->x = *imageOne;
+        imgTwoPixel->x = *imageTwo;
+        imageOne++;
+        pixelValue++;
+        imageTwo++;
+        imgTwoPixel++;
+        imgOnePixel++;
+    }
+    pixelValue = orig;
+    imgOnePixel = origOne;
+    imgTwoPixel = origTwo;
+
+    printf("\n");
+
+
+    void* data;
+    vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[0], 0, VK_WHOLE_SIZE, 0,
+                &data);
+
+    memcpy(data, pixelValue, imageSize * sizeof(glm::vec4));
+
+    auto *copiedMem = (glm::vec4  *) data;
+    for (int i = 0; i < imageSize; ++i) {
+        copiedMem++;
+    }
+    memcpy(data, imgOnePixel, imageSize * sizeof(glm::vec4));
+
+    vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[0]);
+
+    data = nullptr;
+    vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[1], 0, VK_WHOLE_SIZE, 0,
+                &data);
+
+    memcpy(data, imgTwoPixel, imageSize * sizeof(glm::vec4));
+
+    vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[1]);
+
+}
+
 
 void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
 
-
     ArSharedMemory *memP = threadSpawner.getVideoMemoryPointer();
 
-    printf("img 1 size: %zu\n", memP->imgLen1);
-    printf("img 1 data: %d\n", *(uint16_t *) memP->imgOne);
-
-    printf("img 2 size: %zu\n", memP->imgLen2);
-    printf("img 2 data: %d\n", *(uint16_t *) memP->imgTwo);
-
-    // Load image using stb_image.h
-    int texWidth, texHeight, texChannels;
-    std::string filePath = "../textures/Aloe_thirdsize/view1.png";
-
-
-    int width = 427, height = 370;
-    //int imageSize = (width * height);
-    //int width = 1282, height = 1110;
 
     int imageSize = memP->imgLen1 / 2;
 
@@ -199,14 +255,15 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
     auto memPixelOne = (uint16_t *) memP->imgOne;
     auto memPixelTwo = (uint16_t *) memP->imgTwo;
 
-    int pixMax = 255, pixMin = 0;
-
+    std::vector<uchar> pixData(imageSize);
+    std::vector<uchar> pixData2(imageSize);
 
     for (int i = 0; i < imageSize; ++i) {
-        //unsigned char newVal = (255 - 0) / (pixMax - pixMin) * (*memPixelOne - pixMax) + 255;
-        //unsigned char newVal2 = (255 - 0) / (pixMax - pixMin) * (*memPixelTwo - pixMax) + 255;
         imgOnePixel->x = *memPixelOne;
         imgTwoPixel->x = *memPixelTwo;
+        pixData[i] = imgOnePixel->x;
+        pixData2[i] = imgTwoPixel->x;
+
         memPixelOne++;
         memPixelTwo++;
         imgTwoPixel++;
@@ -215,17 +272,31 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
     imgOnePixel = origOne;
     imgTwoPixel = origTwo;
 
-    printf("\n");
 
+    cv::Mat img1(720, 1280, CV_8UC1);
+    img1.data = pixData.data();
+    cv::Mat img2(720, 1280, CV_8UC1);
+    img2.data = pixData2.data();
+    cv::imshow("window", img1);
+    cv::imshow("window2", img2);
+
+    cv::imwrite("../test1.png", img1);
+    cv::imwrite("../test2.png", img2);
 
     void *data;
-
     vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[0], 0, imageSize * sizeof(glm::vec4), 0,
                 &data);
 
     memcpy(data, imgOnePixel, imageSize * sizeof(glm::vec4));
-
     vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[0]);
+
+    data = nullptr;
+    vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[1], 0, imageSize * sizeof(glm::vec4), 0,
+                &data);
+
+    memcpy(data, imgTwoPixel, imageSize * sizeof(glm::vec4));
+    vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[1]);
+
 
 // TODO RESEARCH DEVICE LOCAL GPU MEMORY
 /*
@@ -247,15 +318,8 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
     vkDestroyBuffer(arEngine.mainDevice.device, stagingBuffer.buffer, nullptr);
 
 */
-    data = nullptr;
-    vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[1], 0, imageSize * sizeof(glm::vec4), 0,
-                &data);
-
-    memcpy(data, imgTwoPixel, imageSize * sizeof(glm::vec4));
-
-    vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[1]);
-
 }
+
 
 void VulkanCompute::stopDisparityStream() {
     threadSpawner.stopChildProcess();

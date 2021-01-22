@@ -11,6 +11,7 @@
 #include "VulkanRenderer.hpp"
 #include "../pipeline/MeshModel.h"
 #include "../include/stbi_image_write.h"
+#include "opencv2/opencv.hpp"
 
 VulkanRenderer::VulkanRenderer() = default;
 
@@ -518,8 +519,16 @@ void VulkanRenderer::initComputePipeline() {
 }
 
 void VulkanRenderer::loadComputeData() {
-        vulkanCompute->loadComputeData(arCompute, buffer);
-        vulkanComputeShaders();
+    cv::namedWindow("window", cv::WINDOW_FREERATIO);
+    //cv::namedWindow("window2", cv::WINDOW_FREERATIO);
+
+    while (true){
+        if (cv::waitKey(5) == 27) break;
+        //vulkanCompute->loadComputeData(arCompute, buffer);
+        vulkanCompute->loadImagePreviewData(arCompute, buffer);
+        //vulkanComputeShaders();
+    }
+
 
 }
 
@@ -558,6 +567,8 @@ void VulkanRenderer::vulkanComputeShaders() {
     // --- Retrieve data from compute pipeline ---
     //int width = 1282, height = 1110;
     int width = 1280, height = 720;
+    //int width = 427, height = 370;
+
     int imageSize = (width * height);
 
     void *mappedMemory = nullptr;
@@ -568,14 +579,30 @@ void VulkanRenderer::vulkanComputeShaders() {
 
     auto *pixels = new stbi_uc[imageSize];
     auto original = pixels;
+
+
+
+    int pixMax = 64, pixMin = 0;
     for (int i = 0; i < imageSize; ++i) {
         *pixels = pmappedMemory->x;
+
+        // Normalize values between 255 - 0
+        double slope = 1.0 * (255 - 0) / (pixMax - pixMin);
+        auto output = slope * (*pixels);
+        //uchar newVal =  (255 - 0) / (pixMax - pixMin) * (*pixels - pixMax) + 255;
+        *pixels = output;
+
         pixels++;
         pmappedMemory++;
     }
     pixels = original;
 
-    stbi_write_png("../stbpng.png", width, height, 1, pixels, width * 1);
+    cv::Mat img(height, width, CV_8UC1);
+    img.data = pixels;
+    cv::imshow("window", img);
+    cv::imwrite("../stbpng.png", img);
+
+    //stbi_write_png("../stbpng.png", width, height, 1, pixels, width * 1);
 
     vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[2]);
 

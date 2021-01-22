@@ -27,6 +27,8 @@ public:
 
     void previewVideoStreams();
 
+    void loadImagePreviewData(ArCompute arCompute, Buffer *pBuffer) const;
+
 private:
 
     ArEngine arEngine;

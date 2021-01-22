@@ -23,24 +23,26 @@ void main()
 {
     uint index = gl_GlobalInvocationID.x;
 
+    if (index < 1280 * 500) return;
+
     float sum = 0;
-    float kernelSize = 9;
+    float kernelSize = 49;
     float minAverage = 255;
     float pixelDisparity = 0;
-    int disparityLevel = 128;
+    int disparityLevel = 64;
     float readPosLeft = 0, readPosRight = 0;
 
-    int lowLimit = 1, highLimit = 2;
+    int lowLimit = 3, highLimit = 4;
     int stride = 1280;
 
-    if (!(index > stride && index < 921600 - disparityLevel)) return;
+    if (!(index > stride * 10 && index < (921600 - disparityLevel))) return;
     // Disparity level. Match this pixel
     for (int d = 0; d < disparityLevel; ++d){
         // kernel
         for (int row = -stride * lowLimit; row < stride * highLimit; row+=stride){
             for (int col = -lowLimit; col < highLimit; ++col){
-                readPosRight = imgOne.imgData[index + row + d + col].x;//.val.x;
-                readPosLeft = imgTwo.imgData[index + row + col].x;//.val.x;
+                readPosRight = imgOne.imgData[index + row + d + col].x;
+                readPosLeft = imgTwo.imgData[index + row + col].x;
 
                 sum += abs(readPosRight - readPosLeft);
             }
@@ -56,6 +58,6 @@ void main()
     }
     imgOut.imgData[index].x = pixelDisparity;//.val.x = pixelDisparity;
     pixelDisparity = 0;
-    minAverage = 100;// Reset min for avg
+    minAverage = 255;// Reset min for avg
 
 }
