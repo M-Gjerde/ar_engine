@@ -598,7 +598,7 @@ void VulkanRenderer::vulkanComputeShaders() {
     cv::Mat img(height, width, CV_8UC1);
     img.data = pixels;
     cv::imshow("window", img);
-    cv::imwrite("../stbpng.png", img);
+    cv::imwrite("../demosaicing_test_1.png", img);
 
     //stbi_write_png("../stbpng.png", width, height, 1, pixels, width * 1);
 

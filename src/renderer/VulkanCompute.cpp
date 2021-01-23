@@ -176,14 +176,14 @@ void VulkanCompute::loadImagePreviewData(ArCompute arCompute, Buffer *pBuffer) c
     int texWidth, texHeight, texChannels;
     //std::string filePath = "../textures/Aloe_thirdsize/view1.png";
 
-    std::string filePath = "../test1.png";
+    std::string leftFilePath = "../imgDisparity/leftTest.png";
+    std::string rightFilePath = "../imgDisparity/rightTest.png";
 
-    stbi_uc* imageOne = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
-    if (!imageOne) throw std::runtime_error("failed to load texture image: view1.png");
+    stbi_uc* imageOne = stbi_load(leftFilePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
+    if (!imageOne) throw std::runtime_error("failed to load texture image: leftFilePath");
     //filePath = "../textures/Aloe_thirdsize/view5.png";
-    filePath = "../test2.png";
-    stbi_uc* imageTwo = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
-    if (!imageTwo) throw std::runtime_error("failed to load texture image: view5.png");
+    stbi_uc* imageTwo = stbi_load(rightFilePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
+    if (!imageTwo) throw std::runtime_error("failed to load texture image: rightFilePath");
 
     int width = 1280, height = 720;
     int imageSize = width * height;

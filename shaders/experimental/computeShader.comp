@@ -27,7 +27,7 @@ void main()
     float kernelSize = 25;
     float minAverage = 255;
     float pixelDisparity = 0;
-    int disparityLevel = 128;
+    int disparityLevel = 164;
     float readPosLeft = 0, readPosRight = 0;
 
     int lowLimit = 2, highLimit = 3;
