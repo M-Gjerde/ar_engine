@@ -158,7 +158,7 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     The number of workgroups is specified in the arguments.
     If you are already familiar with compute shaders from OpenGL, this should be nothing new to you.
     */
-    vkCmdDispatch(commandBuffer, (uint32_t) 14000, (uint32_t) 1, 1);
+    vkCmdDispatch(commandBuffer, (uint32_t) 7200, (uint32_t) 1, 1);
 
     result = vkEndCommandBuffer(commandBuffer); // end recording commands.
     if (result != VK_SUCCESS)
@@ -174,14 +174,12 @@ void VulkanCompute::loadImagePreviewData(ArCompute arCompute, Buffer *pBuffer) c
 
 
     int texWidth, texHeight, texChannels;
-    //std::string filePath = "../textures/Aloe_thirdsize/view1.png";
-
-    std::string filePath = "../test1.png";
+    std::string filePath = "../textures/test_images/test1.png";
 
     stbi_uc* imageOne = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
     if (!imageOne) throw std::runtime_error("failed to load texture image: view1.png");
     //filePath = "../textures/Aloe_thirdsize/view5.png";
-    filePath = "../test2.png";
+    filePath = "../textures/test_images/test2.png";
     stbi_uc* imageTwo = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
     if (!imageTwo) throw std::runtime_error("failed to load texture image: view5.png");
 
@@ -269,11 +267,11 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
     img1.data = pixData.data();
     cv::Mat img2(720, 1280, CV_8UC1);
     img2.data = pixData2.data();
-    cv::imshow("window", img1);
-    cv::imshow("window2", img2);
+    //cv::imshow("window", img1);
+    //cv::imshow("window2", img2);
 
-    cv::imwrite("../test1.png", img1);
-    cv::imwrite("../test2.png", img2);
+    cv::imwrite("../textures/test_images/test1.png", img1);
+    cv::imwrite("../textures/test_images/test2.png", img2);
 
     void *data;
     vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[0], 0, imageSize * sizeof(glm::vec4), 0,
