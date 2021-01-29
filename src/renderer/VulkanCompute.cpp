@@ -14,6 +14,7 @@
 #include <array>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
+#include <opencv2/calib3d.hpp>
 
 
 VulkanCompute::VulkanCompute(ArEngine mArEngine) {
@@ -47,7 +48,9 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
                                               Pipeline pipeline) {
     //int width = 1280, height = 720;
     //int width = 427, height = 370;
-    int width = 640, height = 480;
+    //int width = 640, height = 480;
+    int width = 256, height = 256;
+
     int imageSize = (width * height);
     // Buffer size
     uint32_t bufferSize = (imageSize * sizeof(glm::vec4));
@@ -158,7 +161,7 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     The number of workgroups is specified in the arguments.
     If you are already familiar with compute shaders from OpenGL, this should be nothing new to you.
     */
-    vkCmdDispatch(commandBuffer, (uint32_t) 4800, (uint32_t) 1, 1);
+    vkCmdDispatch(commandBuffer, (uint32_t) 1024, (uint32_t) 1, 1);
 
     result = vkEndCommandBuffer(commandBuffer); // end recording commands.
     if (result != VK_SUCCESS)
@@ -174,16 +177,16 @@ void VulkanCompute::loadImagePreviewData(ArCompute arCompute, Buffer *pBuffer) c
 
 
     int texWidth, texHeight, texChannels;
-    std::string filePath = "../textures/test_images/test1.png";
+    std::string filePath = "../textures/test_input/test2/test1.png";
 
     stbi_uc* imageOne = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
     if (!imageOne) throw std::runtime_error("failed to load texture image: view1.png");
     //filePath = "../textures/Aloe_thirdsize/view5.png";
-    filePath = "../textures/test_images/test2.png";
+    filePath = "../textures/test_input/test2/test2.png";
     stbi_uc* imageTwo = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
     if (!imageTwo) throw std::runtime_error("failed to load texture image: view5.png");
 
-    int width = 1280, height = 720;
+    int width = 256, height = 256;
     int imageSize = width * height;
 
     auto * pixelValue = new glm::vec4[imageSize];
@@ -236,8 +239,8 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
     int imageSize = memP->imgLen1 / 2;
 
 
-    auto *imgOnePixel = new glm::vec4[480 * 640];
-    auto *imgTwoPixel = new glm::vec4[480 * 640];
+    auto *imgOnePixel = new glm::vec4[256 * 256];
+    auto *imgTwoPixel = new glm::vec4[256 * 256];
 
     auto origOne = imgOnePixel;
     auto origTwo = imgTwoPixel;
@@ -246,8 +249,8 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
     auto memPixelTwo = (uint16_t *) memP->imgTwo;
 
 
-    cv::Mat img1(480, 640, CV_8UC1);
-    cv::Mat img2(480, 640, CV_8UC1);
+    cv::Mat img1(256, 256, CV_8UC1);
+    cv::Mat img2(256, 256, CV_8UC1);
 
 
     for (int i = 0; i < imageSize; ++i) {
@@ -255,11 +258,11 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
         int x = i % 1280;
         int y = i / 1280;
 
-        if (x >= 320 && x < 960 && y >= 120 && y < 600){
+        if (x >= 512 && x < 768 && y >= 232 && y < 488){
             imgOnePixel->x = *memPixelOne;
             imgTwoPixel->x = *memPixelTwo;
-            img1.at<uchar>(y - 120, x - 320) = imgOnePixel->x;
-            img2.at<uchar>(y - 120, x - 320) = imgTwoPixel->x;
+            img1.at<uchar>(y - 232, x - 512) = imgOnePixel->x;
+            img2.at<uchar>(y - 232, x - 512) = imgTwoPixel->x;
             imgTwoPixel++;
             imgOnePixel++;
 
@@ -277,7 +280,17 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
     cv::imwrite("../textures/test_images/test1.png", img1);
     cv::imwrite("../textures/test_images/test2.png", img2);
 
-    imageSize = 640 * 480;
+    // --- OPENCV DISPARITY ---
+    cv::Mat disp;
+    cv::StereoBM *sbm= cv::StereoBM::create(16, 2);
+
+    sbm->setNumDisparities(112);
+    sbm->setMinDisparity(30);
+
+    sbm(img1, img2, disp);
+
+
+    imageSize = 256 * 256;
 
     void *data;
     vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[0], 0, imageSize * sizeof(glm::vec4), 0,

@@ -561,7 +561,7 @@ void VulkanRenderer::vulkanComputeShaders() {
         throw std::runtime_error("Failed to wait for fence");
     }
 
-    printf("Waiting for fences\n");
+    //printf("Waiting for fences\n");
     result = vkWaitForFences(arEngine.mainDevice.device, 1, &computeFence, VK_TRUE, UINT64_MAX);
     if (result != VK_SUCCESS) {
         printf("result: %d\n", result);
@@ -569,13 +569,15 @@ void VulkanRenderer::vulkanComputeShaders() {
     }
     auto stop = std::chrono::high_resolution_clock::now();
     auto endTime = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-    printf("Queue submit Time taken: %ld ms\n", endTime.count() / 1000);
+    //printf("Queue submit Time taken: %ld ms\n", endTime.count() / 1000);
 
     // --- Retrieve data from compute pipeline ---
     //int width = 1282, height = 1110;
     //int width = 1280, height = 720;
     //int width = 427, height = 370;
-    int width = 640, height = 480;
+    //int width = 640, height = 480;
+    int width = 256, height = 256;
+
     int imageSize = (width * height);
 
     void *mappedMemory = nullptr;
@@ -607,6 +609,8 @@ void VulkanRenderer::vulkanComputeShaders() {
     img.data = pixels;
     cv::imshow("window3", img);
     cv::imwrite("../textures/test_images/output.png", img);
+
+    printf("distance: %f\n", (0.035 * 0.00304) / (img.at<uchar>(128, 128) * 0.00000112));
 
     //stbi_write_png("../stbpng.png", width, height, 1, pixels, width * 1);
 
