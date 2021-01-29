@@ -47,9 +47,9 @@ void VulkanCompute::cleanup() {
 ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDescriptors, Platform *pPlatform,
                                               Pipeline pipeline) {
     //int width = 1280, height = 720;
-    //int width = 427, height = 370;
+    int width = 427, height = 370;
     //int width = 640, height = 480;
-    int width = 256, height = 256;
+    //int width = 256, height = 256;
 
     int imageSize = (width * height);
     // Buffer size
@@ -161,7 +161,7 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     The number of workgroups is specified in the arguments.
     If you are already familiar with compute shaders from OpenGL, this should be nothing new to you.
     */
-    vkCmdDispatch(commandBuffer, (uint32_t) 1024, (uint32_t) 1, 1);
+    vkCmdDispatch(commandBuffer, (uint32_t) 3000, (uint32_t) 1, 1);
 
     result = vkEndCommandBuffer(commandBuffer); // end recording commands.
     if (result != VK_SUCCESS)
@@ -177,16 +177,19 @@ void VulkanCompute::loadImagePreviewData(ArCompute arCompute, Buffer *pBuffer) c
 
 
     int texWidth, texHeight, texChannels;
-    std::string filePath = "../textures/test_input/test2/test1.png";
+    std::string filePath = "../textures/Aloe_thirdsize/view1.png";
 
     stbi_uc* imageOne = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
     if (!imageOne) throw std::runtime_error("failed to load texture image: view1.png");
     //filePath = "../textures/Aloe_thirdsize/view5.png";
-    filePath = "../textures/test_input/test2/test2.png";
+    filePath = "../textures/Aloe_thirdsize/view5.png";
     stbi_uc* imageTwo = stbi_load(filePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
     if (!imageTwo) throw std::runtime_error("failed to load texture image: view5.png");
 
-    int width = 256, height = 256;
+
+    //int width = 256, height = 256;
+    int width = 427, height = 370;
+
     int imageSize = width * height;
 
     auto * pixelValue = new glm::vec4[imageSize];
@@ -279,16 +282,6 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
 
     cv::imwrite("../textures/test_images/test1.png", img1);
     cv::imwrite("../textures/test_images/test2.png", img2);
-
-    // --- OPENCV DISPARITY ---
-    cv::Mat disp;
-    cv::StereoBM *sbm= cv::StereoBM::create(16, 2);
-
-    sbm->setNumDisparities(112);
-    sbm->setMinDisparity(30);
-
-    sbm(img1, img2, disp);
-
 
     imageSize = 256 * 256;
 
