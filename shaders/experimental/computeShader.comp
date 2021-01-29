@@ -27,13 +27,13 @@ void main()
     float kernelSize = 9;
     float minAverage = 255;
     float pixelDisparity = 0;
-    int disparityLevel = 64;
+    int disparityLevel = 256;
     float readPosLeft = 0, readPosRight = 0;
 
     int lowLimit = 1, highLimit = 2;
-    int stride = 1280;
+    int stride = 640;
 
-    if (!(index > stride && index < (921600 - disparityLevel))) return;
+    if (!(index > stride && index < (307200 - disparityLevel))) return;
     // Disparity level. Match this pixel
     for (int d = 0; d < disparityLevel; ++d){
         // kernel

@@ -520,7 +520,8 @@ void VulkanRenderer::initComputePipeline() {
 
 void VulkanRenderer::loadComputeData() {
     cv::namedWindow("window", cv::WINDOW_FREERATIO);
-    //cv::namedWindow("window2", cv::WINDOW_FREERATIO);
+    cv::namedWindow("window2", cv::WINDOW_FREERATIO);
+    cv::namedWindow("window3", cv::WINDOW_FREERATIO);
 
     bool preview = true;
 
@@ -572,9 +573,9 @@ void VulkanRenderer::vulkanComputeShaders() {
 
     // --- Retrieve data from compute pipeline ---
     //int width = 1282, height = 1110;
-    int width = 1280, height = 720;
+    //int width = 1280, height = 720;
     //int width = 427, height = 370;
-
+    int width = 640, height = 480;
     int imageSize = (width * height);
 
     void *mappedMemory = nullptr;
@@ -592,10 +593,10 @@ void VulkanRenderer::vulkanComputeShaders() {
         *pixels = pmappedMemory->x;
 
         // Normalize values between 255 - 0
-        double slope = 1.0 * (255 - 0) / (pixMax - pixMin);
-        auto output = slope * (*pixels);
+        //double slope = 1.0 * (255 - 0) / (pixMax - pixMin);
+        //auto output = slope * (*pixels);
         //uchar newVal =  (255 - 0) / (pixMax - pixMin) * (*pixels - pixMax) + 255;
-        *pixels = output;
+        //*pixels = output;
 
         pixels++;
         pmappedMemory++;
@@ -604,8 +605,8 @@ void VulkanRenderer::vulkanComputeShaders() {
 
     cv::Mat img(height, width, CV_8UC1);
     img.data = pixels;
-    cv::imshow("window", img);
-    cv::imwrite("../demosaicing_test_1.png", img);
+    cv::imshow("window3", img);
+    cv::imwrite("../textures/test_images/output.png", img);
 
     //stbi_write_png("../stbpng.png", width, height, 1, pixels, width * 1);
 
