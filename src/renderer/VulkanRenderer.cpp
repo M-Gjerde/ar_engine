@@ -573,8 +573,8 @@ void VulkanRenderer::vulkanComputeShaders() {
 
     // --- Retrieve data from compute pipeline ---
     //int width = 1282, height = 1110;
-    //int width = 1280, height = 720;
-    int width = 427, height = 370;
+    int width = 1280, height = 720;
+    //int width = 427, height = 370;
     //int width = 640, height = 480;
     //int width = 256, height = 256;
 

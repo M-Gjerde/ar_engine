@@ -24,14 +24,14 @@ void main()
     uint index = gl_GlobalInvocationID.x;
 
     float sum = 0;
-    float kernelSize = 49;
+    float kernelSize = 121;
     float minAverage = 255;
     float pixelDisparity = 0;
-    int disparityLevel = 80;
+    int disparityLevel = 128;
     float readPosLeft = 0, readPosRight = 0;
 
-    int lowLimit = 3, highLimit = 4;
-    int stride = 427;
+    int lowLimit = 5, highLimit = 6;
+    int stride = 1280;
 
 
     // Disparity level. Match this pixel
