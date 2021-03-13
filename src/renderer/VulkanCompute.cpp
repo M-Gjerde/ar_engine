@@ -46,10 +46,12 @@ void VulkanCompute::cleanup() {
 
 ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDescriptors, Platform *pPlatform,
                                               Pipeline pipeline) {
-    int width = 1280, height = 720;
+    //int width = 1280, height = 720;
     //int width = 427, height = 370;
     //int width = 640, height = 480;
     //int width = 256, height = 256;
+    //int width = 1282, height = 1110;
+    int width = 450, height = 375;
 
     int imageSize = (width * height);
     // Buffer size
@@ -161,7 +163,7 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     The number of workgroups is specified in the arguments.
     If you are already familiar with compute shaders from OpenGL, this should be nothing new to you.
     */
-    vkCmdDispatch(commandBuffer, (uint32_t) 30000, (uint32_t) 1, 1);
+    vkCmdDispatch(commandBuffer, (uint32_t) 3000, (uint32_t) 1, 1);
 
     result = vkEndCommandBuffer(commandBuffer); // end recording commands.
     if (result != VK_SUCCESS)
@@ -177,20 +179,23 @@ void VulkanCompute::loadImagePreviewData(ArCompute arCompute, Buffer *pBuffer) c
 
 
     int texWidth, texHeight, texChannels;
-    std::string leftImageFilePath = "../textures/test_input/test3/leftout.png";
-    std::string rightImageFilePath = "../textures/test_input/test3/rightout.png";
+    std::string leftImageFilePath = "../textures/cones/im2.png";
+    std::string rightImageFilePath = "../textures/cones/im6.png";
 
     stbi_uc* imageOne = stbi_load(leftImageFilePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
     if (!imageOne) throw std::runtime_error("failed to load texture image: view1.png");
     stbi_uc* imageTwo = stbi_load(rightImageFilePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
     if (!imageTwo) throw std::runtime_error("failed to load texture image: view5.png");
 
-    stbi_write_png("../textures/test_input/test3/rightoutgrey.png", 1280, 720, 1, imageTwo, 1280);
-    stbi_write_png("../textures/test_input/test3/leftoutgrey.png", 1280, 720, 1, imageOne, 1280);
+    //stbi_write_png("../textures/test_input/test3/rightoutgrey.png", 1280, 720, 1, imageTwo, 1280);
+    //stbi_write_png("../textures/test_input/test3/leftoutgrey.png", 1280, 720, 1, imageOne, 1280);
 
     //int width = 256, height = 256;
     //int width = 427, height = 370;
-    int width = 1280, height = 720;
+    //int width = 1280, height = 720;
+    //int width = 1282, height = 1110;
+    int width = 450, height = 375;
+
 
     int imageSize = width * height;
 

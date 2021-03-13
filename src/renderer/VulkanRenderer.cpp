@@ -519,23 +519,24 @@ void VulkanRenderer::initComputePipeline() {
 }
 
 void VulkanRenderer::loadComputeData() {
-    cv::namedWindow("window", cv::WINDOW_FREERATIO);
-    cv::namedWindow("window2", cv::WINDOW_FREERATIO);
-    cv::namedWindow("window3", cv::WINDOW_FREERATIO);
+    //cv::namedWindow("window", cv::WINDOW_FREERATIO);
+    //cv::namedWindow("window2", cv::WINDOW_FREERATIO);
+    cv::namedWindow("Disparity image", cv::WINDOW_FREERATIO);
 
     bool preview = false;
 
-    while (preview){
-        vulkanCompute->loadComputeData(arCompute, buffer);
-        vulkanComputeShaders();
-        if (cv::waitKey(30) == 27) break;
+    //while (preview){
+        //vulkanCompute->loadComputeData(arCompute, buffer);
+        //vulkanComputeShaders();
+        //if (cv::waitKey(30) == 27) break;
 
-    }
+    //}
 
     //vulkanCompute->loadComputeData(arCompute, buffer);
     vulkanCompute->loadImagePreviewData(arCompute, buffer);
     vulkanComputeShaders();
 
+    cv::waitKey(0);
 
 }
 
@@ -573,9 +574,10 @@ void VulkanRenderer::vulkanComputeShaders() {
 
     // --- Retrieve data from compute pipeline ---
     //int width = 1282, height = 1110;
-    int width = 1280, height = 720;
+    //int width = 1280, height = 720;
     //int width = 427, height = 370;
     //int width = 640, height = 480;
+    int width = 450, height = 375;
     //int width = 256, height = 256;
 
     int imageSize = (width * height);
@@ -607,7 +609,8 @@ void VulkanRenderer::vulkanComputeShaders() {
 
     cv::Mat img(height, width, CV_8UC1);
     img.data = pixels;
-    cv::imshow("window3", img);
+    cv::equalizeHist(img, img);
+    cv::imshow("Disparity image", img);
     cv::imwrite("../output.png", img);
 
     printf("distance: %f\n", (0.035 * 0.00304) / (img.at<uchar>(128, 128) * 0.00000112));
