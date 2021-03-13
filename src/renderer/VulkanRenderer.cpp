@@ -375,7 +375,10 @@ void VulkanRenderer::loadTypeOneObject() {
     arModel.transferCommandPool = arEngine.commandPool;
     arModel.transferQueue = arEngine.graphicsQueue;
     arModel.modelName = "standard/sphere.obj";
+
     MeshModel meshModel;
+    meshModel.setModel("standard/sphere.obj");
+
     meshes.push_back(meshModel.loadModel(arEngine.mainDevice, &arModel, true));
     models.push_back(arModel);
 

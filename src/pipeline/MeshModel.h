@@ -16,8 +16,11 @@ public:
 
     Mesh loadModel(MainDevice mainDevice, ArModel *arModel, bool generateNormals);
 
+    void setModel(std::string modelName);
+
 private:
 
+    std::string modelName;
 
     void calculateNormals();
 };
