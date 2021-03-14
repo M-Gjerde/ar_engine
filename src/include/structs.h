@@ -19,6 +19,7 @@ struct ArShadersPath {
     std::string fragmentShader;
 };
 
+// ArModel passes queue and cmd pool from arEngine and used to store buffers and memory
 struct ArModel {
     VkQueue transferQueue;
     VkCommandPool transferCommandPool;
@@ -30,8 +31,15 @@ struct ArModel {
     uint32_t indexCount{};
     VkBuffer indexBuffer{};
     VkDeviceMemory indexBufferMemory{};
-    std::string modelName;
 };
+
+// ArModelInfo stores general information that is used upon creation
+struct ArModelInfo {
+
+    std::string modelName;
+    bool generateNormals = true;
+};
+
 
 
 struct ArDescriptorInfo {

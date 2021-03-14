@@ -17,6 +17,7 @@
 #include "../pipeline/Textures.h"
 #include "VulkanCompute.h"
 #include "../record/ThreadSpawner.h"
+#include "../pipeline/MeshModel.h"
 #include <stdexcept>
 #include <vector>
 #include <iostream>
@@ -79,8 +80,7 @@ private:
 
 
     // Objects
-    std::vector<Mesh> meshes{};
-    std::vector<ArModel> models{};
+    std::vector<MeshModel> models{};
 
     // Descriptors
     Descriptors *descriptors{};

@@ -9,20 +9,34 @@
 #include <string>
 #include "../include/structs.h"
 #include "Mesh.h"
+#include "../../external/tinyobj/tiny_obj_loader.h"
+#include "Descriptors.h"
 
 class MeshModel {
 
 public:
 
-    Mesh loadModel(MainDevice mainDevice, ArModel *arModel, bool generateNormals);
+    void loadModel(MainDevice mainDevice, ArModel arModel, ArModelInfo arModelInfo);
 
-    void setModel(std::string modelName);
+    void setModelFileName(std::string modelName);
+    void setModel(const glm::mat4 &_model);
+    const glm::mat4 &getModel() const;
+
+    VkBuffer const getIndexBuffer() const;
+    VkBuffer const getVertexBuffer() const;
+
+    void cleanUp(VkDevice device);
+
+    uint32_t indexCount = -1;
+
+    void attachDescriptors(ArDescriptor *arDescriptor, Descriptors *descriptors, Buffer *buffer);
 
 private:
+    uboModel model1;
+    ArModel arModel1;
 
-    std::string modelName;
+    void getDataFromModel(ArModel *arModel, ArModelInfo arModelInfo);
 
-    void calculateNormals();
 };
 
 

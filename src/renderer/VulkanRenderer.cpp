@@ -54,8 +54,8 @@ void VulkanRenderer::cleanup() {
 
     images->cleanUp(); // Clean up depth images
 
-    for (auto &mesh : meshes) {
-        mesh.cleanUp();
+    for (auto &meshmodels : models) {
+        meshmodels.cleanUp(arEngine.mainDevice.device);
     }
 
     // Clean descriptor sets
@@ -217,13 +217,13 @@ void VulkanRenderer::recordCommand() {
 
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        for (int j = 0; j < meshes.size(); ++j) {
+        for (int j = 0; j < models.size(); ++j) {
             vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, arPipelines[j].pipeline);
 
-            VkBuffer vertexBuffers[] = {models[j].vertexBuffer};
+            VkBuffer vertexBuffers[] = {models[j].getVertexBuffer()};
             VkDeviceSize offsets[] = {0};
             vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
-            vkCmdBindIndexBuffer(commandBuffers[i], models[j].indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+            vkCmdBindIndexBuffer(commandBuffers[i], models[j].getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
             vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
                                     arPipelines[j].pipelineLayout, 0, arDescriptors[j].descriptorSets.size(),
@@ -269,9 +269,9 @@ void VulkanRenderer::createSyncObjects() {
 }
 
 void VulkanRenderer::updateBuffer(uint32_t imageIndex) {
-    for (int i = 0; i < meshes.size(); ++i) {
+    for (int i = 0; i < models.size(); ++i) {
 
-        uboModelVar.model = meshes[i].getModel();
+        uboModelVar.model = models[i].getModel();
         // Copy vertex data
         void *data;
         vkMapMemory(arEngine.mainDevice.device, arDescriptors[i].bufferMemory[0], 0, arDescriptors[i].dataSizes[0],
@@ -298,11 +298,11 @@ void VulkanRenderer::updateCamera(glm::mat4 newView, glm::mat4 newProjection) {
 
 // TODO can be combined with updateLightPos if a wrapper is written around those two
 void VulkanRenderer::updateModel(glm::mat4 newModel, int index) {
-    meshes[index].setModel(newModel);
+    models[index].setModel(newModel);
 }
 
 void VulkanRenderer::updateLightPos(glm::vec3 newPos, glm::mat4 transMat, int index) {
-    meshes[index].setModel(glm::translate(transMat, newPos));
+    models[index].setModel(glm::translate(transMat, newPos));
     fragmentColor.lightPos = glm::vec4(newPos, 1.0f);
     fragmentColor.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
     fragmentColor.objectColor = glm::vec4(0.5f, 0.5f, 0.31f, 0.0f);
@@ -357,70 +357,48 @@ void VulkanRenderer::updateScene() {
     // --- Translate models ---
     glm::mat4 trans(1.0f);
     // Glasses
-    for (int i = 0; i < meshes.size(); ++i) {
+    for (int i = 0; i < models.size(); ++i) {
         updateLightPos(glm::vec3(0.0f, 0.20f, i * -3.0f), trans, i);
     }
     // lightbox
 }
 
 void VulkanRenderer::deleteLastObject() {
-    meshes.pop_back();
+    models.pop_back();
     // TODO Clean up resources used with this object as well
 }
 
 
 void VulkanRenderer::loadTypeOneObject() {
-    // Create Mesh
+    // ArModel passes queue and cmd pool from arEngine and used to store buffers and memory
     ArModel arModel;
     arModel.transferCommandPool = arEngine.commandPool;
     arModel.transferQueue = arEngine.graphicsQueue;
-    arModel.modelName = "standard/sphere.obj";
+
+    // ModelInfo
+    ArModelInfo arModelInfo;
+    arModelInfo.modelName = "standard/sphere.obj";
+    arModelInfo.generateNormals = true;
 
     MeshModel meshModel;
-    meshModel.setModel("standard/sphere.obj");
-
-    meshes.push_back(meshModel.loadModel(arEngine.mainDevice, &arModel, true));
-    models.push_back(arModel);
+    meshModel.setModelFileName("standard/sphere.obj");
+    meshModel.loadModel(arEngine.mainDevice, arModel, arModelInfo);
 
     // Create descriptors
     ArDescriptor arDescriptor;
+
     ArDescriptorInfo descriptorInfo{};
     descriptorInfo.descriptorSetCount = 2;
     descriptorInfo.descriptorSetLayoutCount = 2;
     descriptorInfo.descriptorPoolCount = 1;
+    // What kind of data into descriptor
     std::array<uint32_t, 2> sizes = {sizeof(uboModel), sizeof(FragmentColor)};
     descriptorInfo.dataSizes = sizes.data();
 
-    // TODO Rewrite usage of vectors like this
-    arDescriptor.dataSizes.resize(2);
-    arDescriptor.dataSizes[0] = sizeof(uboModel);
-    arDescriptor.dataSizes[1] = sizeof(FragmentColor);
-
-    descriptorInfo.descriptorCount = 2;
-    std::array<uint32_t, 2> descriptorCounts = {1, 1};
-    descriptorInfo.pDescriptorSplitCount = descriptorCounts.data();
-    std::array<uint32_t, 2> bindings = {0, 1};
-    descriptorInfo.pBindings = bindings.data();
-    std::array<VkDescriptorType, 2> types = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER};
-    descriptorInfo.pDescriptorType = types.data();
-    std::array<VkShaderStageFlags, 2> stageFlags = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
-    descriptorInfo.stageFlags = stageFlags.data();
 
 
-    std::vector<ArBuffer> buffers(2);
-    // Create and fill buffers
-    for (int j = 0; j < 2; ++j) {
-        buffers[j].bufferSize = sizes[j];
-        buffers[j].bufferUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        buffers[j].sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        buffers[j].bufferProperties =
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-        buffer->createBuffer(&buffers[j]);
-        arDescriptor.buffer.push_back(buffers[j].buffer);
-        arDescriptor.bufferMemory.push_back(buffers[j].bufferMemory);
-    }
+    meshModel.attachDescriptors(&arDescriptor, descriptors, buffer);
 
-    descriptors->createDescriptors(descriptorInfo, &arDescriptor);
 
     ArPipeline arPipeline{};
     arPipeline.device = arEngine.mainDevice.device;
@@ -435,6 +413,7 @@ void VulkanRenderer::loadTypeOneObject() {
     fragmentColor.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
     fragmentColor.objectColor = glm::vec4(0.5f, 0.5f, 0.31f, 0.0f);
 
+    models.push_back(meshModel);
     arDescriptors.push_back(arDescriptor);
     arPipelines.push_back(arPipeline);
 
@@ -446,10 +425,17 @@ void VulkanRenderer::loadTypeTwoObject() {
     ArModel arModel;
     arModel.transferCommandPool = arEngine.commandPool;
     arModel.transferQueue = arEngine.graphicsQueue;
-    arModel.modelName = "standard/cube.obj";
+
+    // ModelInfo
+    ArModelInfo arModelInfo;
+    arModelInfo.modelName = "standard/sphere.obj";
+    arModelInfo.generateNormals = true;
+
+
     MeshModel meshModel;
-    meshes.push_back(meshModel.loadModel(arEngine.mainDevice, &arModel, true));
-    models.push_back(arModel);
+    meshModel.setModelFileName("standard/sphere.obj");
+    meshModel.loadModel(arEngine.mainDevice, arModel, arModelInfo);
+    models.push_back(meshModel);
 
     // Create descriptors
     ArDescriptor arDescriptor;
