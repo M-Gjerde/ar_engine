@@ -14,12 +14,10 @@
 #include "../include/structs.h"
 #include "Descriptors.h"
 
-void MeshModel::loadModel(MainDevice mainDevice, ArModel arModel, ArModelInfo arModelInfo) {
+void MeshModel::loadModel(MainDevice mainDevice, ArModel arModel, const ArModelInfo& arModelInfo) {
 
     // Get data from object model file
     getDataFromModel(&arModel, arModelInfo);
-
-    // Create two buffers in GPU memory holding vertex and index data
     std::vector<ArBuffer> modelBuffers(2);
     modelBuffers[0].bufferSize = sizeof(arModel.vertices[0]) * arModel.vertices.size();
     modelBuffers[0].bufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
@@ -30,8 +28,8 @@ void MeshModel::loadModel(MainDevice mainDevice, ArModel arModel, ArModelInfo ar
     modelBuffers[1].bufferProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     modelBuffers[1].sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    // Create mesh from model
-    Mesh mesh(mainDevice, &arModel, modelBuffers);
+    // Create mesh from model I'm just using the constructor. This could be acomplished by a helper class
+    mesh = new Mesh(mainDevice, &arModel, modelBuffers);
 
     arModel1 = arModel;
     indexCount = arModel.indexCount;
@@ -39,7 +37,7 @@ void MeshModel::loadModel(MainDevice mainDevice, ArModel arModel, ArModelInfo ar
 }
 
 
-void MeshModel::cleanUp(VkDevice device) {
+void MeshModel::cleanUp(VkDevice device) const {
     vkFreeMemory(device, arModel1.vertexBufferMemory, nullptr);
     vkDestroyBuffer(device, arModel1.vertexBuffer, nullptr);
 
@@ -54,7 +52,7 @@ void MeshModel::setModelFileName(std::string modelName) {
 }
 
 
-void MeshModel::getDataFromModel(ArModel *arModel, ArModelInfo arModelInfo) {
+void MeshModel::getDataFromModel(ArModel *arModel, const ArModelInfo& arModelInfo) {
 
     // Use library to load in model
     tinyobj::attrib_t attrib;
@@ -155,39 +153,22 @@ void MeshModel::setModel(const glm::mat4 &_model) {
     model1.model = _model;
 }
 
-const VkBuffer MeshModel::getVertexBuffer() const {
+VkBuffer MeshModel::getVertexBuffer() const {
     return arModel1.vertexBuffer;
 }
 
-const VkBuffer MeshModel::getIndexBuffer() const {
+VkBuffer MeshModel::getIndexBuffer() const {
     return arModel1.indexBuffer;
 }
 
-void MeshModel::attachDescriptors(ArDescriptor *arDescriptor, Descriptors* descriptors, Buffer *buffer) {
+void MeshModel::attachDescriptors(ArDescriptor *arDescriptor, ArDescriptorInfo arDescriptorInfo, Descriptors *descriptors,
+                             Buffer *buffer) {
 
 
-
-
-    // TODO Rewrite usage of vectors like this
-    arDescriptor->dataSizes.resize(2);
-    arDescriptor->dataSizes[0] = sizeof(uboModel);
-    arDescriptor->dataSizes[1] = sizeof(FragmentColor);
-
-    descriptorInfo.descriptorCount = 2;
-    std::array<uint32_t, 2> descriptorCounts = {1, 1};
-    descriptorInfo.pDescriptorSplitCount = descriptorCounts.data();
-    std::array<uint32_t, 2> bindings = {0, 1};
-    descriptorInfo.pBindings = bindings.data();
-    std::array<VkDescriptorType, 2> types = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER};
-    descriptorInfo.pDescriptorType = types.data();
-    std::array<VkShaderStageFlags, 2> stageFlags = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
-    descriptorInfo.stageFlags = stageFlags.data();
-
-
-    std::vector<ArBuffer> buffers(2);
+    std::vector<ArBuffer> buffers(arDescriptorInfo.descriptorSetCount);
     // Create and fill buffers
-    for (int j = 0; j < 2; ++j) {
-        buffers[j].bufferSize = sizes[j];
+    for (int j = 0; j < arDescriptorInfo.descriptorSetCount; ++j) {
+        buffers[j].bufferSize = arDescriptorInfo.dataSizes[j];
         buffers[j].bufferUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         buffers[j].sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         buffers[j].bufferProperties =
@@ -195,9 +176,13 @@ void MeshModel::attachDescriptors(ArDescriptor *arDescriptor, Descriptors* descr
         buffer->createBuffer(&buffers[j]);
         arDescriptor->buffer.push_back(buffers[j].buffer);
         arDescriptor->bufferMemory.push_back(buffers[j].bufferMemory);
+
+        // Copy over datasizes
+        arDescriptor->dataSizes.resize(arDescriptorInfo.descriptorSetCount);
+        arDescriptor->dataSizes[j] = arDescriptorInfo.dataSizes[j];
     }
 
-    descriptors->createDescriptors(descriptorInfo, arDescriptor);
+    descriptors->createDescriptors(arDescriptorInfo, arDescriptor);
 
 }
 

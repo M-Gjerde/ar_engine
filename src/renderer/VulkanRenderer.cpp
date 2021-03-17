@@ -345,6 +345,7 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
             loadTypeOneObject();
         else if (modelSettings[i].at("type") == "cube")
             loadTypeTwoObject();
+
     }
 
     updateScene();
@@ -358,7 +359,7 @@ void VulkanRenderer::updateScene() {
     glm::mat4 trans(1.0f);
     // Glasses
     for (int i = 0; i < models.size(); ++i) {
-        updateLightPos(glm::vec3(0.0f, 0.20f, i * -3.0f), trans, i);
+        updateLightPos(glm::vec3(0.0f, 0.20f, (float) i * -3.0f), trans, i);
     }
     // lightbox
 }
@@ -384,9 +385,8 @@ void VulkanRenderer::loadTypeOneObject() {
     meshModel.setModelFileName("standard/sphere.obj");
     meshModel.loadModel(arEngine.mainDevice, arModel, arModelInfo);
 
-    // Create descriptors
-    ArDescriptor arDescriptor;
 
+    // Define the descriptor type attached to object
     ArDescriptorInfo descriptorInfo{};
     descriptorInfo.descriptorSetCount = 2;
     descriptorInfo.descriptorSetLayoutCount = 2;
@@ -394,10 +394,20 @@ void VulkanRenderer::loadTypeOneObject() {
     // What kind of data into descriptor
     std::array<uint32_t, 2> sizes = {sizeof(uboModel), sizeof(FragmentColor)};
     descriptorInfo.dataSizes = sizes.data();
+    descriptorInfo.descriptorCount = 2;
+    std::array<uint32_t, 2> descriptorCounts = {1, 1};
+    descriptorInfo.pDescriptorSplitCount = descriptorCounts.data();
+    std::array<uint32_t, 2> bindings = {0, 1};
+    descriptorInfo.pBindings = bindings.data();
+    std::array<VkDescriptorType, 2> types = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER};
+    descriptorInfo.pDescriptorType = types.data();
+    std::array<VkShaderStageFlags, 2> stageFlags = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
+    descriptorInfo.stageFlags = stageFlags.data();
 
-
-
-    meshModel.attachDescriptors(&arDescriptor, descriptors, buffer);
+    // Descriptor handle
+    ArDescriptor arDescriptor;
+    // Create descriptors
+    meshModel.attachDescriptors(&arDescriptor, descriptorInfo, descriptors, buffer);
 
 
     ArPipeline arPipeline{};
@@ -413,6 +423,7 @@ void VulkanRenderer::loadTypeOneObject() {
     fragmentColor.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
     fragmentColor.objectColor = glm::vec4(0.5f, 0.5f, 0.31f, 0.0f);
 
+    // Push objects to global lists
     models.push_back(meshModel);
     arDescriptors.push_back(arDescriptor);
     arPipelines.push_back(arPipeline);
@@ -428,27 +439,22 @@ void VulkanRenderer::loadTypeTwoObject() {
 
     // ModelInfo
     ArModelInfo arModelInfo;
-    arModelInfo.modelName = "standard/sphere.obj";
+    arModelInfo.modelName = "standard/cube.obj";
     arModelInfo.generateNormals = true;
 
 
     MeshModel meshModel;
-    meshModel.setModelFileName("standard/sphere.obj");
+    meshModel.setModelFileName("standard/cube.obj");
     meshModel.loadModel(arEngine.mainDevice, arModel, arModelInfo);
     models.push_back(meshModel);
 
-    // Create descriptors
-    ArDescriptor arDescriptor;
+    // descriptor info
     ArDescriptorInfo descriptorInfo{};
     descriptorInfo.descriptorSetCount = 1;
     descriptorInfo.descriptorSetLayoutCount = 1;
     descriptorInfo.descriptorPoolCount = 1;
     std::array<uint32_t, 1> sizes = {sizeof(uboModel)};
     descriptorInfo.dataSizes = sizes.data();
-
-    // TODO Rewrite usage of vectors like this
-    arDescriptor.dataSizes.resize(1);
-    arDescriptor.dataSizes[0] = sizeof(uboModel);
 
     descriptorInfo.descriptorCount = 1;
     std::array<uint32_t, 1> descriptorCounts = {1};
@@ -460,21 +466,11 @@ void VulkanRenderer::loadTypeTwoObject() {
     std::array<VkShaderStageFlags, 1> stageFlags = {VK_SHADER_STAGE_VERTEX_BIT};
     descriptorInfo.stageFlags = stageFlags.data();
 
+    // TODO Rewrite usage of vectors like this
+    // Create descriptors
+    ArDescriptor arDescriptor;
+    meshModel.attachDescriptors(&arDescriptor, descriptorInfo, descriptors, buffer);
 
-    std::vector<ArBuffer> buffers(1);
-    // Create and fill buffers
-    for (int j = 0; j < 1; ++j) {
-        buffers[j].bufferSize = sizes[j];
-        buffers[j].bufferUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        buffers[j].sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        buffers[j].bufferProperties =
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-        buffer->createBuffer(&buffers[j]);
-        arDescriptor.buffer.push_back(buffers[j].buffer);
-        arDescriptor.bufferMemory.push_back(buffers[j].bufferMemory);
-    }
-
-    descriptors->createDescriptors(descriptorInfo, &arDescriptor);
 
 
     ArPipeline arPipeline{};

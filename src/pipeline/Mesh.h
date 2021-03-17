@@ -15,19 +15,13 @@ public:
 
     explicit Mesh(MainDevice mainDevice, ArModel *standardModel, std::vector<ArBuffer> newArBuffer);
 
-    const glm::mat4 &getModel() const;
-    void setModel(const glm::mat4 &model);
-
     void cleanUp();
     ~Mesh();
 private:
     VkDevice device;
-    ArBuffer vertexBuffer{};
     ArBuffer indexBuffer{};
-
+    ArBuffer vertexBuffer{};
     ArModel modelInfo{};
-
-    uboModel model1;
 
     void createVertexBuffer();
     void createIndexBuffer();

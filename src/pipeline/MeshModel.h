@@ -16,26 +16,27 @@ class MeshModel {
 
 public:
 
-    void loadModel(MainDevice mainDevice, ArModel arModel, ArModelInfo arModelInfo);
+    void loadModel(MainDevice mainDevice, ArModel arModel, const ArModelInfo& arModelInfo);
 
-    void setModelFileName(std::string modelName);
+    static void setModelFileName(std::string modelName);
     void setModel(const glm::mat4 &_model);
     const glm::mat4 &getModel() const;
+    VkBuffer getIndexBuffer() const;
+    VkBuffer getVertexBuffer() const;
 
-    VkBuffer const getIndexBuffer() const;
-    VkBuffer const getVertexBuffer() const;
-
-    void cleanUp(VkDevice device);
+    void cleanUp(VkDevice device) const;
 
     uint32_t indexCount = -1;
 
-    void attachDescriptors(ArDescriptor *arDescriptor, Descriptors *descriptors, Buffer *buffer);
+    void attachDescriptors(ArDescriptor *arDescriptor, ArDescriptorInfo arDescriptorInfo, Descriptors *descriptors,
+                           Buffer *buffer);
 
 private:
     uboModel model1;
     ArModel arModel1;
+    Mesh* mesh;
 
-    void getDataFromModel(ArModel *arModel, ArModelInfo arModelInfo);
+    static void getDataFromModel(ArModel *arModel, const ArModelInfo& arModelInfo);
 
 };
 

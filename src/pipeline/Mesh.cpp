@@ -16,27 +16,19 @@ Mesh::Mesh(MainDevice mainDevice, ArModel *standardModel, std::vector<ArBuffer> 
     modelInfo = *standardModel;
 
     // Use ArBuffer struct to use less memory than by just using standard Model struct
-    vertexBuffer = newArBuffer[0];
     indexBuffer = newArBuffer[1];
-
+    vertexBuffer = newArBuffer[0];
     // Populate ArBuffers
     createVertexBuffer();
     createIndexBuffer();
 
     // Copy data back to standard model.
-    standardModel->vertexBuffer = vertexBuffer.buffer;
     standardModel->indexBuffer = indexBuffer.buffer;
+    standardModel->vertexBuffer = vertexBuffer.buffer;
+    standardModel->indexBufferMemory = indexBuffer.bufferMemory;
+    standardModel->vertexBufferMemory = vertexBuffer.bufferMemory;
+
     //standardModel->indexCount = meshIndices.size();
-}
-
-
-
-void Mesh::cleanUp() {
-    vkFreeMemory(device, vertexBuffer.bufferMemory, nullptr);
-    vkDestroyBuffer(device, vertexBuffer.buffer, nullptr);
-
-    vkFreeMemory(device, indexBuffer.bufferMemory, nullptr);
-    vkDestroyBuffer(device, indexBuffer.buffer, nullptr);
 }
 
 
@@ -106,14 +98,6 @@ void Mesh::createIndexBuffer() {
     vkDestroyBuffer(device, stagingBuffer.buffer, nullptr);
     vkFreeMemory(device, stagingBuffer.bufferMemory, nullptr);
 
-}
-
-const glm::mat4 &Mesh::getModel() const {
-    return model1.model;
-}
-
-void Mesh::setModel(const glm::mat4 &_model) {
-    model1.model = _model;
 }
 
 Mesh::~Mesh() = default;
