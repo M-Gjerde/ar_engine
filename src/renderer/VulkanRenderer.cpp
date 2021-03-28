@@ -508,21 +508,19 @@ void VulkanRenderer::loadComputeData() {
     //cv::namedWindow("window2", cv::WINDOW_FREERATIO);
     cv::namedWindow("Disparity image", cv::WINDOW_FREERATIO);
 
-    bool preview = false;
+    while (true){
+        vulkanCompute->loadComputeData(arCompute, buffer);
+        vulkanComputeShaders();
+        if (cv::waitKey(30) == 27) break;
 
-    //while (preview){
-        //vulkanCompute->loadComputeData(arCompute, buffer);
-        //vulkanComputeShaders();
-        //if (cv::waitKey(30) == 27) break;
-
-    //}
-
-    //vulkanCompute->loadComputeData(arCompute, buffer);
+    }
+    cv::destroyAllWindows();
+    /*
+    vulkanCompute->loadComputeData(arCompute, buffer);
     vulkanCompute->loadImagePreviewData(arCompute, buffer);
     vulkanComputeShaders();
-
     cv::waitKey(0);
-
+*/
 }
 
 void VulkanRenderer::startDisparityStream() {
