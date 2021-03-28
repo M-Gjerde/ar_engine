@@ -57,6 +57,8 @@ public:
     void loadComputeData();
 
     void startDisparityStream();
+    void stopDisparityStream();
+
 
 private:
     // Vulkan components

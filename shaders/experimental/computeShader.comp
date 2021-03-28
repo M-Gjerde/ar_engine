@@ -31,7 +31,7 @@ void main()
     float readPosLeft = 0, readPosRight = 0;
 
     int lowLimit = 2, highLimit = 3;
-    int stride = 256;
+    int stride = 640;
 
 
     // Disparity level. Match this pixel

@@ -3,10 +3,6 @@
 //
 
 
-
-
-#include <sys/ioctl.h>
-#include <array>
 #include "ThreadSpawner.h"
 
 #define WIDTH 1280
@@ -44,13 +40,15 @@ void ThreadSpawner::startChildProcess() {
     }
 
         // Child process
-    else if (pidStreamer == 0)
+    else if (pidStreamer == 0) {
         childProcess();
+
+    }
 
 }
 
 void ThreadSpawner::stopChildProcess() {
-
+    printf("Is streamrunning: %d\n", isStreamRunning());
     if (!isStreamRunning()) {
         printf("Streamer is not running\n");
     } else {
@@ -97,7 +95,83 @@ bool ThreadSpawner::isStreamRunning() const {
 }
 
 void ThreadSpawner::childProcess() {
-    setupAndRunVideoStream();
+    // setupAndRunVideoStream(); For V4L2 Framework
+
+    // For Realsense camera stream
+    realsenseVideoStream();
+
+}
+
+void ThreadSpawner::realsenseVideoStream() {
+    try {
+
+        int SCR_WIDTH = 640;
+        int SCR_HEIGHT = 480;
+        // -- REALSENSE ---
+        // Create initial config for streaming
+        rs2::config cfg;
+
+
+        //Add desired streams to configuration
+        //cfg.enable_stream(RS2_STREAM_COLOR, 1920, 1080, RS2_FORMAT_BGR8, 30);
+        cfg.enable_stream(RS2_STREAM_DEPTH, SCR_WIDTH, SCR_HEIGHT, RS2_FORMAT_Z16, 30);
+        cfg.enable_stream(RS2_STREAM_INFRARED, 1, SCR_WIDTH, SCR_HEIGHT, RS2_FORMAT_Y8, 30);
+        cfg.enable_stream(RS2_STREAM_INFRARED, 2, SCR_WIDTH, SCR_HEIGHT, RS2_FORMAT_Y8, 30);
+
+        RealsenseStreamer realsenseStreamer(cfg);
+        realsenseStreamer.startStream();
+        realsenseStreamer.streaming();
+
+        // --- Update child process STATUS
+        setChildProcessStatus(true);
+
+        // Disable emitter
+        realsenseStreamer.setEmitter(0);
+
+        // uncomment this call to draw in wireframe polygons.
+        //cv::namedWindow("depth", cv::WINDOW_AUTOSIZE);
+
+        while (realsenseStreamer.streaming()) {
+
+            // Retrieve depth images
+            cv::Mat ir_right = realsenseStreamer.getImage(realsenseStreamer.IR_IMAGE_RIGHT);
+            cv::Mat ir_left = realsenseStreamer.getImage(realsenseStreamer.IR_IMAGE_LEFT);
+
+            // Copy data to shared memory
+            cv::imshow("ir_right", ir_right);
+            cv::imshow("ir_left", ir_left);
+
+            // Attach
+            ArSharedMemory *memP = attachMemory();
+            // Copy data
+            memcpy(memP->imgOne, ir_left.data, ir_left.cols * ir_left.rows);
+            memcpy(memP->imgTwo, ir_right.data, ir_right.cols * ir_right.rows);
+            memP->imgLen1 = ir_left.cols * ir_left.rows;
+            memP->imgLen2 = ir_right.cols * ir_right.rows;
+            // Detach
+            detachMemory(memP);
+
+            // Display images
+            if (cv::waitKey(30) == 27)
+            {
+                setChildProcessStatus(false);
+                realsenseStreamer.stopStream();
+                break;
+            }
+
+        }
+    }
+    catch (std::runtime_error &error) {
+        printf("We got a realsense error: %s\n", error.what());
+    }
+
+    catch (const rs2::error& e)
+    {
+        std::cerr << "Some other error occurred!" << std::endl;
+    }
+
+    cv::destroyAllWindows();
+
 
 }
 
@@ -277,16 +351,7 @@ int ThreadSpawner::setupAndRunVideoStream() {
     }
     int r = -1;
 
-    // --- Update child process STATUS
-    auto *statusMemP = (Status *) shmat(shStatusMem, nullptr, 0);
-    if (statusMemP == (void *) -1) {
-        throw std::runtime_error("Failed to attach to shared memory segment");
-    }
-    statusMemP->isRunning = true;
-    if (shmdt(statusMemP) == -1) {
-        throw std::runtime_error("Failed to detach to shared memory");
-    }
-    // --- END update child process STATUS
+    setChildProcessStatus(true);
 
 
     while (true) {
@@ -356,9 +421,24 @@ int ThreadSpawner::setupAndRunVideoStream() {
     return 0;
 }
 
+
+void ThreadSpawner::setChildProcessStatus(bool status){
+    // --- Update child process STATUS
+    auto *statusMemP = (Status *) shmat(shStatusMem, nullptr, 0);
+    if (statusMemP == (void *) -1) {
+        throw std::runtime_error("Failed to attach to shared memory segment");
+    }
+    statusMemP->isRunning = status;
+    if (shmdt(statusMemP) == -1) {
+        throw std::runtime_error("Failed to detach to shared memory");
+    }
+    // --- END update child process STATUS
+}
+
+
 void ThreadSpawner::waitForExistence() const {
     clock_t Start = clock();
-    double timeOut_ms = 5000;
+    double timeOut_ms = 2000;
 
     auto memP = getStatusMemoryPointer();
 

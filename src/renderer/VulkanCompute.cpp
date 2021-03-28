@@ -48,8 +48,8 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
                                               Pipeline pipeline) {
     //int width = 1280, height = 720;
     //int width = 427, height = 370;
-    //int width = 640, height = 480;
-    int width = 256, height = 256;
+    int width = 640, height = 480;
+    //int width = 256, height = 256;
     //int width = 1282, height = 1110;
     //int width = 450, height = 375;
 
@@ -163,7 +163,7 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     The number of workgroups is specified in the arguments.
     If you are already familiar with compute shaders from OpenGL, this should be nothing new to you.
     */
-    vkCmdDispatch(commandBuffer, (uint32_t) 23000, (uint32_t) 1, 1);
+    vkCmdDispatch(commandBuffer, (uint32_t) 4800, (uint32_t) 1, 1);
 
     result = vkEndCommandBuffer(commandBuffer); // end recording commands.
     if (result != VK_SUCCESS)
@@ -246,28 +246,32 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
     ArSharedMemory *memP = threadSpawner.getVideoMemoryPointer();
 
 
-    int imageSize = memP->imgLen1 / 2;
+    //int imageSize = memP->imgLen1 / 2;
+    int imageSize = 640 * 480;
+    int width = 640, height = 480;
 
-
-    auto *imgOnePixel = new glm::vec4[256 * 256];
-    auto *imgTwoPixel = new glm::vec4[256 * 256];
+    auto *imgOnePixel = new glm::vec4[imageSize];
+    auto *imgTwoPixel = new glm::vec4[imageSize];
 
     auto origOne = imgOnePixel;
     auto origTwo = imgTwoPixel;
 
-    auto memPixelOne = (uint16_t *) memP->imgOne;
-    auto memPixelTwo = (uint16_t *) memP->imgTwo;
+    auto memPixelOne = (unsigned char*) memP->imgOne;
+    auto memPixelTwo = (unsigned char *) memP->imgTwo;
 
 
-    cv::Mat img1(256, 256, CV_8UC1);
-    cv::Mat img2(256, 256, CV_8UC1);
+    cv::Mat img1(height, width, CV_8UC1);
+    cv::Mat img2(height, width, CV_8UC1);
 
+    img1.data = memPixelOne;
+    img2.data = memPixelTwo;
 
     for (int i = 0; i < imageSize; ++i) {
 
-        int x = i % 1280;
-        int y = i / 1280;
+        int x = i % width;
+        int y = i / width;
 
+        /* OLD stuff dont know how it works lol..
         if (x >= 512 && x < 768 && y >= 232 && y < 488){
             imgOnePixel->x = *memPixelOne;
             imgTwoPixel->x = *memPixelTwo;
@@ -275,8 +279,14 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
             img2.at<uchar>(y - 232, x - 512) = imgTwoPixel->x;
             imgTwoPixel++;
             imgOnePixel++;
+        }*/
 
-        }
+        imgOnePixel->x = *memPixelOne;
+        imgTwoPixel->x = *memPixelTwo;
+        //img1.at<uchar>(x, y) = imgOnePixel->x;
+        //img2.at<uchar>(x, y) = imgTwoPixel->x;
+        imgTwoPixel++;
+        imgOnePixel++;
 
         memPixelOne++;
         memPixelTwo++;
@@ -284,13 +294,8 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
     imgOnePixel = origOne;
     imgTwoPixel = origTwo;
 
-    cv::imshow("window", img1);
-    cv::imshow("window2", img2);
-
-    cv::imwrite("../textures/test_images/test1.png", img1);
-    cv::imwrite("../textures/test_images/test2.png", img2);
-
-    imageSize = 256 * 256;
+    //cv::imshow("window", img1);
+    //cv::imshow("window2", img2);
 
     void *data;
     vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[0], 0, imageSize * sizeof(glm::vec4), 0,

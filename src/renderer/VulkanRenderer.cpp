@@ -525,7 +525,10 @@ void VulkanRenderer::loadComputeData() {
 
 void VulkanRenderer::startDisparityStream() {
     vulkanCompute->startDisparityStream();
+}
 
+void VulkanRenderer::stopDisparityStream() {
+    vulkanCompute->stopDisparityStream();
 }
 
 void VulkanRenderer::vulkanComputeShaders() {
@@ -559,9 +562,9 @@ void VulkanRenderer::vulkanComputeShaders() {
     //int width = 1282, height = 1110;
     //int width = 1280, height = 720;
     //int width = 427, height = 370;
-    //int width = 640, height = 480;
+    int width = 640, height = 480;
     //int width = 450, height = 375;
-    int width = 256, height = 256;
+    //int width = 256, height = 256;
 
     int imageSize = (width * height);
 
@@ -604,5 +607,7 @@ void VulkanRenderer::vulkanComputeShaders() {
     vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[2]);
 
 }
+
+
 
 

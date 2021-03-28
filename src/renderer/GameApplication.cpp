@@ -60,10 +60,13 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
     }
 
 
-    // delete objects sequence
     if (key == GLFW_KEY_ENTER && action == GLFW_PRESS) {
         vulkanRenderer.startDisparityStream();
+        vulkanRenderer.loadComputeData();
+    }
 
+    if (key == GLFW_KEY_H && action == GLFW_PRESS) {
+        vulkanRenderer.stopDisparityStream();
     }
 
     if (key == GLFW_KEY_UP) {

@@ -18,6 +18,11 @@
 #include <mqueue.h>
 #include <sys/mman.h>
 #include "../include/structs.h"
+#include "RealsenseStreamer.h"
+#include <sys/ioctl.h>
+#include <array>
+#include <iostream>
+#include <opencv2/opencv.hpp>
 
 class ThreadSpawner {
 
@@ -48,10 +53,6 @@ private:
 
     void childProcess();
 
-
-
-
-
     void xioctl(int fh, int request, void *arg);
 
     int setupAndRunVideoStream();
@@ -66,6 +67,10 @@ private:
     [[nodiscard]] ArSharedMemory *attachMemory() const;
 
     static void detachMemory(ArSharedMemory *memP);
+
+    void realsenseVideoStream();
+
+    void setChildProcessStatus(bool status);
 };
 
 
