@@ -561,9 +561,9 @@ void VulkanRenderer::vulkanComputeShaders() {
     //int width = 1282, height = 1110;
     //int width = 1280, height = 720;
     //int width = 427, height = 370;
-    int width = 640, height = 480;
+    //int width = 640, height = 480;
     //int width = 450, height = 375;
-    //int width = 256, height = 256;
+    int width = 256, height = 256;
 
     int imageSize = (width * height);
 
@@ -596,7 +596,8 @@ void VulkanRenderer::vulkanComputeShaders() {
     img.data = pixels;
     cv::equalizeHist(img, img);
     cv::imshow("Disparity image", img);
-    cv::imwrite("../output.png", img);
+    //cv::imwrite("../textures/Aloe/output.png", img);
+
 
     //printf("distance: %f\n", (0.035 * 0.00304) / (img.at<uchar>(128, 128) * 0.00000112));
 
