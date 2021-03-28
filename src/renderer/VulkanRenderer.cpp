@@ -577,10 +577,11 @@ void VulkanRenderer::vulkanComputeShaders() {
     auto *pixels = new stbi_uc[imageSize];
     auto original = pixels;
 
-
     int pixMax = 64, pixMin = 0;
     for (int i = 0; i < imageSize; ++i) {
         *pixels = pmappedMemory->x;
+        if (*pixels == 127)
+            *pixels = 0;
 
         // Normalize values between 255 - 0
         //double slope = 1.0 * (255 - 0) / (pixMax - pixMin);
@@ -596,7 +597,11 @@ void VulkanRenderer::vulkanComputeShaders() {
     cv::Mat img(height, width, CV_8UC1);
     img.data = pixels;
     cv::equalizeHist(img, img);
-    cv::imshow("Disparity image", img);
+    cv::Mat bwImg = img;
+    cv::imshow("BW Disparity image", bwImg);
+    cv::applyColorMap(img, img, cv::COLORMAP_JET);
+
+    cv::imshow("Jet Disparity image", img);
     //cv::imwrite("../textures/Aloe/output.png", img);
 
 

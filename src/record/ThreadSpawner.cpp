@@ -138,8 +138,8 @@ void ThreadSpawner::realsenseVideoStream() {
             cv::Mat ir_left = realsenseStreamer.getImage(realsenseStreamer.IR_IMAGE_LEFT);
 
             // Copy data to shared memory
-            cv::imshow("ir_right", ir_right);
-            cv::imshow("ir_left", ir_left);
+            //cv::imshow("ir_right", ir_right);
+            //cv::imshow("ir_left", ir_left);
 
             // Attach
             ArSharedMemory *memP = attachMemory();
