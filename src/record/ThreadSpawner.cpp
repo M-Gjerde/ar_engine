@@ -132,7 +132,6 @@ void ThreadSpawner::realsenseVideoStream() {
         //cv::namedWindow("depth", cv::WINDOW_AUTOSIZE);
 
         while (realsenseStreamer.streaming()) {
-
             // Retrieve depth images
             cv::Mat ir_right = realsenseStreamer.getImage(realsenseStreamer.IR_IMAGE_RIGHT);
             cv::Mat ir_left = realsenseStreamer.getImage(realsenseStreamer.IR_IMAGE_LEFT);
@@ -444,7 +443,11 @@ void ThreadSpawner::waitForExistence() const {
 
     while (!memP->isRunning) {
         auto endTime = (double) (clock() - Start) / CLOCKS_PER_SEC * 1000;
-        if (endTime > timeOut_ms) throw std::runtime_error("Failed to start camera process within reasonable time\n");
+        if (endTime > timeOut_ms) {
+            printf("Camera child process is not running correctly\n"); // TODO Notify user instead of printing to console
+            throw std::runtime_error("Camera child process not running\n");
+            break;
+        }
 
     }
 

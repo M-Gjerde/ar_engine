@@ -40,7 +40,7 @@ int VulkanRenderer::init(GLFWwindow *newWindow) {
         printf("Initiated compute pipeline\n\n");
 
     } catch (std::runtime_error &err) {
-        printf("Error: %s\n", err.what());
+        std::cerr << err.what() << std::endl;
         return -1;
     }
     return 0;
@@ -506,7 +506,7 @@ void VulkanRenderer::initComputePipeline() {
 void VulkanRenderer::loadComputeData() {
     //cv::namedWindow("window", cv::WINDOW_FREERATIO);
     //cv::namedWindow("window2", cv::WINDOW_FREERATIO);
-    cv::namedWindow("Disparity image", cv::WINDOW_FREERATIO);
+    //cv::namedWindow("Disparity image", cv::WINDOW_FREERATIO);
 
     while (true){
         vulkanCompute->loadComputeData(arCompute, buffer);
@@ -556,7 +556,7 @@ void VulkanRenderer::vulkanComputeShaders() {
     }
     auto stop = std::chrono::high_resolution_clock::now();
     auto endTime = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-    printf("Queue submit Time taken: %ld ms\n", endTime.count() / 1000);
+    //printf("Queue submit Time taken: %ld ms\n", endTime.count() / 1000);
 
     // --- Retrieve data from compute pipeline ---
     //int width = 1282, height = 1110;
@@ -580,7 +580,7 @@ void VulkanRenderer::vulkanComputeShaders() {
     int pixMax = 64, pixMin = 0;
     for (int i = 0; i < imageSize; ++i) {
         *pixels = pmappedMemory->x;
-        if (*pixels == 127)
+        if (*pixels > 125)
             *pixels = 0;
 
         // Normalize values between 255 - 0
@@ -594,22 +594,49 @@ void VulkanRenderer::vulkanComputeShaders() {
     }
     pixels = original;
 
+
     cv::Mat img(height, width, CV_8UC1);
     img.data = pixels;
-    cv::equalizeHist(img, img);
     cv::Mat bwImg = img;
-    cv::imshow("BW Disparity image", bwImg);
-    cv::applyColorMap(img, img, cv::COLORMAP_JET);
 
-    cv::imshow("Jet Disparity image", img);
+    cv::medianBlur(img, img, 9);
+
+    double focalLength = 1.93;
+    double baseline = 49.939;
+    double pixelSize = 0.003;
+    double disparity = (double) img.at<uchar>(240, 320);
+    double distance = (focalLength * baseline) / (disparity * pixelSize);
+    printf("distance: %f\n", distance);
+
+    cv::equalizeHist(img, img);
+
+    cv:: circle(bwImg,
+                cv::Point(320, 240),
+                5,
+                cv::Scalar( 255, 255, 255 ),
+                cv::FILLED,
+                cv::LINE_8 );
+
+    cv::imshow("BW Disparity image", bwImg);
+    cv::Mat jetmapImage;
+    cv::applyColorMap(img, jetmapImage, cv::COLORMAP_JET);
+
+    cv:: circle(jetmapImage,
+                cv::Point(320, 240),
+                2,
+                cv::Scalar( 255, 255, 255 ),
+                cv::FILLED,
+                cv::LINE_8 );
+
+    cv::imshow("Jet Disparity image", jetmapImage);
     //cv::imwrite("../textures/Aloe/output.png", img);
 
 
-    //printf("distance: %f\n", (0.035 * 0.00304) / (img.at<uchar>(128, 128) * 0.00000112));
+    vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[2]);
 
+    delete[](pixels);
     //stbi_write_png("../stbpng.png", width, height, 1, pixels, width * 1);
 
-    vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[2]);
 
 }
 

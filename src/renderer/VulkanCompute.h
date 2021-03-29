@@ -37,7 +37,7 @@ private:
     ArPipeline computePipeline{};
 
     ThreadSpawner threadSpawner;
-
+    ArSharedMemory * memP;
 
 };
 

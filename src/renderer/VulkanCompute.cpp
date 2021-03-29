@@ -169,6 +169,9 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     if (result != VK_SUCCESS)
         throw std::runtime_error("Failed to end command buffers");
 
+    // If Vulkan setup finished retrieve pointer to memory for camera data IPC.
+    memP = threadSpawner.getVideoMemoryPointer();
+
     ArCompute arCompute;
     arCompute.commandBuffer = commandBuffer;
     arCompute.descriptor = arDescriptor;
@@ -243,8 +246,6 @@ void VulkanCompute::loadImagePreviewData(ArCompute arCompute, Buffer *pBuffer) c
 
 void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
 
-    ArSharedMemory *memP = threadSpawner.getVideoMemoryPointer();
-
 
     //int imageSize = memP->imgLen1 / 2;
     int imageSize = 640 * 480;
@@ -266,12 +267,13 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
     img1.data = memPixelOne;
     img2.data = memPixelTwo;
 
-    for (int i = 0; i < imageSize; ++i) {
 
+    for (int i = 0; i < imageSize; ++i) {
+/*
         int x = i % width;
         int y = i / width;
 
-        /* OLD stuff dont know how it works lol..
+        OLD stuff dont know how it works lol..
         if (x >= 512 && x < 768 && y >= 232 && y < 488){
             imgOnePixel->x = *memPixelOne;
             imgTwoPixel->x = *memPixelTwo;
@@ -283,19 +285,18 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
 
         imgOnePixel->x = *memPixelOne;
         imgTwoPixel->x = *memPixelTwo;
-        //img1.at<uchar>(x, y) = imgOnePixel->x;
-        //img2.at<uchar>(x, y) = imgTwoPixel->x;
+
         imgTwoPixel++;
         imgOnePixel++;
-
         memPixelOne++;
         memPixelTwo++;
     }
+
     imgOnePixel = origOne;
     imgTwoPixel = origTwo;
 
-    //cv::imshow("window", img1);
-    //cv::imshow("window2", img2);
+    cv::imshow("left", img1);
+    cv::imshow("right", img2);
 
     void *data;
     vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[0], 0, imageSize * sizeof(glm::vec4), 0,
@@ -311,6 +312,9 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
     memcpy(data, imgTwoPixel, imageSize * sizeof(glm::vec4));
     vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[1]);
 
+    // Cleanup
+    delete[](imgOnePixel);
+    delete[](imgTwoPixel);
 
 // TODO RESEARCH DEVICE LOCAL GPU MEMORY
 /*
@@ -342,6 +346,6 @@ void VulkanCompute::stopDisparityStream() {
 
 void VulkanCompute::startDisparityStream() {
     threadSpawner.startChildProcess();
-    threadSpawner.waitForExistence();
+    //threadSpawner.waitForExistence();
 
 }

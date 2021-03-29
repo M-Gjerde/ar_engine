@@ -27,20 +27,24 @@ void main()
     float kernelSize = 25;
     float minAverage = 255;
     float pixelDisparity = 0;
-    int disparityLevel = 64;
+    uint disparityLevel = 128;
     float readPosLeft = 0, readPosRight = 0;
 
     int lowLimit = 2, highLimit = 3;
     int stride = 640;
 
-
+    // If we are closing in on last columns then decrease disparity level.
+    uint col = index % stride;
+    if (col >= 512){
+        disparityLevel = disparityLevel - (col - 512);
+    }
     // Disparity level. Match this pixel
-    for (int d = 5; d < disparityLevel; ++d){
+    for (int d = lowLimit; d < disparityLevel; ++d){
         // kernel
         for (int row = -stride * lowLimit; row < stride * highLimit; row+=stride){
             for (int col = -lowLimit; col < highLimit; ++col){
-                readPosRight = imgOne.imgData[index + row + d + col].x;
-                readPosLeft = imgTwo.imgData[index + row + col].x;
+                readPosRight = imgTwo.imgData[index + row + col].x;
+                readPosLeft = imgOne.imgData[index + row +d  + col].x;
 
                 sum += abs(readPosRight - readPosLeft);
             }
