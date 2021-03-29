@@ -53,7 +53,8 @@ add_library(VulkanRenderer
         src/renderer/VulkanCompute.cpp
         src/renderer/VulkanCompute.h
         src/objects/BufferObject.cpp
-        src/objects/BufferObject.h)
+        src/objects/BufferObject.h
+        src/include/helper_functions.h)
 
 target_link_libraries(VulkanRenderer
         vulkan
@@ -61,7 +62,7 @@ target_link_libraries(VulkanRenderer
         videoStream
         ${OpenCV_LIBS})
 
-add_executable(engine main.cpp external/tinyobj/tiny_obj_loader.h)
+add_executable(engine main.cpp external/tinyobj/tiny_obj_loader.h )
 
 target_link_libraries(engine
         glfw ${GLFW_LIBRARIES}

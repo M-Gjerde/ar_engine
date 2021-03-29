@@ -12,6 +12,10 @@
 #include "../pipeline/MeshModel.h"
 #include "../include/stbi_image_write.h"
 #include "opencv2/opencv.hpp"
+#include "../include/helper_functions.h"
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/qvm/mat_operations.hpp>
+#include <boost/numeric/ublas/io.hpp>
 
 VulkanRenderer::VulkanRenderer() = default;
 
@@ -105,6 +109,8 @@ void VulkanRenderer::draw() {
 
     // TODO check if this should be done different
     updateBuffer(imageIndex);
+    if (updateDisparity)
+        updateDisparityData();
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -472,7 +478,6 @@ void VulkanRenderer::loadTypeTwoObject() {
     meshModel.attachDescriptors(&arDescriptor, descriptorInfo, descriptors, buffer);
 
 
-
     ArPipeline arPipeline{};
     arPipeline.device = arEngine.mainDevice.device;
     arPipeline.swapchainImageFormat = arEngine.swapchainFormat;
@@ -503,18 +508,18 @@ void VulkanRenderer::initComputePipeline() {
     vkResetFences(arEngine.mainDevice.device, 1, &computeFence);
 }
 
-void VulkanRenderer::loadComputeData() {
+void VulkanRenderer::updateDisparityData() {
     //cv::namedWindow("window", cv::WINDOW_FREERATIO);
     //cv::namedWindow("window2", cv::WINDOW_FREERATIO);
     //cv::namedWindow("Disparity image", cv::WINDOW_FREERATIO);
 
-    while (true){
-        vulkanCompute->loadComputeData(arCompute, buffer);
-        vulkanComputeShaders();
-        if (cv::waitKey(30) == 27) break;
-
+    vulkanCompute->loadComputeData(arCompute, buffer);
+    vulkanComputeShaders();
+    if (cv::waitKey(30) == 27) {
+        updateDisparity = false;
+        cv::destroyAllWindows();
     }
-    cv::destroyAllWindows();
+
     /*
     vulkanCompute->loadComputeData(arCompute, buffer);
     vulkanCompute->loadImagePreviewData(arCompute, buffer);
@@ -525,10 +530,11 @@ void VulkanRenderer::loadComputeData() {
 
 void VulkanRenderer::startDisparityStream() {
     vulkanCompute->startDisparityStream();
+    updateDisparity = true;
 }
 
 void VulkanRenderer::stopDisparityStream() {
-    vulkanCompute->stopDisparityStream();
+    updateDisparityData();
 }
 
 void VulkanRenderer::vulkanComputeShaders() {
@@ -556,7 +562,7 @@ void VulkanRenderer::vulkanComputeShaders() {
     }
     auto stop = std::chrono::high_resolution_clock::now();
     auto endTime = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-    //printf("Queue submit Time taken: %ld ms\n", endTime.count() / 1000);
+    printf("Queue submit Time taken: %ld ms\n", endTime.count() / 1000);
 
     // --- Retrieve data from compute pipeline ---
     //int width = 1282, height = 1110;
@@ -599,7 +605,7 @@ void VulkanRenderer::vulkanComputeShaders() {
     img.data = pixels;
     cv::Mat bwImg = img;
 
-    cv::medianBlur(img, img, 9);
+    cv::medianBlur(img, img, 3);
 
     double focalLength = 1.93;
     double baseline = 49.939;
@@ -608,28 +614,69 @@ void VulkanRenderer::vulkanComputeShaders() {
     double distance = (focalLength * baseline) / (disparity * pixelSize);
     printf("distance: %f\n", distance);
 
+    // -- CALCULATE POINT CLOUD
+/*
+    double fx = 331.8015, fy = 363.9482;
+    double cx = 314.2519, cy = 247.4047;
+
+    boost::numeric::ublas::matrix<double> K(4, 4);
+    K(0, 0) = 1 / fx;
+    K(0, 2) = (-cx*fx)/ (fx*fy);
+    K(1, 1) = 1 / fy;
+    K(1, 2) = -cy / fy;
+    K(2, 2) = 1;
+    K(3, 3) = 1;
+
+    boost::numeric::ublas::vector<double> world(4);
+    std::vector<boost::numeric::ublas::vector<double>> points(imageSize);
+
+    FILE *fptr;
+    fptr = fopen("3d_points.txt","w");
+    for (int i = 0; i < img.rows; ++i) {
+        for (int j = 0; j < img.cols; ++j) {
+            disparity = (double) img.at<uchar>(i, j);
+            boost::numeric::ublas::vector<double> u(4);
+            u(0) = i;
+            u(1) = j;
+            u(2) = 1;
+            u(3) = 1 / disparity;
+            world = disparity * boost::numeric::ublas::prod(K, u);
+
+            fscanf(fptr,"%lf %lf %lf %lf", &world(0), &world(1), &world(2), &world(3));
+
+            points.push_back(world);
+        }
+    }
+
+    fclose(fptr);
+
+*/
+
+    // -- VISUALIZE
     cv::equalizeHist(img, img);
 
-    cv:: circle(bwImg,
-                cv::Point(320, 240),
-                5,
-                cv::Scalar( 255, 255, 255 ),
-                cv::FILLED,
-                cv::LINE_8 );
+    cv::circle(bwImg,
+               cv::Point(320, 240),
+               5,
+               cv::Scalar(255, 255, 255),
+               cv::FILLED,
+               cv::LINE_8);
 
     cv::imshow("BW Disparity image", bwImg);
     cv::Mat jetmapImage;
     cv::applyColorMap(img, jetmapImage, cv::COLORMAP_JET);
 
-    cv:: circle(jetmapImage,
-                cv::Point(320, 240),
-                2,
-                cv::Scalar( 255, 255, 255 ),
-                cv::FILLED,
-                cv::LINE_8 );
+    cv::circle(jetmapImage,
+               cv::Point(320, 240),
+               2,
+               cv::Scalar(255, 255, 255),
+               cv::FILLED,
+               cv::LINE_8);
 
     cv::imshow("Jet Disparity image", jetmapImage);
     //cv::imwrite("../textures/Aloe/output.png", img);
+
+
 
 
     vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[2]);

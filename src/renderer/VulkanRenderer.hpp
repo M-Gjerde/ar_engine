@@ -54,7 +54,7 @@ public:
 
     void deleteLastObject();
 
-    void loadComputeData();
+    void updateDisparityData();
 
     void startDisparityStream();
     void stopDisparityStream();
@@ -76,6 +76,7 @@ private:
     VulkanCompute *vulkanCompute{};
     ArCompute arCompute;
     VkFence computeFence{};
+    bool updateDisparity = false;
 
     // Buffer
     Buffer *buffer{};

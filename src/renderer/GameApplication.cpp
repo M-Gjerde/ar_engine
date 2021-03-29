@@ -56,17 +56,18 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
     if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
         //vulkanRenderer.loadTypeOneObject();
         //vulkanRenderer.updateScene();
-        vulkanRenderer.loadComputeData();
+        vulkanRenderer.startDisparityStream();
+        vulkanRenderer.updateDisparityData();
+
     }
 
 
     if (key == GLFW_KEY_ENTER && action == GLFW_PRESS) {
-        vulkanRenderer.startDisparityStream();
-        vulkanRenderer.loadComputeData();
+        vulkanRenderer.stopDisparityStream();
+
     }
 
     if (key == GLFW_KEY_H && action == GLFW_PRESS) {
-        vulkanRenderer.stopDisparityStream();
     }
 
     if (key == GLFW_KEY_UP) {

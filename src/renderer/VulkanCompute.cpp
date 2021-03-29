@@ -264,9 +264,12 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
     cv::Mat img1(height, width, CV_8UC1);
     cv::Mat img2(height, width, CV_8UC1);
 
+    /*
     img1.data = memPixelOne;
     img2.data = memPixelTwo;
-
+    cv::imshow("left", img1);
+    cv::imshow("right", img2);
+    */
 
     for (int i = 0; i < imageSize; ++i) {
 /*
@@ -295,8 +298,7 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
     imgOnePixel = origOne;
     imgTwoPixel = origTwo;
 
-    cv::imshow("left", img1);
-    cv::imshow("right", img2);
+
 
     void *data;
     vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[0], 0, imageSize * sizeof(glm::vec4), 0,
