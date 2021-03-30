@@ -170,6 +170,7 @@ void ThreadSpawner::realsenseVideoStream() {
     }
 
     cv::destroyAllWindows();
+    stopChildProcess();
 
 
 }

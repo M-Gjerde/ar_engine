@@ -586,8 +586,6 @@ void VulkanRenderer::vulkanComputeShaders() {
     int pixMax = 64, pixMin = 0;
     for (int i = 0; i < imageSize; ++i) {
         *pixels = pmappedMemory->x;
-        if (*pixels > 125)
-            *pixels = 0;
 
         // Normalize values between 255 - 0
         //double slope = 1.0 * (255 - 0) / (pixMax - pixMin);
@@ -603,9 +601,9 @@ void VulkanRenderer::vulkanComputeShaders() {
 
     cv::Mat img(height, width, CV_8UC1);
     img.data = pixels;
-    cv::Mat bwImg = img;
+    //cv::imwrite("../output.png", img);
 
-    cv::medianBlur(img, img, 3);
+    cv::Mat bwImg = img;
 
     double focalLength = 1.93;
     double baseline = 49.939;
@@ -630,7 +628,7 @@ void VulkanRenderer::vulkanComputeShaders() {
     boost::numeric::ublas::vector<double> world(4);
 
     std::ofstream outdata; // outdata is like cin
-    outdata.open("/home/magnus/CLionProjects/bachelor_project/pcl_data/3d_points.txt", std::ios::trunc); // opens the file
+    outdata.open("/home/magnus/CLionProjects/bachelor_project/pcl_data/3d_points.pcd", std::ios::trunc); // opens the file
     writePcdHeader(&outdata);
     boost::numeric::ublas::vector<double> u(4);
 
@@ -658,6 +656,7 @@ void VulkanRenderer::vulkanComputeShaders() {
                cv::Scalar(255, 255, 255),
                cv::FILLED,
                cv::LINE_8);
+
 
     cv::imshow("BW Disparity image", bwImg);
     cv::Mat jetmapImage;

@@ -24,19 +24,19 @@ void main()
     uint index = gl_GlobalInvocationID.x;
 
     float sum = 0;
-    float kernelSize = 25;
+    float kernelSize = 49;
     float minAverage = 255;
     float pixelDisparity = 0;
-    uint disparityLevel = 128;
+    uint disparityLevel = 256;
     float readPosLeft = 0, readPosRight = 0;
 
-    int lowLimit = 2, highLimit = 3;
+    int lowLimit = 3, highLimit = 4;
     int stride = 640;
 
     // If we are closing in on last columns then decrease disparity level.
     uint col = index % stride;
-    if (col >= 512){
-        disparityLevel = disparityLevel - (col - 512);
+    if (col >= 384){
+        disparityLevel = disparityLevel - (col - 384);
     }
     // Disparity level. Match this pixel
     for (int d = lowLimit; d < disparityLevel; ++d){
