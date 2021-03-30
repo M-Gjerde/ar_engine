@@ -615,7 +615,7 @@ void VulkanRenderer::vulkanComputeShaders() {
     printf("distance: %f\n", distance);
 
     // -- CALCULATE POINT CLOUD
-/*
+
     double fx = 331.8015, fy = 363.9482;
     double cx = 314.2519, cy = 247.4047;
 
@@ -628,29 +628,26 @@ void VulkanRenderer::vulkanComputeShaders() {
     K(3, 3) = 1;
 
     boost::numeric::ublas::vector<double> world(4);
-    std::vector<boost::numeric::ublas::vector<double>> points(imageSize);
 
-    FILE *fptr;
-    fptr = fopen("3d_points.txt","w");
+    std::ofstream outdata; // outdata is like cin
+    outdata.open("/home/magnus/CLionProjects/bachelor_project/pcl_data/3d_points.txt", std::ios::trunc); // opens the file
+    writePcdHeader(&outdata);
+    boost::numeric::ublas::vector<double> u(4);
+
     for (int i = 0; i < img.rows; ++i) {
         for (int j = 0; j < img.cols; ++j) {
             disparity = (double) img.at<uchar>(i, j);
-            boost::numeric::ublas::vector<double> u(4);
+            double dist = (focalLength * baseline) / (disparity * pixelSize);
             u(0) = i;
             u(1) = j;
             u(2) = 1;
-            u(3) = 1 / disparity;
-            world = disparity * boost::numeric::ublas::prod(K, u);
-
-            fscanf(fptr,"%lf %lf %lf %lf", &world(0), &world(1), &world(2), &world(3));
-
-            points.push_back(world);
+            u(3) = 1 / dist;
+            world = (double) 1 / 1000 * dist * boost::numeric::ublas::prod(K, u);
+            outdata << world(0) << " " << world(1) << " " << world(2) << std::endl;
         }
     }
 
-    fclose(fptr);
-
-*/
+    outdata.close();
 
     // -- VISUALIZE
     cv::equalizeHist(img, img);
