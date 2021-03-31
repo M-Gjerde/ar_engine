@@ -41,6 +41,47 @@ void writePcdHeader(std::ofstream *file){
 }
 
 
+void createPointCloudWriteToPCD(cv::Mat img, std::string fileName){
+
+    double focalLength = 1.93;
+    double baseline = 49.939;
+    double pixelSize = 0.003;
+
+    double fx = 331.8015, fy = 363.9482;
+    double cx = 314.2519, cy = 247.4047;
+
+    boost::numeric::ublas::matrix<double> K(4, 4);
+    K(0, 0) = 1 / fx;
+    K(0, 2) = (-cx*fx)/ (fx*fy);
+    K(1, 1) = 1 / fy;
+    K(1, 2) = -cy / fy;
+    K(2, 2) = 1;
+    K(3, 3) = 1;
+
+    boost::numeric::ublas::vector<double> world(4);
+
+    std::ofstream outdata; // outdata is like cin
+    outdata.open(fileName, std::ios::trunc); // opens the file
+    writePcdHeader(&outdata);
+    boost::numeric::ublas::vector<double> u(4);
+
+    double pixelValue, disparity;
+    for (int i = 0; i < img.rows; ++i) {
+        for (int j = 0; j < img.cols; ++j) {
+            pixelValue = (double) img.at<uchar>(i, j);
+            disparity = (focalLength * baseline) / (pixelValue * pixelSize);
+            u(0) = i;
+            u(1) = j;
+            u(2) = 1;
+            u(3) = 1 / disparity;
+            world = (double) 1 / 1000 * disparity * boost::numeric::ublas::prod(K, u);
+            outdata << world(0) << " " << world(1) << " " << world(2) << std::endl;
+        }
+    }
+
+    outdata.close();
+}
+
 template<class T>
 //#define T double /// for debug
 boost::numeric::ublas::matrix<T>

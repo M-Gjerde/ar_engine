@@ -597,81 +597,28 @@ void VulkanRenderer::vulkanComputeShaders() {
         pmappedMemory++;
     }
     pixels = original;
-
-
     cv::Mat img(height, width, CV_8UC1);
     img.data = pixels;
+
     //cv::imwrite("../output.png", img);
 
-    cv::Mat bwImg = img;
-
-    double focalLength = 1.93;
-    double baseline = 49.939;
-    double pixelSize = 0.003;
-    double disparity = (double) img.at<uchar>(240, 320);
-    double distance = (focalLength * baseline) / (disparity * pixelSize);
-    printf("distance: %f\n", distance);
-
     // -- CALCULATE POINT CLOUD
+    //createPointCloudWriteToPCD(img, "/home/magnus/CLionProjects/bachelor_project/pcl_data/3d_points.pcd");
 
-    double fx = 331.8015, fy = 363.9482;
-    double cx = 314.2519, cy = 247.4047;
-
-    boost::numeric::ublas::matrix<double> K(4, 4);
-    K(0, 0) = 1 / fx;
-    K(0, 2) = (-cx*fx)/ (fx*fy);
-    K(1, 1) = 1 / fy;
-    K(1, 2) = -cy / fy;
-    K(2, 2) = 1;
-    K(3, 3) = 1;
-
-    boost::numeric::ublas::vector<double> world(4);
-
-    std::ofstream outdata; // outdata is like cin
-    outdata.open("/home/magnus/CLionProjects/bachelor_project/pcl_data/3d_points.pcd", std::ios::trunc); // opens the file
-    writePcdHeader(&outdata);
-    boost::numeric::ublas::vector<double> u(4);
-
-    for (int i = 0; i < img.rows; ++i) {
-        for (int j = 0; j < img.cols; ++j) {
-            disparity = (double) img.at<uchar>(i, j);
-            double dist = (focalLength * baseline) / (disparity * pixelSize);
-            u(0) = i;
-            u(1) = j;
-            u(2) = 1;
-            u(3) = 1 / dist;
-            world = (double) 1 / 1000 * dist * boost::numeric::ublas::prod(K, u);
-            outdata << world(0) << " " << world(1) << " " << world(2) << std::endl;
-        }
-    }
-
-    outdata.close();
 
     // -- VISUALIZE
-    cv::equalizeHist(img, img);
-
-    cv::circle(bwImg,
-               cv::Point(320, 240),
-               5,
-               cv::Scalar(255, 255, 255),
-               cv::FILLED,
-               cv::LINE_8);
-
-
-    cv::imshow("BW Disparity image", bwImg);
+    cv::Mat bwImg = img;
     cv::Mat jetmapImage;
+    cv::equalizeHist(img, img);
+    cv::medianBlur(img, img, 3);
     cv::applyColorMap(img, jetmapImage, cv::COLORMAP_JET);
 
-    cv::circle(jetmapImage,
-               cv::Point(320, 240),
-               2,
-               cv::Scalar(255, 255, 255),
-               cv::FILLED,
-               cv::LINE_8);
+    //cv::circle(jetmapImage,cv::Point(320, 240),2,cv::Scalar(255, 255, 255),cv::FILLED,cv::LINE_8);
+    //cv::circle(bwImg,cv::Point(320, 240),5,cv::Scalar(255, 255, 255),cv::FILLED,cv::LINE_8);
 
     cv::imshow("Jet Disparity image", jetmapImage);
+    cv::imshow("BW Disparity image", bwImg);
     //cv::imwrite("../textures/Aloe/output.png", img);
-
 
 
 

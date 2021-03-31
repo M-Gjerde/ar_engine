@@ -170,9 +170,6 @@ void ThreadSpawner::realsenseVideoStream() {
     }
 
     cv::destroyAllWindows();
-    stopChildProcess();
-
-
 }
 
 Status *ThreadSpawner::getStatusMemoryPointer() const {
