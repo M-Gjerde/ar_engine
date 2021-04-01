@@ -611,7 +611,7 @@ void VulkanRenderer::vulkanComputeShaders() {
     cv::Mat bwImg = img;
     cv::Mat jetmapImage;
     cv::equalizeHist(img, img);
-    cv::medianBlur(img, img, 3);
+    cv::medianBlur(img, img, 7);
     cv::applyColorMap(img, jetmapImage, cv::COLORMAP_JET);
 
     //cv::circle(jetmapImage,cv::Point(320, 240),2,cv::Scalar(255, 255, 255),cv::FILLED,cv::LINE_8);

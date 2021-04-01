@@ -116,8 +116,8 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
 
     computePipeline.device = arEngine.mainDevice.device;
     ArShadersPath arShaderPath;
-    arShaderPath.computeShader = "../shaders/experimental/computeShader";
-    //arShaderPath.computeShader = "../shaders/experimental/computeDisparity";
+    //arShaderPath.computeShader = "../shaders/experimental/computeShader";
+    arShaderPath.computeShader = "../shaders/experimental/computeDisparity";
     pipeline.computePipeline(arDescriptor, arShaderPath, &computePipeline);
 
 
@@ -166,7 +166,7 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     The number of workgroups is specified in the arguments.
     If you are already familiar with compute shaders from OpenGL, this should be nothing new to you.
     */
-    vkCmdDispatch(commandBuffer, (uint32_t) 4800, (uint32_t) 1, 1);
+    vkCmdDispatch(commandBuffer, (uint32_t) 1200, (uint32_t) 1, 1);
 
     result = vkEndCommandBuffer(commandBuffer); // end recording commands.
     if (result != VK_SUCCESS)
