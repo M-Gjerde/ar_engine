@@ -270,7 +270,7 @@ void Pipeline::cleanUp(ArPipeline arPipeline) const {
 void Pipeline::computePipeline(ArDescriptor arDescriptor, const ArShadersPath& shaderPath,
                                ArPipeline *pipeline) {
 
-    auto vertShaderCode = readFile("../shaders/experimental/computeShader.spv");
+    auto vertShaderCode = readFile(shaderPath.computeShader + ".spv");
 
     VkShaderModule vertShaderModule = createShaderModule(pipeline->device, vertShaderCode);
     //SHADER SETUP

@@ -17,6 +17,7 @@
 struct ArShadersPath {
     std::string vertexShader;
     std::string fragmentShader;
+    std::string computeShader;
 };
 
 // ArModel passes queue and cmd pool from arEngine and used to store buffers and memory

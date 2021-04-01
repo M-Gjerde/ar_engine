@@ -49,6 +49,7 @@ float forward = 5, right = 0, rotation = 0;
 void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         std::cout << "exiting..." << std::endl;
+        vulkanRenderer.stopDisparityStream();
         glfwSetWindowShouldClose(window, true);
     }
 

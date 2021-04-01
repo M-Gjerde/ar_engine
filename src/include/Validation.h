@@ -59,6 +59,8 @@ public:
             std::wcerr << "validation warning: " << pCallbackData->pMessage << std::endl;
         } else if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
             std::wcerr << "validation error: " << pCallbackData->pMessage << std::endl;
+        } else if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
+            std::cout << "validation INFO: " << pCallbackData->pMessage << std::endl;
         }
         return VK_FALSE;
     }

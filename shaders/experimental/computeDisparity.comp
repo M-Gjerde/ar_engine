@@ -1,6 +1,6 @@
 #version 450
 
-layout (local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
+layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
 struct Pixel {
     vec4 val;
@@ -26,10 +26,9 @@ void main()
     float sum = 0;
     float kernelSize = 49;
     float minAverage = 255;
+    float minSum = 21000;
     float pixelDisparity = 0;
     uint disparityLevel = 128;
-    float readPosLeft = 0, readPosRight = 0;
-
     int lowLimit = 3, highLimit = 4;
     int stride = 640;
 
@@ -40,28 +39,32 @@ void main()
     if (col >= 512){
         disparityLevel = disparityLevel - (col - 512);
     }
-    // Disparity level. Match this pixel
+
+    float readPosLeft = 0, readPosRight = 0;
+    float sumLeft = 0;
+    float sumRight = 0;
+    // Read left image pixel
+    for (int row = -stride * lowLimit; row < stride * highLimit; row+=stride){
+        for (int col = -lowLimit; col < highLimit; ++col){
+            readPosRight = imgTwo.imgData[index + row + col].x;
+            sumRight += readPosRight;
+        }
+    }
+
+    // Match this pixel to the right image
     for (int d = lowLimit; d < disparityLevel; ++d){
-        // kernel
+        sumLeft = 0;
         for (int row = -stride * lowLimit; row < stride * highLimit; row+=stride){
             for (int col = -lowLimit; col < highLimit; ++col){
-                readPosRight = imgTwo.imgData[index + row + col].x;
-                readPosLeft = imgOne.imgData[index + row +d  + col].x;
-
-                sum += abs(readPosRight - readPosLeft);
+                readPosLeft = imgOne.imgData[index + row + d  + col].x;
+                sumLeft += readPosLeft;
             }
         }
-
-        float average = sum / kernelSize;
-        if (average < minAverage){
-            minAverage = average;
+        sum = abs(sumRight - sumLeft);
+        if (sum < minSum){
+            minSum = sum;
             pixelDisparity = d;
-
         }
-        sum = 0;
     }
     imgOut.imgData[index].x = pixelDisparity;//.val.x = pixelDisparity;
-    pixelDisparity = 0;
-    minAverage = 255;// Reset min for avg
-
 }

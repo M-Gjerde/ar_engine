@@ -115,7 +115,10 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
 
 
     computePipeline.device = arEngine.mainDevice.device;
-    pipeline.computePipeline(arDescriptor, ArShadersPath(), &computePipeline);
+    ArShadersPath arShaderPath;
+    arShaderPath.computeShader = "../shaders/experimental/computeShader";
+    //arShaderPath.computeShader = "../shaders/experimental/computeDisparity";
+    pipeline.computePipeline(arDescriptor, arShaderPath, &computePipeline);
 
 
 

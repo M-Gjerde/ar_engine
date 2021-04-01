@@ -36,7 +36,6 @@ private:
 
     VkShaderModule createShaderModule(VkDevice device, const std::vector<char> &code);
 
-
 };
 
 

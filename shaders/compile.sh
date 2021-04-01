@@ -5,4 +5,5 @@ glslc ./lamp.vert -o lampVert.spv
 glslc ./lamp.frag -o lampFrag.spv
 
 glslc ./experimental/computeShader.comp -o ./experimental/computeShader.spv
+glslc ./experimental/computeDisparity.comp -o ./experimental/computeDisparity.spv
 glslc ./experimental/copyShader.comp -o ./experimental/copyShader.spv

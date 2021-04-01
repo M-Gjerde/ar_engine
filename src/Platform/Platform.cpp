@@ -30,7 +30,7 @@ void Platform::createInstance() {
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "AR_ENGINE";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_1;
+    appInfo.apiVersion = VK_API_VERSION_1_2;
 
     VkInstanceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -56,8 +56,8 @@ void Platform::createInstance() {
         createInfo.enabledLayerCount = 0;
         createInfo.pNext = nullptr;
     }
-
-    if (vkCreateInstance(&createInfo, nullptr, &arEngine.instance) != VK_SUCCESS)
+    VkResult result = vkCreateInstance(&createInfo, nullptr, &arEngine.instance);
+    if (result != VK_SUCCESS)
         throw std::runtime_error("failed to create instance!");
 
 
@@ -181,6 +181,7 @@ void Platform::createLogicalDevice() {
     }
     // Specify which extra additional device features we want to be able to use || not relevant for now
     //VkPhysicalDeviceFeatures deviceFeatures{};
+
 
     // Create Logical device
     VkDeviceCreateInfo createInfo{};

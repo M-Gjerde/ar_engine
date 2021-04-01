@@ -534,7 +534,7 @@ void VulkanRenderer::startDisparityStream() {
 }
 
 void VulkanRenderer::stopDisparityStream() {
-    updateDisparityData();
+    vulkanCompute->stopDisparityStream();
 }
 
 void VulkanRenderer::vulkanComputeShaders() {
@@ -600,6 +600,7 @@ void VulkanRenderer::vulkanComputeShaders() {
     cv::Mat img(height, width, CV_8UC1);
     img.data = pixels;
 
+    cv::imshow("Raw disparity", img);
     //cv::imwrite("../output.png", img);
 
     // -- CALCULATE POINT CLOUD
@@ -617,7 +618,7 @@ void VulkanRenderer::vulkanComputeShaders() {
     //cv::circle(bwImg,cv::Point(320, 240),5,cv::Scalar(255, 255, 255),cv::FILLED,cv::LINE_8);
 
     cv::imshow("Jet Disparity image", jetmapImage);
-    cv::imshow("BW Disparity image", bwImg);
+    //cv::imshow("BW Disparity image", bwImg);
     //cv::imwrite("../textures/Aloe/output.png", img);
 
 
