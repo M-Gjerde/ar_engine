@@ -537,6 +537,9 @@ void VulkanRenderer::stopDisparityStream() {
     vulkanCompute->stopDisparityStream();
 }
 
+
+int loop = 0;
+
 void VulkanRenderer::vulkanComputeShaders() {
 
 
@@ -604,8 +607,7 @@ void VulkanRenderer::vulkanComputeShaders() {
     //cv::imwrite("../output.png", img);
 
     // -- CALCULATE POINT CLOUD
-    //createPointCloudWriteToPCD(img, "/home/magnus/CLionProjects/bachelor_project/pcl_data/3d_points.pcd");
-
+    //createPointCloudWriteToPCD(img, "/home/magnus/CLionProjects/bachelor_project/pcl_data/3d_points"+std::to_string(loop)+".pcd");
 
     // -- VISUALIZE
     cv::Mat bwImg = img;
@@ -618,9 +620,13 @@ void VulkanRenderer::vulkanComputeShaders() {
     //cv::circle(bwImg,cv::Point(320, 240),5,cv::Scalar(255, 255, 255),cv::FILLED,cv::LINE_8);
 
     cv::imshow("Jet Disparity image", jetmapImage);
-    //cv::imshow("BW Disparity image", bwImg);
-    //cv::imwrite("../textures/Aloe/output.png", img);
+    cv::imshow("BW Disparity image", bwImg);
 
+    if (takePhoto) {
+        cv::imwrite("../disparity" + std::to_string(loop) + ".png", jetmapImage);
+        takePhoto = false;
+        loop++;
+    }
 
 
     vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[2]);

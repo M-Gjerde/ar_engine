@@ -59,6 +59,7 @@ public:
     void startDisparityStream();
     void stopDisparityStream();
 
+    bool takePhoto = false;
 
 private:
     // Vulkan components

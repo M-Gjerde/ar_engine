@@ -68,7 +68,8 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
 
     }
 
-    if (key == GLFW_KEY_H && action == GLFW_PRESS) {
+    if (key == GLFW_KEY_C && action == GLFW_PRESS) {
+        vulkanRenderer.takePhoto = true;
     }
 
     if (key == GLFW_KEY_UP) {
