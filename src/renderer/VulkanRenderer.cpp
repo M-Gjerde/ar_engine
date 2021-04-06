@@ -515,7 +515,8 @@ void VulkanRenderer::updateDisparityData() {
 
     vulkanCompute->loadComputeData(arCompute, buffer);
     vulkanComputeShaders();
-    if (cv::waitKey(30) == 27) {
+
+    if (cv::waitKey(1000) == 27) {
         updateDisparity = false;
         cv::destroyAllWindows();
     }

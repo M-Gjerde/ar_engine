@@ -1,4 +1,5 @@
 #version 450
+#extension GL_EXT_debug_printf : enable
 
 layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
@@ -21,12 +22,15 @@ layout(set = 1, binding = 0) buffer imageOut {
 
 void main()
 {
+
     uint index = gl_GlobalInvocationID.x;
-    if (!(index > (640 * 5)))
-    return;
+    if (!(index > (640 * 5))){
+        return;
+
+    }
     int stride = 640;
     uint disparityLevel = 128;
-
+    uint row = index / stride;
     // If we are closing in on last columns then decrease disparity level.
     // disp 128 then 512
     // disp 256 then 384
@@ -88,13 +92,16 @@ void main()
 
             // If we got identical minimizers then discard
             if (prevSum == sum)
-                pixelDisparity = 0;
+            pixelDisparity = 0;
             else
-                minIndex = d;
+            minIndex = d;
 
             prevSum = sum;
+
         }
     }
+
+
 
     // Determine a 10% threshold for the minimium value. If there are more than another minimizer below this threshold then discard value
     float threshold = (10 * disparities[minIndex] / 100) + disparities[minIndex];
@@ -105,6 +112,10 @@ void main()
             minimizers++;
         }
     }
+
+    if (row == 100 && col == 100){
+        debugPrintfEXT("Minimizers: %d\n", minimizers);
+}
     // If there are more than 2 minimziers then discard pixel
     if (minimizers > 2){
         imgOut.imgData[index].x = 0;

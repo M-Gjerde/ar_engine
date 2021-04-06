@@ -32,6 +32,7 @@ void main()
 
     int lowLimit = 2, highLimit = 3;
     int stride = 640;
+    float prevAvg = 0;
 
     // If we are closing in on last columns then decrease disparity level.
     // disp 128 then 512
@@ -54,9 +55,13 @@ void main()
 
         float average = sum / kernelSize;
         if (average < minAverage){
-            minAverage = average;
-            pixelDisparity = d;
+            if (!(prevAvg == minAverage))  // if no unique avgerage then discard
+            {
+                minAverage = average;
+                pixelDisparity = d;
 
+                prevAvg = minAverage;
+            }
         }
         sum = 0;
     }

@@ -37,6 +37,7 @@ void Platform::createInstance() {
     createInfo.pApplicationInfo = &appInfo;
 
 
+
     auto extensions = Validation::getRequiredExtensions();
 
     //Check instance extensions supported...
@@ -51,7 +52,22 @@ void Platform::createInstance() {
         createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
         createInfo.ppEnabledLayerNames = validationLayers.data();
         Validation::populateDebugMessengerCreateInfo(debugCreateInfo);
-        //createInfo.pNext = &debugCreateInfo;
+
+        // Enable shader Debug validation layers
+        VkValidationFeaturesEXT validationFeaturesExt{};
+        validationFeaturesExt.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
+        VkValidationFeatureEnableEXT enabled[] = { VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT };
+        VkValidationFeatureDisableEXT disabled[] = {
+                VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
+                VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT, VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT };
+
+        validationFeaturesExt.enabledValidationFeatureCount = 1;
+        validationFeaturesExt.pEnabledValidationFeatures = enabled;
+        validationFeaturesExt.disabledValidationFeatureCount = 4;
+        validationFeaturesExt.pDisabledValidationFeatures = disabled;
+        validationFeaturesExt.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+        createInfo.pNext = &validationFeaturesExt;
+
     } else {
         createInfo.enabledLayerCount = 0;
         createInfo.pNext = nullptr;
