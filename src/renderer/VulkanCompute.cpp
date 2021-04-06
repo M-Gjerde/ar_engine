@@ -116,8 +116,8 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
 
     computePipeline.device = arEngine.mainDevice.device;
     ArShadersPath arShaderPath;
-    arShaderPath.computeShader = "../shaders/experimental/computeShader";
-    //arShaderPath.computeShader = "../shaders/experimental/computeDisparity";
+    //arShaderPath.computeShader = "../shaders/experimental/computeShader";
+    arShaderPath.computeShader = "../shaders/experimental/computeDisparity";
     pipeline.computePipeline(arDescriptor, arShaderPath, &computePipeline);
 
 
@@ -246,7 +246,7 @@ void VulkanCompute::loadImagePreviewData(ArCompute arCompute, Buffer *pBuffer) c
 
 }
 
-
+int loopp = 0;
 void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
 
 
@@ -273,6 +273,12 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
     cv::imshow("left", img1);
     cv::imshow("right", img2);
 
+    if (takePhoto) {
+        cv::imwrite("../left" + std::to_string(loopp) + ".png", img1);
+        cv::imwrite("../right" + std::to_string(loopp) + ".png", img2);
+        takePhoto = false;
+        loopp++;
+    }
     cv::imwrite("../left.png", img1);
 
 

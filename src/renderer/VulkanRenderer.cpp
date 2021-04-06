@@ -603,6 +603,11 @@ void VulkanRenderer::vulkanComputeShaders() {
     cv::Mat img(height, width, CV_8UC1);
     img.data = pixels;
 
+    if (takePhoto) {
+        cv::imwrite("../home_disparity" + std::to_string(loop) + ".png", img);
+        vulkanCompute->takePhoto = true;
+    }
+
     cv::imshow("Raw disparity", img);
     //cv::imwrite("../output.png", img);
 
@@ -618,15 +623,17 @@ void VulkanRenderer::vulkanComputeShaders() {
 
     //cv::circle(jetmapImage,cv::Point(320, 240),2,cv::Scalar(255, 255, 255),cv::FILLED,cv::LINE_8);
     //cv::circle(bwImg,cv::Point(320, 240),5,cv::Scalar(255, 255, 255),cv::FILLED,cv::LINE_8);
+    if (takePhoto){
+        cv::imwrite("../home_disparity_jet" + std::to_string(loop) + ".png", jetmapImage);
+        loop++;
+        takePhoto = false;
+
+    }
 
     cv::imshow("Jet Disparity image", jetmapImage);
     cv::imshow("BW Disparity image", bwImg);
 
-    if (takePhoto) {
-        cv::imwrite("../disparity" + std::to_string(loop) + ".png", jetmapImage);
-        takePhoto = false;
-        loop++;
-    }
+
 
 
     vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[2]);

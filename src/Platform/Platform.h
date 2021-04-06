@@ -48,7 +48,7 @@ private:
 
     // - Extensions
     const std::vector<const char*> deviceExtensions = {
-            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };
 
     // Create functions

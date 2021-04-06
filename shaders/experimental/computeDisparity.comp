@@ -1,6 +1,6 @@
 #version 450
 
-layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+layout (local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
 struct Pixel {
     vec4 val;
@@ -23,7 +23,7 @@ void main()
 {
     uint index = gl_GlobalInvocationID.x;
     if (!(index > (640 * 5)))
-     return;
+    return;
     int stride = 640;
     uint disparityLevel = 128;
 
@@ -31,17 +31,23 @@ void main()
     // disp 128 then 512
     // disp 256 then 384
     uint col = index % stride;
+
     if (col <= disparityLevel){
         disparityLevel -= (disparityLevel - col);
     }
     float sum = 0;
-    float kernelSize = 25;
     float minAverage = 255;
     float minSum = 255;
     float pixelDisparity = 0;
+    float prevSum = 0;
 
-    int lowLimit = 2, highLimit = 3;
-    const int k = 5;
+    float disparities[128];
+    int foundDisparities = 0;
+    uint minIndex = 0;
+
+    float kernelSize = 361;
+    int lowLimit = 9, highLimit = 10;
+    const int k = 19;
     float matchKernel[k][k];
     // Read left image pixel
     int rowLoop = 0, colLoop = 0;
@@ -72,10 +78,41 @@ void main()
                 sum += abs(matchKernel[i][j] - rightImgKernel[i][j]);
             }
         }
-        if (sum < minSum){
+        sum = sum / kernelSize;
+        disparities[d] = sum;
+
+
+        if (sum <= minSum){
             minSum = sum;
             pixelDisparity = d;
+
+            // If we got identical minimizers then discard
+            if (prevSum == sum)
+                pixelDisparity = 0;
+            else
+                minIndex = d;
+
+            prevSum = sum;
         }
     }
-    imgOut.imgData[index].x = pixelDisparity;//.val.x = pixelDisparity;
+
+    // Determine a 10% threshold for the minimium value. If there are more than another minimizer below this threshold then discard value
+    float threshold = (10 * disparities[minIndex] / 100) + disparities[minIndex];
+    int minimizers = 0;
+    for (int i = 0; i < disparityLevel; ++i){
+        // Find the amount of minimizers below threshold
+        if (disparities[i] < threshold){
+            minimizers++;
+        }
+    }
+    // If there are more than 2 minimziers then discard pixel
+    if (minimizers > 2){
+        imgOut.imgData[index].x = 0;
+
+    } else
+    imgOut.imgData[index].x = pixelDisparity;
+
+    //imgOut.imgData[index].x = pixelDisparity;
+
+
 }

@@ -29,6 +29,8 @@ public:
 
     void loadImagePreviewData(ArCompute arCompute, Buffer *pBuffer) const;
 
+    bool takePhoto = false;
+
 private:
 
     ArEngine arEngine;
