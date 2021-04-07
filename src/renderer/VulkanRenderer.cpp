@@ -586,15 +586,8 @@ void VulkanRenderer::vulkanComputeShaders() {
     auto *pixels = new stbi_uc[imageSize];
     auto original = pixels;
 
-    int pixMax = 64, pixMin = 0;
     for (int i = 0; i < imageSize; ++i) {
         *pixels = pmappedMemory->x;
-
-        // Normalize values between 255 - 0
-        //double slope = 1.0 * (255 - 0) / (pixMax - pixMin);
-        //auto output = slope * (*pixels);
-        //uchar newVal =  (255 - 0) / (pixMax - pixMin) * (*pixels - pixMax) + 255;
-        //*pixels = output;
 
         pixels++;
         pmappedMemory++;

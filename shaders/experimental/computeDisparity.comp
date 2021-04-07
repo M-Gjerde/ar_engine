@@ -45,9 +45,9 @@ void main()
     int foundDisparities = 0;
     uint minIndex = 0;
 
-    float kernelSize = 361;
-    int lowLimit = 9, highLimit = 10;
-    const int k = 19;
+    float kernelSize = 81;
+    int lowLimit = 4, highLimit = 5;
+    const int k = 9;
     float matchKernel[k][k];
     // Read left image pixel
     int rowLoop = 0, colLoop = 0;
@@ -97,7 +97,7 @@ void main()
     }
 
     // Determine a 10% threshold for the minimium value. If there are more than another minimizer below this threshold then discard value
-    float threshold = (10 * disparities[minIndex] / 100) + disparities[minIndex];
+    float threshold = (5 * disparities[minIndex] / 100) + disparities[minIndex];
     int minimizers = 0;
     for (int i = 0; i < disparityLevel; ++i){
         // Find the amount of minimizers below threshold
@@ -108,8 +108,33 @@ void main()
     // If there are more than 2 minimziers then discard pixel
     if (minimizers > 2){
         imgOut.imgData[index].x = 0;
+        return;
+    }
+    // subpixel estimation
+    // Find second and third smallest disparity
+    float min = 255;
+    int secondSmallest = 0;
+    for (int i = 0; i < disparityLevel; ++i){
+        if (min > disparities[i] && i != minIndex){
+            min = disparities[i];
+            secondSmallest = i;
+        }
+    }
+    min = 255;
+    int thirdSmallest = 0;
+    for (int i = 0; i < disparityLevel; ++i){
+        if (min > disparities[i] && i != minIndex && i != secondSmallest){
+            min = disparities[i];
+            thirdSmallest = i;
+        }
+    }
 
-    } else
+    float num = secondSmallest - thirdSmallest;
+    float denum = 2*(secondSmallest - (2*pixelDisparity) + thirdSmallest);
+
+    pixelDisparity = pixelDisparity + num/denum;
+
+
     imgOut.imgData[index].x = pixelDisparity;
 
     //imgOut.imgData[index].x = pixelDisparity;
