@@ -7,3 +7,4 @@ glslc ./lamp.frag -o lampFrag.spv
 glslc ./experimental/computeShader.comp -o ./experimental/computeShader.spv
 glslc ./experimental/computeDisparity.comp -o ./experimental/computeDisparity.spv
 glslc ./experimental/copyShader.comp -o ./experimental/copyShader.spv
+glslc ./experimental/sgm.comp -o ./experimental/sgm.spv
