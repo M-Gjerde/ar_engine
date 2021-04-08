@@ -348,7 +348,7 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
     for (int i = 0; i < modelSettings.size(); ++i) {
 
         if (modelSettings[i].at("type") == "sphere")
-            loadTypeOneObject();
+            ;//loadTypeOneObject();
         else if (modelSettings[i].at("type") == "cube")
             loadTypeTwoObject();
 
@@ -516,7 +516,7 @@ void VulkanRenderer::updateDisparityData() {
     vulkanCompute->loadComputeData(arCompute, buffer);
     vulkanComputeShaders();
 
-    if (cv::waitKey(1000) == 27) {
+    if (cv::waitKey(1) == 27) {
         updateDisparity = false;
         cv::destroyAllWindows();
     }

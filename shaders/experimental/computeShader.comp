@@ -24,10 +24,10 @@ void main()
     uint index = gl_GlobalInvocationID.x;
 
     float sum = 0;
-    float kernelSize = 25 ;
+    float kernelSize = 25;
     float minAverage = 255;
     float pixelDisparity = 0;
-    uint disparityLevel = 128;
+    uint disparityLevel = 64;
     float readPosLeft = 0, readPosRight = 0;
 
     int lowLimit = 2, highLimit = 3;
@@ -37,10 +37,11 @@ void main()
     // If we are closing in on last columns then decrease disparity level.
     // disp 128 then 512
     // disp 256 then 384
-    uint col = index % stride;
-    if (col >= 512){
+ //   uint col = index % stride;
+/*    if (col >= 512){
         disparityLevel = disparityLevel - (col - 512);
     }
+  */
     // Disparity level. Match this pixel
     for (int d = lowLimit; d < disparityLevel; ++d){
         // kernel
@@ -55,14 +56,11 @@ void main()
 
         float average = sum / kernelSize;
         if (average < minAverage){
-            if (!(prevAvg == minAverage))  // if no unique avgerage then discard
-            {
-                minAverage = average;
-                pixelDisparity = d;
+            minAverage = average;
+            pixelDisparity = d;
 
-                prevAvg = minAverage;
-            }
         }
+
         sum = 0;
     }
     imgOut.imgData[index].x = pixelDisparity;//.val.x = pixelDisparity;

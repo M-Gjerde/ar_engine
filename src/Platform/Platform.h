@@ -11,8 +11,8 @@
 #include "../include/Validation.h"
 
 struct {
-    int WIDTH = 1280;
-    int HEIGHT = 720;
+    int WIDTH = 640;
+    int HEIGHT = 480;
 } viewport;
 
 class Platform {

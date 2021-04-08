@@ -22,8 +22,73 @@ layout(set = 1, binding = 0) buffer imageOut {
 
 void main()
 {
-
     uint index = gl_GlobalInvocationID.x;
+
+    float roww = index / 640;
+    if (index < (640 * 10))
+    return;
+
+    const int disparityLevel = 256;
+    const int dispArraySize = 256;
+    int stride = 640;
+    int lowBound = -2;
+    int highBound = 3;
+    const int kernelSize = 25;
+    // Left image kernel
+    float leftImgValues[kernelSize];
+    int leftImgIndex = 0;
+    for (int row = stride * lowBound; row < stride * highBound; row+=stride){
+        for (int col = lowBound; col < highBound; ++col){
+            leftImgValues[leftImgIndex] = imgOne.imgData[index + row + col].x;
+
+            //debugPrintfEXT("LImg: %f i: %d\n", leftImgValues[leftImgIndex], leftImgIndex);
+            //debugPrintfEXT("index: %d, row: %d, col: %d, imgOne: %f\n", index, row, col, imgOne.imgData[index + row + col].x);
+            leftImgIndex++;
+
+        }
+    }
+
+
+    bool firstRun = true;
+    float SAD[disparityLevel];
+    int disparity = 0;
+    float temp = 100;
+    for (int d = 0; d < disparityLevel; ++d){
+        // Right image Kernel
+        float rightImgValues[kernelSize];
+        int rightImgIndex = 0;
+        for (int row = stride * lowBound; row < stride * highBound; row+=stride){
+            for (int col = lowBound; col < highBound; ++col){
+                rightImgValues[rightImgIndex] = imgTwo.imgData[index + row + col - d].x;
+
+                rightImgIndex++;
+            }
+        }
+
+        // Calculate the SAD for this disparity level.
+        float sum = 0;
+        for (int i = 0; i < kernelSize; ++i){
+            sum += abs(leftImgValues[i] - rightImgValues[i]);
+        }
+        // save all the SAD values
+        SAD[d] = sum;
+
+        // determine the minimum sad value
+        if (temp > SAD[d]) {
+            temp=SAD[d];
+            disparity = d;
+        }
+    }
+
+    // Save minimum value to outImage
+    imgOut.imgData[index].x = disparity;
+    //if (index == (640 * 240 + 320))
+        //debugPrintfEXT("disparity: %d\n", disparity);
+
+
+
+
+    /*
     if (!(index > (640 * 5))){
         return;
 
@@ -49,9 +114,9 @@ void main()
     int foundDisparities = 0;
     uint minIndex = 0;
 
-    float kernelSize = 361;
-    int lowLimit = 9, highLimit = 10;
-    const int k = 19;
+    float kernelSize = 81;
+    int lowLimit = 4, highLimit = 5;
+    const int k = 9;
     float matchKernel[k][k];
     // Read left image pixel
     int rowLoop = 0, colLoop = 0;
@@ -101,10 +166,8 @@ void main()
         }
     }
 
-
-
     // Determine a 10% threshold for the minimium value. If there are more than another minimizer below this threshold then discard value
-    float threshold = (10 * disparities[minIndex] / 100) + disparities[minIndex];
+    float threshold = (5 * disparities[minIndex] / 100) + disparities[minIndex];
     int minimizers = 0;
     for (int i = 0; i < disparityLevel; ++i){
         // Find the amount of minimizers below threshold
@@ -113,17 +176,12 @@ void main()
         }
     }
 
-    if (row == 100 && col == 100){
-        debugPrintfEXT("Minimizers: %d\n", minimizers);
-}
     // If there are more than 2 minimziers then discard pixel
     if (minimizers > 2){
         imgOut.imgData[index].x = 0;
 
     } else
-    imgOut.imgData[index].x = pixelDisparity;
 
-    //imgOut.imgData[index].x = pixelDisparity;
-
+    */
 
 }
