@@ -19,20 +19,22 @@ void RealsenseStreamer::startStream() {
     streamStatus = true;
 
     // TODO CAN BE REMOVED - JUST DEBUGGING REALSENSE
-    auto depth_stream = selection.get_stream(RS2_STREAM_DEPTH)
-            .as<rs2::video_stream_profile>();
-    auto resolution = std::make_pair(depth_stream.width(), depth_stream.height());
-    auto i = depth_stream.get_intrinsics();
-    auto principal_point = std::make_pair(i.ppx, i.ppy);
-    auto focal_length = std::make_pair(i.fx, i.fy);
-    rs2_distortion model = i.model;
+    /*
+ auto depth_stream = selection.get_stream(RS2_STREAM_DEPTH)
+         .as<rs2::video_stream_profile>();
+ auto resolution = std::make_pair(depth_stream.width(), depth_stream.height());
+ auto i = depth_stream.get_intrinsics();
+ auto principal_point = std::make_pair(i.ppx, i.ppy);
+ auto focal_length = std::make_pair(i.fx, i.fy);
+ rs2_distortion model = i.model;
 
-    printf("principal x,y: %f, %f\n", principal_point.first, principal_point.second);
-    printf("focal x,y: %f, %f\n", focal_length.first, focal_length.second);
-    for (float coeff : i.coeffs) {
-        printf("coeff: %f\n", coeff);
-    }
 
+ printf("principal x,y: %f, %f\n", principal_point.first, principal_point.second);
+ printf("focal x,y: %f, %f\n", focal_length.first, focal_length.second);
+ for (float coeff : i.coeffs) {
+     printf("coeff: %f\n", coeff);
+ }
+ */
 }
 
 void RealsenseStreamer::setEmitter(int cmd) {

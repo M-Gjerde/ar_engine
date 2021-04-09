@@ -347,8 +347,7 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
 // Load in each model
     for (int i = 0; i < modelSettings.size(); ++i) {
 
-        if (modelSettings[i].at("type") == "sphere")
-            ;//loadTypeOneObject();
+        if (modelSettings[i].at("type") == "sphere");//loadTypeOneObject();
         else if (modelSettings[i].at("type") == "cube")
             loadTypeTwoObject();
 
@@ -584,47 +583,61 @@ void VulkanRenderer::vulkanComputeShaders() {
                 &mappedMemory);
     auto *pmappedMemory = (glm::vec4 *) mappedMemory;
 
-    auto *pixels = new stbi_uc[imageSize];
+    auto *pixels = new float[imageSize];
     auto original = pixels;
 
     int pixMax = 64, pixMin = 0;
     for (int i = 0; i < imageSize; ++i) {
-        *pixels = pmappedMemory->x;
-
-        // Normalize values between 255 - 0
-        //double slope = 1.0 * (255 - 0) / (pixMax - pixMin);
-        //auto output = slope * (*pixels);
-        //uchar newVal =  (255 - 0) / (pixMax - pixMin) * (*pixels - pixMax) + 255;
-        //*pixels = output;
+        *pixels = pmappedMemory->x / 255;
 
         pixels++;
         pmappedMemory++;
     }
     pixels = original;
-    cv::Mat img(height, width, CV_8UC1);
-    img.data = pixels;
 
+    cv::Mat img(height, width, CV_32FC1);
+    img.data = reinterpret_cast<uchar *>(pixels);
+
+    // Initialize arguments for the filter
+    //cv::Point anchor = cv::Point( -1, -1 );
+    //double delta = 0;
+   // int ddepth = -1;
+    //img.convertTo(img, CV_8UC1, 255);
+    //cv::Mat kernel = cv::getGaussianKernel(7,2, CV_32F);
+    //cv::Mat kernel = cv::Mat::ones(7, 7, CV_32F);
+    //cv::filter2D(img, img, ddepth, kernel, anchor, delta, cv::BORDER_DEFAULT) ;
+    //cv::medianBlur(img, img, 5);
+
+    //img.convertTo(img, CV_32FC1, (float)  1 /255);
     if (takePhoto) {
-        cv::imwrite("../home_disparity" + std::to_string(loop) + ".png", img);
+        cv::imwrite("../home_disparity" + std::to_string(loop) + ".exr", img);
         vulkanCompute->takePhoto = true;
     }
+    img.convertTo(img, CV_8UC1, 255);
+
+
+    // -- CALCULATE POINT CLOUD
+    //createPointCloudWriteToPCD(img, "/home/magnus/CLionProjects/bachelor_project/pcl_data/3d_points"+std::to_string(loop)+".pcd");
+
+
+
+
+    //cv::normalize(img, img, 0, 1, cv::NORM_MINMAX);
 
     cv::imshow("Raw disparity", img);
     //cv::imwrite("../output.png", img);
 
-    // -- CALCULATE POINT CLOUD
-    //createPointCloudWriteToPCD(img, "/home/magnus/CLionProjects/bachelor_project/pcl_data/3d_points"+std::to_string(loop)+".pcd");
 
     // -- VISUALIZE
     cv::Mat bwImg = img;
     cv::Mat jetmapImage;
     cv::equalizeHist(img, img);
-    cv::medianBlur(img, img, 7);
+
     cv::applyColorMap(img, jetmapImage, cv::COLORMAP_JET);
 
     //cv::circle(jetmapImage,cv::Point(320, 240),2,cv::Scalar(255, 255, 255),cv::FILLED,cv::LINE_8);
     //cv::circle(bwImg,cv::Point(320, 240),5,cv::Scalar(255, 255, 255),cv::FILLED,cv::LINE_8);
-    if (takePhoto){
+    if (takePhoto) {
         cv::imwrite("../home_disparity_jet" + std::to_string(loop) + ".png", jetmapImage);
         loop++;
         takePhoto = false;
@@ -633,8 +646,6 @@ void VulkanRenderer::vulkanComputeShaders() {
 
     cv::imshow("Jet Disparity image", jetmapImage);
     cv::imshow("BW Disparity image", bwImg);
-
-
 
 
     vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[2]);
