@@ -113,9 +113,6 @@ void main()
         }
     }
 
-    if (row == 100 && col == 100){
-        debugPrintfEXT("Minimizers: %d\n", minimizers);
-}
     // If there are more than 2 minimziers then discard pixel
     if (minimizers > 2){
         imgOut.imgData[index].x = 0;

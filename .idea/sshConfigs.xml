@@ -2,7 +2,7 @@
 <project version="4">
   <component name="SshConfigs">
     <configs>
-      <sshConfig authType="PASSWORD" host="10.42.0.10" id="c32a9c18-0c57-4db6-a15e-c0197e9c13bf" port="22" nameFormat="DESCRIPTIVE" username="dev" />
+      <sshConfig authType="PASSWORD" connectionConfig="{&quot;serverAliveInterval&quot;:300}" host="10.42.0.10" id="c32a9c18-0c57-4db6-a15e-c0197e9c13bf" port="22" nameFormat="DESCRIPTIVE" username="dev" />
     </configs>
   </component>
 </project>
