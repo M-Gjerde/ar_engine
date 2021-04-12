@@ -588,7 +588,7 @@ void VulkanRenderer::vulkanComputeShaders() {
 
     int pixMax = 64, pixMin = 0;
     for (int i = 0; i < imageSize; ++i) {
-        *pixels = pmappedMemory->x / 255;
+        *pixels = pmappedMemory->x;
 
         pixels++;
         pmappedMemory++;
@@ -597,18 +597,19 @@ void VulkanRenderer::vulkanComputeShaders() {
 
     cv::Mat img(height, width, CV_32FC1);
     img.data = reinterpret_cast<uchar *>(pixels);
-
     // Initialize arguments for the filter
     //cv::Point anchor = cv::Point( -1, -1 );
     //double delta = 0;
-   // int ddepth = -1;
-    //img.convertTo(img, CV_8UC1, 255);
+    //int ddepth = -1;
+    img.convertTo(img, CV_16UC1, 65535);
     //cv::Mat kernel = cv::getGaussianKernel(7,2, CV_32F);
     //cv::Mat kernel = cv::Mat::ones(7, 7, CV_32F);
     //cv::filter2D(img, img, ddepth, kernel, anchor, delta, cv::BORDER_DEFAULT) ;
-    //cv::medianBlur(img, img, 5);
+    //cv::GaussianBlur(img, img, cv::Size(5,5),5);
 
-    //img.convertTo(img, CV_32FC1, (float)  1 /255);
+    cv::medianBlur(img, img, 5);
+
+    img.convertTo(img, CV_32FC1, (float)  1 /65535);
     if (takePhoto) {
         cv::imwrite("../home_disparity" + std::to_string(loop) + ".exr", img);
         vulkanCompute->takePhoto = true;
