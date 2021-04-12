@@ -605,9 +605,16 @@ void VulkanRenderer::vulkanComputeShaders() {
     //cv::Mat kernel = cv::getGaussianKernel(7,2, CV_32F);
     //cv::Mat kernel = cv::Mat::ones(7, 7, CV_32F);
     //cv::filter2D(img, img, ddepth, kernel, anchor, delta, cv::BORDER_DEFAULT) ;
-    //cv::GaussianBlur(img, img, cv::Size(5,5),5);
 
     cv::medianBlur(img, img, 5);
+    //cv::GaussianBlur(img, img, cv::Size(5,5),5);
+
+    cv::Mat kernel = cv::Mat::ones(5, 5, CV_32F);
+    cv::dilate(img, img, kernel);
+
+    //kernel = cv::getStructuringElement	(cv::MORPH_RECT, cv::Size(7,7));
+
+    //cv::bilateralFilter( img, img, 5, 20, 20 );
 
     img.convertTo(img, CV_32FC1, (float)  1 /65535);
     if (takePhoto) {
