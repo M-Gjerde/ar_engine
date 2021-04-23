@@ -347,7 +347,8 @@ void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> m
 // Load in each model
     for (int i = 0; i < modelSettings.size(); ++i) {
 
-        if (modelSettings[i].at("type") == "sphere");//loadTypeOneObject();
+        if (modelSettings[i].at("type") == "sphere")
+            loadTypeOneObject();
         else if (modelSettings[i].at("type") == "cube")
             loadTypeTwoObject();
 
@@ -579,7 +580,7 @@ void VulkanRenderer::vulkanComputeShaders() {
 
     void *mappedMemory = nullptr;
     // Map the buffer memory, so that we can read from it on the CPU.
-    vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[2], 0, imageSize * sizeof(glm::vec4), 0,
+    vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[3], 0, imageSize * sizeof(glm::vec4), 0,
                 &mappedMemory);
     auto *pmappedMemory = (glm::vec4 *) mappedMemory;
 
@@ -656,7 +657,7 @@ void VulkanRenderer::vulkanComputeShaders() {
     cv::imshow("BW Disparity image", bwImg);
 
 
-    vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[2]);
+    vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[3]);
 
     delete[](pixels);
     //stbi_write_png("../stbpng.png", width, height, 1, pixels, width * 1);

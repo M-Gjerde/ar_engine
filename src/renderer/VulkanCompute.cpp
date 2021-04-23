@@ -58,7 +58,6 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     uint32_t bufferSize = (imageSize * sizeof(glm::vec4));
     // Create DescriptorBuffers
     ArBuffer inputBufferOne{};
-
     inputBufferOne.bufferSize = bufferSize;
     inputBufferOne.bufferUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     inputBufferOne.bufferProperties =
@@ -75,6 +74,14 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     inputBufferTwo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     pBuffer->createBuffer(&inputBufferTwo);
 
+    ArBuffer ROIInput{};
+    ROIInput.bufferSize = sizeof(glm::vec4);
+    ROIInput.bufferUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    ROIInput.bufferProperties =
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    ROIInput.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    pBuffer->createBuffer(&ROIInput);
+
     ArBuffer outputBuffer{};
     outputBuffer.bufferSize = bufferSize;
     outputBuffer.bufferUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
@@ -88,26 +95,28 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     arDescriptor.bufferMemory.push_back(inputBufferOne.bufferMemory);
     arDescriptor.buffer.push_back(inputBufferTwo.buffer);
     arDescriptor.bufferMemory.push_back(inputBufferTwo.bufferMemory);
+    arDescriptor.buffer.push_back(ROIInput.buffer);
+    arDescriptor.bufferMemory.push_back(ROIInput.bufferMemory);
     arDescriptor.buffer.push_back(outputBuffer.buffer);
     arDescriptor.bufferMemory.push_back(outputBuffer.bufferMemory);
 
 
     // Create descriptor sets
     ArDescriptorInfo descriptorInfo{};
-    descriptorInfo.descriptorCount = 3;
-    std::array<uint32_t , 3> descriptorCounts = {2, 1};
+    descriptorInfo.descriptorCount = 4;
+    std::array<uint32_t , 4> descriptorCounts = {3, 1};
     descriptorInfo.pDescriptorSplitCount = descriptorCounts.data();
-    std::array<uint32_t, 3> bindings = {0,1, 0};
+    std::array<uint32_t, 4> bindings = {0,1, 2, 0};
     descriptorInfo.pBindings = bindings.data();
-    std::array<VkDescriptorType, 3> types = {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER};
+    std::array<VkDescriptorType, 4> types = {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER};
     descriptorInfo.pDescriptorType = types.data();
-    std::vector<VkShaderStageFlags> stageFlags(3, VK_SHADER_STAGE_COMPUTE_BIT);
+    std::vector<VkShaderStageFlags> stageFlags(4, VK_SHADER_STAGE_COMPUTE_BIT);
     descriptorInfo.stageFlags = stageFlags.data();
     descriptorInfo.descriptorPoolCount = 1;
 
     descriptorInfo.descriptorSetLayoutCount = 2;
     descriptorInfo.descriptorSetCount = 2;
-    std::array<uint32_t , 3> dataSizes = {bufferSize, bufferSize, bufferSize};
+    std::array<uint32_t , 4> dataSizes = {bufferSize, bufferSize,  sizeof(glm::vec4), bufferSize};
     descriptorInfo.dataSizes = dataSizes.data();
     // Create descriptor set two
 
@@ -239,9 +248,7 @@ void VulkanCompute::loadImagePreviewData(ArCompute arCompute, Buffer *pBuffer) c
     data = nullptr;
     vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[1], 0, VK_WHOLE_SIZE, 0,
                 &data);
-
     memcpy(data, imgTwoPixel, imageSize * sizeof(glm::vec4));
-
     vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[1]);
 
 }

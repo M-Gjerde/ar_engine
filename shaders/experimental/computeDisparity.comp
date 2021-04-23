@@ -11,9 +11,15 @@ layout(set = 0, binding = 0) readonly buffer  imageOne {
     vec4 imgData[];
 }imgOne;
 
+
 layout(set = 0, binding = 1) readonly buffer imageTwo {
     vec4 imgData[];
 } imgTwo;
+
+layout(set = 0, binding = 2) readonly buffer options {
+    vec4 roi;
+} opt;
+
 
 layout(set = 1, binding = 0) buffer imageOut {
     vec4 imgData[];
@@ -25,6 +31,9 @@ void main()
     uint index = gl_GlobalInvocationID.x;
     uint gRow = index / 640;
     uint gCol = index % 640;
+
+    if (index == 129)
+        debugPrintfEXT("roi: %f\n", opt.roi.x);
 
     // discard if we are working within the first or last 10 rows of the picture
     if (index < (640 * 10) || index > (640 * 470))
