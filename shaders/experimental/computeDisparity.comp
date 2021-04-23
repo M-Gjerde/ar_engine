@@ -32,8 +32,18 @@ void main()
     uint gRow = index / 640;
     uint gCol = index % 640;
 
-    if (index == 129)
-        debugPrintfEXT("roi: %f\n", opt.roi.x);
+    const int k = 15;                               // Kernel size i.e k * k
+    uint disparityLevel = 128;                      // Pixels in x-direction to search for correspondence
+
+    // Check we are only computing necessary rows
+    if (gRow < (opt.roi.x) || gRow > (opt.roi.y)){
+        return;
+    }
+
+    // check we are only computing necessary columns
+    if (gCol < opt.roi.z || gCol > opt.roi.w){
+        return;
+    }
 
     // discard if we are working within the first or last 10 rows of the picture
     if (index < (640 * 10) || index > (640 * 470))
@@ -42,14 +52,12 @@ void main()
         return;
     }
 
-    uint disparityLevel = 128;                       // Pixels in x-direction to search for correspondence
     const int disparityLevelArraySize = 128;        // Pixels in x-direction to search for correspondence (const int for array declaration)
     int stride = 640;                               // Width of input image (Assume identical L/R dimmensions
     float minThreshold = 150000;                       // Threshold value for minimzer for cost fuction
 
     const int kernelSize = 81;                      // Number of pixels in kernel used for correspondence
     int lowLimit = 7, highLimit = 8;                // Used for for-loop indexes to go from -lowlimit to hihglimit
-    const int k = 15;                               // Kernel size i.e k * k
     float matchKernel[k][k];                        // Kernel from Left image used to search for matches in the right image
     float SAD[disparityLevelArraySize];             // Array to store cost-values from SAD algorithm
     int rowLoop = 0;                                // Index for each row iteration

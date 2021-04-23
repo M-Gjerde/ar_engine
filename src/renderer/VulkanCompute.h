@@ -27,9 +27,13 @@ public:
 
     void previewVideoStreams();
 
+    const glm::vec4 &getRoi() const;
+    void setRoi(const glm::vec4 &roi);
     void loadImagePreviewData(ArCompute arCompute, Buffer *pBuffer) const;
 
     bool takePhoto = false;
+
+
 
 private:
 
@@ -40,6 +44,9 @@ private:
 
     ThreadSpawner threadSpawner;
     ArSharedMemory * memP;
+
+    glm::vec4 ROI;
+
 
 };
 

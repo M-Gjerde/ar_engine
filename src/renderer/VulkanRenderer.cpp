@@ -568,6 +568,7 @@ void VulkanRenderer::vulkanComputeShaders() {
     auto endTime = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
     printf("Queue submit Time taken: %ld ms\n", endTime.count() / 1000);
 
+
     // --- Retrieve data from compute pipeline ---
     //int width = 1282, height = 1110;
     //int width = 1280, height = 720;
@@ -587,7 +588,10 @@ void VulkanRenderer::vulkanComputeShaders() {
     auto *pixels = new float[imageSize];
     auto original = pixels;
 
-    int pixMax = 64, pixMin = 0;
+    stop = std::chrono::high_resolution_clock::now();
+    endTime = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    printf("Mapping data: %ld ms\n", endTime.count() / 1000);
+    int a = pmappedMemory[0].x
     for (int i = 0; i < imageSize; ++i) {
         *pixels = pmappedMemory->x;
 
@@ -596,26 +600,22 @@ void VulkanRenderer::vulkanComputeShaders() {
     }
     pixels = original;
 
+    stop = std::chrono::high_resolution_clock::now();
+    endTime = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    printf("Looping data: %ld ms\n", endTime.count() / 1000);
+    int k = sizeof(glm::vec4);
     cv::Mat img(height, width, CV_32FC1);
     img.data = reinterpret_cast<uchar *>(pixels);
-    // Initialize arguments for the filter
-    //cv::Point anchor = cv::Point( -1, -1 );
+
     //double delta = 0;
     //int ddepth = -1;
     img.convertTo(img, CV_16UC1, 65535);
-    //cv::Mat kernel = cv::getGaussianKernel(7,2, CV_32F);
-    //cv::Mat kernel = cv::Mat::ones(7, 7, CV_32F);
-    //cv::filter2D(img, img, ddepth, kernel, anchor, delta, cv::BORDER_DEFAULT) ;
 
     cv::medianBlur(img, img, 5);
-    //cv::GaussianBlur(img, img, cv::Size(5,5),5);
 
     cv::Mat kernel = cv::Mat::ones(5, 5, CV_32F);
     cv::dilate(img, img, kernel);
 
-    //kernel = cv::getStructuringElement	(cv::MORPH_RECT, cv::Size(7,7));
-
-    //cv::bilateralFilter( img, img, 5, 20, 20 );
 
     img.convertTo(img, CV_32FC1, (float)  1 /65535);
     if (takePhoto) {
@@ -624,6 +624,9 @@ void VulkanRenderer::vulkanComputeShaders() {
     }
     img.convertTo(img, CV_8UC1, 255);
 
+     stop = std::chrono::high_resolution_clock::now();
+     endTime = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    printf("Filtering and converting: %ld ms\n", endTime.count() / 1000);
 
     // -- CALCULATE POINT CLOUD
     //createPointCloudWriteToPCD(img, "/home/magnus/CLionProjects/bachelor_project/pcl_data/3d_points"+std::to_string(loop)+".pcd");
@@ -634,9 +637,33 @@ void VulkanRenderer::vulkanComputeShaders() {
     //cv::normalize(img, img, 0, 1, cv::NORM_MINMAX);
 
     cv::imshow("Raw disparity", img);
+
+    glm::vec4 roi = vulkanCompute->getRoi();
+    uint32_t disparitySum = 0;
+    uint32_t roiSize = 0;
+    for (int i = roi.x; i < roi.y; ++i) {
+        for (int j = roi.z; j < roi.w; ++j) {
+            if (img.at<uchar>(i, j) > 1){
+                disparitySum += img.at<uchar>(i, j);
+                roiSize++;
+            }
+        }
+    }
+
+    glm::vec3 lightPos = glm::vec3(5.0f, 0.0f, (float) disparitySum / roiSize);
+    glm::mat4 lightTrans(1.0f);
+
+    updateLightPos(lightPos, lightTrans, 1);
+
+    //printf("avg disp: %f\n", (float) disparitySum/roiSize);
+
+    stop = std::chrono::high_resolution_clock::now();
+    endTime = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    printf("summing ROI and updating pos: %ld ms\n", endTime.count() / 1000);
     //cv::imwrite("../output.png", img);
 
 
+    /*
     // -- VISUALIZE
     cv::Mat bwImg = img;
     cv::Mat jetmapImage;
@@ -656,7 +683,7 @@ void VulkanRenderer::vulkanComputeShaders() {
     cv::imshow("Jet Disparity image", jetmapImage);
     cv::imshow("BW Disparity image", bwImg);
 
-
+*/
     vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[3]);
 
     delete[](pixels);

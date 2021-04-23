@@ -104,11 +104,12 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     // Create descriptor sets
     ArDescriptorInfo descriptorInfo{};
     descriptorInfo.descriptorCount = 4;
-    std::array<uint32_t , 4> descriptorCounts = {3, 1};
+    std::array<uint32_t, 4> descriptorCounts = {3, 1};
     descriptorInfo.pDescriptorSplitCount = descriptorCounts.data();
-    std::array<uint32_t, 4> bindings = {0,1, 2, 0};
+    std::array<uint32_t, 4> bindings = {0, 1, 2, 0};
     descriptorInfo.pBindings = bindings.data();
-    std::array<VkDescriptorType, 4> types = {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER};
+    std::array<VkDescriptorType, 4> types = {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER};
     descriptorInfo.pDescriptorType = types.data();
     std::vector<VkShaderStageFlags> stageFlags(4, VK_SHADER_STAGE_COMPUTE_BIT);
     descriptorInfo.stageFlags = stageFlags.data();
@@ -116,7 +117,7 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
 
     descriptorInfo.descriptorSetLayoutCount = 2;
     descriptorInfo.descriptorSetCount = 2;
-    std::array<uint32_t , 4> dataSizes = {bufferSize, bufferSize,  sizeof(glm::vec4), bufferSize};
+    std::array<uint32_t, 4> dataSizes = {bufferSize, bufferSize, sizeof(glm::vec4), bufferSize};
     descriptorInfo.dataSizes = dataSizes.data();
     // Create descriptor set two
 
@@ -128,7 +129,6 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     //arShaderPath.computeShader = "../shaders/experimental/computeShader";
     arShaderPath.computeShader = "../shaders/experimental/computeDisparity";
     pipeline.computePipeline(arDescriptor, arShaderPath, &computePipeline);
-
 
 
     VkCommandBuffer commandBuffer;
@@ -190,16 +190,16 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     return arCompute;
 }
 
-void VulkanCompute::loadImagePreviewData(ArCompute arCompute, Buffer *pBuffer) const{
+void VulkanCompute::loadImagePreviewData(ArCompute arCompute, Buffer *pBuffer) const {
 
 
     int texWidth, texHeight, texChannels;
     std::string leftImageFilePath = "../left15.png";
     std::string rightImageFilePath = "../right15.png";
 
-    stbi_uc* imageOne = stbi_load(leftImageFilePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
+    stbi_uc *imageOne = stbi_load(leftImageFilePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
     if (!imageOne) throw std::runtime_error("failed to load texture image: " + leftImageFilePath);
-    stbi_uc* imageTwo = stbi_load(rightImageFilePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
+    stbi_uc *imageTwo = stbi_load(rightImageFilePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
     if (!imageTwo) throw std::runtime_error("failed to load texture image: " + rightImageFilePath);
 
     //stbi_write_png("../textures/test_input/test3/rightoutgrey.png", 1280, 720, 1, imageTwo, 1280);
@@ -214,9 +214,9 @@ void VulkanCompute::loadImagePreviewData(ArCompute arCompute, Buffer *pBuffer) c
 
     int imageSize = width * height;
 
-    auto * pixelValue = new glm::vec4[imageSize];
-    auto * imgOnePixel = new glm::vec4[imageSize];
-    auto * imgTwoPixel = new glm::vec4[imageSize];
+    auto *pixelValue = new glm::vec4[imageSize];
+    auto *imgOnePixel = new glm::vec4[imageSize];
+    auto *imgTwoPixel = new glm::vec4[imageSize];
 
     auto origOne = imgOnePixel;
     auto origTwo = imgTwoPixel;
@@ -237,7 +237,7 @@ void VulkanCompute::loadImagePreviewData(ArCompute arCompute, Buffer *pBuffer) c
     imgTwoPixel = origTwo;
 
 
-    void* data;
+    void *data;
     vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[0], 0, VK_WHOLE_SIZE, 0,
                 &data);
 
@@ -254,6 +254,7 @@ void VulkanCompute::loadImagePreviewData(ArCompute arCompute, Buffer *pBuffer) c
 }
 
 int loopp = 0;
+
 void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
 
 
@@ -267,7 +268,7 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
     auto origOne = imgOnePixel;
     auto origTwo = imgTwoPixel;
 
-    auto memPixelOne = (unsigned char*) memP->imgOne;
+    auto memPixelOne = (unsigned char *) memP->imgOne;
     auto memPixelTwo = (unsigned char *) memP->imgTwo;
 
 
@@ -279,16 +280,29 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
     img2.data = memPixelTwo;
 
     // OpenCV Face detection
-    std::vector< cv::Rect > objects;
+    std::vector<cv::Rect> objects;
     auto classifier = cv::CascadeClassifier("../user/haarcascade_frontalface_default.xml");
     classifier.detectMultiScale(img1, objects, 1.05, 8);
 
-    for (int i = 0; i < objects.size(); ++i) {
-        cv::rectangle(img1, objects[i], cv::Scalar(0, 255, 0));
+    for (auto & object : objects) {
+        //cv::rectangle(img1, object, cv::Scalar(0, 255, 0));
+    }
+    int yMin = 0, yMax = 0, xMin = 0, xMax = 0;
+    glm::vec4 roi(0, 0, 0, 0);
+
+    if (!objects.empty()) {
+
+        yMax = objects[0].y + objects[0].height;
+        xMax = objects[0].x + objects[0].width;
+        roi = glm::vec4(objects[0].y, yMax, objects[0].x, xMax);
+        setRoi(roi);
     }
 
+    // Put region of interest into vec4 for shader compatability
+
+
     cv::imshow("left", img1);
-    cv::imshow("right", img2);
+    //cv::imshow("right", img2);
 
     if (takePhoto) {
         cv::imwrite("../left" + std::to_string(loopp) + ".png", img1);
@@ -327,7 +341,6 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
     imgTwoPixel = origTwo;
 
 
-
     void *data;
     vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[0], 0, imageSize * sizeof(glm::vec4), 0,
                 &data);
@@ -341,6 +354,14 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
 
     memcpy(data, imgTwoPixel, imageSize * sizeof(glm::vec4));
     vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[1]);
+
+    data = nullptr;
+
+    vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[2], 0, sizeof(glm::vec4), 0,
+                &data);
+
+    memcpy(data, &roi, sizeof(glm::vec4));
+    vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[2]);
 
     // Cleanup
     delete[](imgOnePixel);
@@ -378,4 +399,12 @@ void VulkanCompute::startDisparityStream() {
     threadSpawner.startChildProcess();
     //threadSpawner.waitForExistence();
 
+}
+
+const glm::vec4 &VulkanCompute::getRoi() const {
+    return ROI;
+}
+
+void VulkanCompute::setRoi(const glm::vec4 &roi) {
+    ROI = roi;
 }

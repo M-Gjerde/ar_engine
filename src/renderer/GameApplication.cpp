@@ -74,12 +74,12 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
 
     if (key == GLFW_KEY_UP) {
         forward++;
-        lightPos.x = forward;
+        lightPos.z = forward;
         vulkanRenderer.updateLightPos(lightPos, lightTrans, 1);
     }
     if (key == GLFW_KEY_DOWN) {
         forward--;
-        lightPos.x = forward;
+        lightPos.z = forward;
         vulkanRenderer.updateLightPos(lightPos, lightTrans, 1);
     }
 
