@@ -16,9 +16,16 @@ find_package(OpenCV REQUIRED)
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 add_subdirectory(external/json)
 
-add_library(videoStream src/record/ThreadSpawner.cpp src/record/ThreadSpawner.h src/record/RealsenseStreamer.cpp src/record/RealsenseStreamer.h)
+add_library(videoStream
+        src/record/ThreadSpawner.cpp
+        src/record/ThreadSpawner.h
+        src/record/RealsenseStreamer.cpp
+        src/record/RealsenseStreamer.h)
 
-target_link_libraries(videoStream ${OpenCV_LIBS} -lv4l2 -lrealsense2)
+target_link_libraries(videoStream
+        ${OpenCV_LIBS}
+        -lv4l2
+        -lrealsense2)
 
 # Ties vulkanRenderer with helper classes
 add_library(VulkanRenderer

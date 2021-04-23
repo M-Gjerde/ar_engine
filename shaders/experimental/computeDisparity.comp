@@ -36,7 +36,7 @@ void main()
     uint disparityLevel = 128;                       // Pixels in x-direction to search for correspondence
     const int disparityLevelArraySize = 128;        // Pixels in x-direction to search for correspondence (const int for array declaration)
     int stride = 640;                               // Width of input image (Assume identical L/R dimmensions
-    float minThreshold = 100;                       // Threshold value for minimzer for cost fuction
+    float minThreshold = 150000;                       // Threshold value for minimzer for cost fuction
 
     const int kernelSize = 81;                      // Number of pixels in kernel used for correspondence
     int lowLimit = 7, highLimit = 8;                // Used for for-loop indexes to go from -lowlimit to hihglimit

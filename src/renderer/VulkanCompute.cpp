@@ -185,8 +185,8 @@ void VulkanCompute::loadImagePreviewData(ArCompute arCompute, Buffer *pBuffer) c
 
 
     int texWidth, texHeight, texChannels;
-    std::string leftImageFilePath = "../textures/test_input/test2/test1.png";
-    std::string rightImageFilePath = "../textures/test_input/test2/test2.png";
+    std::string leftImageFilePath = "../left15.png";
+    std::string rightImageFilePath = "../right15.png";
 
     stbi_uc* imageOne = stbi_load(leftImageFilePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_grey);
     if (!imageOne) throw std::runtime_error("failed to load texture image: " + leftImageFilePath);
@@ -196,12 +196,12 @@ void VulkanCompute::loadImagePreviewData(ArCompute arCompute, Buffer *pBuffer) c
     //stbi_write_png("../textures/test_input/test3/rightoutgrey.png", 1280, 720, 1, imageTwo, 1280);
     //stbi_write_png("../textures/test_input/test3/leftoutgrey.png", 1280, 720, 1, imageOne, 1280);
 
-    int width = 256, height = 256;
+    //int width = 256, height = 256;
     //int width = 427, height = 370;
     //int width = 1280, height = 720;
     //int width = 1282, height = 1110;
     //int width = 450, height = 375;
-    //int width = 640, height = 480;
+    int width = 640, height = 480;
 
     int imageSize = width * height;
 
@@ -270,6 +270,16 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
 
     img1.data = memPixelOne;
     img2.data = memPixelTwo;
+
+    // OpenCV Face detection
+    std::vector< cv::Rect > objects;
+    auto classifier = cv::CascadeClassifier("../user/haarcascade_frontalface_default.xml");
+    classifier.detectMultiScale(img1, objects, 1.05, 8);
+
+    for (int i = 0; i < objects.size(); ++i) {
+        cv::rectangle(img1, objects[i], cv::Scalar(0, 255, 0));
+    }
+
     cv::imshow("left", img1);
     cv::imshow("right", img2);
 

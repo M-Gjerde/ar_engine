@@ -513,6 +513,7 @@ void VulkanRenderer::updateDisparityData() {
     //cv::namedWindow("Disparity image", cv::WINDOW_FREERATIO);
 
     vulkanCompute->loadComputeData(arCompute, buffer);
+    //vulkanCompute->loadImagePreviewData(arCompute, buffer);
     vulkanComputeShaders();
 
     if (cv::waitKey(1) == 27) {
@@ -522,7 +523,6 @@ void VulkanRenderer::updateDisparityData() {
 
     /*
     vulkanCompute->loadComputeData(arCompute, buffer);
-    vulkanCompute->loadImagePreviewData(arCompute, buffer);
     vulkanComputeShaders();
     cv::waitKey(0);
 */
