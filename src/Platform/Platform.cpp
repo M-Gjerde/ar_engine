@@ -56,13 +56,13 @@ void Platform::createInstance() {
         // Enable shader Debug validation layers
         VkValidationFeaturesEXT validationFeaturesExt{};
         validationFeaturesExt.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
-        VkValidationFeatureEnableEXT enabled[] = { VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT };
+        //VkValidationFeatureEnableEXT enabled[] = { VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT };
         VkValidationFeatureDisableEXT disabled[] = {
                 VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
                 VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT, VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT };
 
-        validationFeaturesExt.enabledValidationFeatureCount = 1;
-        validationFeaturesExt.pEnabledValidationFeatures = enabled;
+        //validationFeaturesExt.enabledValidationFeatureCount = 1;
+        //validationFeaturesExt.pEnabledValidationFeatures = enabled;
         validationFeaturesExt.disabledValidationFeatureCount = 4;
         validationFeaturesExt.pDisabledValidationFeatures = disabled;
         validationFeaturesExt.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
