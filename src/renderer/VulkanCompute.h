@@ -46,8 +46,9 @@ private:
     ArSharedMemory * memP;
 
     glm::vec4 ROI;
+    cv::CascadeClassifier classifier;
 
-
+    void setupFaceDetector();
 };
 
 

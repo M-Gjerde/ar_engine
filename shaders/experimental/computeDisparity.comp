@@ -8,12 +8,12 @@ struct Pixel {
 };
 
 layout(set = 0, binding = 0) readonly buffer  imageOne {
-    vec4 imgData[];
+    float imgData[];
 }imgOne;
 
 
 layout(set = 0, binding = 1) readonly buffer imageTwo {
-    vec4 imgData[];
+    float imgData[];
 } imgTwo;
 
 layout(set = 0, binding = 2) readonly buffer options {
@@ -22,7 +22,7 @@ layout(set = 0, binding = 2) readonly buffer options {
 
 
 layout(set = 1, binding = 0) buffer imageOut {
-    vec4 imgData[];
+    float imgData[];
 } imgOut;
 
 
@@ -155,7 +155,7 @@ void main()
     float denumerator = 2 * (dPlus + dMinus - (2*dF));
     float xmin = x1 - (numerator/denumerator);
 
-    //float subDisparity = a * xmin * xmin + b * xmin +c;
+    //float subDisparity = xmin * 65535;
     float subDisparity = xmin / 255; // Downscale values to being between 0 and 1.
 
     // Save minimum value to outImage
