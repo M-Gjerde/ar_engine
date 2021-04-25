@@ -46,6 +46,9 @@ void VulkanCompute::cleanup() {
 
 ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDescriptors, Platform *pPlatform,
                                               Pipeline pipeline) {
+
+    setupFaceDetector();
+
     //int width = 1280, height = 720;
     //int width = 427, height = 370;
     int width = 640, height = 480;
@@ -262,8 +265,8 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
     int imageSize = 640 * 480;
     int width = 640, height = 480;
 
-    auto *imgOnePixel = new glm::vec4[imageSize];
-    auto *imgTwoPixel = new glm::vec4[imageSize];
+    auto *imgOnePixel = new float[imageSize];
+    auto *imgTwoPixel = new float[imageSize];
 
     auto origOne = imgOnePixel;
     auto origTwo = imgTwoPixel;
@@ -275,23 +278,28 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
     cv::Mat img1(height, width, CV_8UC1);
     cv::Mat img2(height, width, CV_8UC1);
 
+    // memcpy(imgOnePixel, memPixelOne, imageSize/sizeof(float)*sizeof(float));
+    //memcpy(imgTwoPixel, memPixelTwo, imageSize/sizeof(float)*sizeof(float));
 
-    img1.data = memPixelOne;
+    //const auto *memPixelOne = reinterpret_cast<const float*>(memP->imgOne);
+
+    img1.data = reinterpret_cast<uchar *>(memPixelOne);
     img2.data = memPixelTwo;
 
+    //glm::vec4 roi(0, 0, 480, 640);
+
     // OpenCV Face detection
+
     std::vector<cv::Rect> objects;
-    auto classifier = cv::CascadeClassifier("../user/haarcascade_frontalface_default.xml");
-    classifier.detectMultiScale(img1, objects, 1.05, 8);
+    classifier.detectMultiScale(img1, objects, 1.1, 8);
 
     for (auto & object : objects) {
-        //cv::rectangle(img1, object, cv::Scalar(0, 255, 0));
+        cv::rectangle(img1, object, cv::Scalar(0, 255, 0));
     }
-    int yMin = 0, yMax = 0, xMin = 0, xMax = 0;
+    int yMax = 0, xMax = 0;
     glm::vec4 roi(0, 0, 0, 0);
 
     if (!objects.empty()) {
-
         yMax = objects[0].y + objects[0].height;
         xMax = objects[0].x + objects[0].width;
         roi = glm::vec4(objects[0].y, yMax, objects[0].x, xMax);
@@ -299,7 +307,6 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
     }
 
     // Put region of interest into vec4 for shader compatability
-
 
     cv::imshow("left", img1);
     //cv::imshow("right", img2);
@@ -314,22 +321,8 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
 
 
     for (int i = 0; i < imageSize; ++i) {
-/*
-        int x = i % width;
-        int y = i / width;
-
-        OLD stuff dont know how it works lol..
-        if (x >= 512 && x < 768 && y >= 232 && y < 488){
-            imgOnePixel->x = *memPixelOne;
-            imgTwoPixel->x = *memPixelTwo;
-            img1.at<uchar>(y - 232, x - 512) = imgOnePixel->x;
-            img2.at<uchar>(y - 232, x - 512) = imgTwoPixel->x;
-            imgTwoPixel++;
-            imgOnePixel++;
-        }*/
-
-        imgOnePixel->x = *memPixelOne;
-        imgTwoPixel->x = *memPixelTwo;
+        *imgOnePixel= *memPixelOne;
+        *imgTwoPixel = *memPixelTwo;
 
         imgTwoPixel++;
         imgOnePixel++;
@@ -340,19 +333,18 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
     imgOnePixel = origOne;
     imgTwoPixel = origTwo;
 
-
     void *data;
-    vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[0], 0, imageSize * sizeof(glm::vec4), 0,
+    vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[0], 0, imageSize * sizeof(float), 0,
                 &data);
 
-    memcpy(data, imgOnePixel, imageSize * sizeof(glm::vec4));
+    memcpy(data, imgOnePixel, imageSize * sizeof(float));
     vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[0]);
 
     data = nullptr;
-    vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[1], 0, imageSize * sizeof(glm::vec4), 0,
+    vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[1], 0, imageSize * sizeof(float), 0,
                 &data);
 
-    memcpy(data, imgTwoPixel, imageSize * sizeof(glm::vec4));
+    memcpy(data, imgTwoPixel, imageSize * sizeof(float));
     vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[1]);
 
     data = nullptr;
@@ -407,4 +399,9 @@ const glm::vec4 &VulkanCompute::getRoi() const {
 
 void VulkanCompute::setRoi(const glm::vec4 &roi) {
     ROI = roi;
+}
+
+void VulkanCompute::setupFaceDetector() {
+    classifier = cv::CascadeClassifier("../user/haarcascade_frontalface_default.xml");
+
 }

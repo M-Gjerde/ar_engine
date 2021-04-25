@@ -581,42 +581,26 @@ void VulkanRenderer::vulkanComputeShaders() {
 
     void *mappedMemory = nullptr;
     // Map the buffer memory, so that we can read from it on the CPU.
-    vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[3], 0, imageSize * sizeof(glm::vec4), 0,
+    vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[3], 0, imageSize * sizeof(float), 0,
                 &mappedMemory);
-    auto *pmappedMemory = (glm::vec4 *) mappedMemory;
+    auto *pmappedMemory = (float *) mappedMemory;
 
-    auto *pixels = new float[imageSize];
-    auto original = pixels;
 
-    stop = std::chrono::high_resolution_clock::now();
-    endTime = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-    printf("Mapping data: %ld ms\n", endTime.count() / 1000);
-    int a = pmappedMemory[0].x
-    for (int i = 0; i < imageSize; ++i) {
-        *pixels = pmappedMemory->x;
 
-        pixels++;
-        pmappedMemory++;
-    }
-    pixels = original;
 
-    stop = std::chrono::high_resolution_clock::now();
-    endTime = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-    printf("Looping data: %ld ms\n", endTime.count() / 1000);
-    int k = sizeof(glm::vec4);
+    // Create float type image at fill it with data from gpu
     cv::Mat img(height, width, CV_32FC1);
-    img.data = reinterpret_cast<uchar *>(pixels);
+    img.data = reinterpret_cast<uchar *>(pmappedMemory);
 
-    //double delta = 0;
-    //int ddepth = -1;
+    // convert image to 16 bit uc1
     img.convertTo(img, CV_16UC1, 65535);
 
+    // Remove salt 'n pepper noise - must be a 8 or 16 bit type.
     cv::medianBlur(img, img, 5);
-
     cv::Mat kernel = cv::Mat::ones(5, 5, CV_32F);
     cv::dilate(img, img, kernel);
 
-
+    // Convert back to flopmappedMemoryat format to save and display
     img.convertTo(img, CV_32FC1, (float)  1 /65535);
     if (takePhoto) {
         cv::imwrite("../home_disparity" + std::to_string(loop) + ".exr", img);
@@ -686,7 +670,6 @@ void VulkanRenderer::vulkanComputeShaders() {
 */
     vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[3]);
 
-    delete[](pixels);
     //stbi_write_png("../stbpng.png", width, height, 1, pixels, width * 1);
 
 
