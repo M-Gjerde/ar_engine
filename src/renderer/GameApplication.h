@@ -52,7 +52,7 @@ public:
 
         // Load scene objects according to settings file
         auto settingsMap = loadSettings.getSceneObjects();
-        vulkanRenderer.drawScene(settingsMap);
+        vulkanRenderer.setupSceneFromFile(settingsMap);
 
     }
 

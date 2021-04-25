@@ -27,6 +27,7 @@ target_link_libraries(videoStream
         -lv4l2
         -lrealsense2)
 
+
 # Ties vulkanRenderer with helper classes
 add_library(VulkanRenderer
         src/renderer/VulkanRenderer.cpp
@@ -61,13 +62,17 @@ add_library(VulkanRenderer
         src/renderer/VulkanCompute.h
         src/objects/BufferObject.cpp
         src/objects/BufferObject.h
-        src/include/helper_functions.h)
+        src/include/helper_functions.h
+        src/Models/SceneObject.cpp
+        src/Models/SceneObject.h
+        )
 
 target_link_libraries(VulkanRenderer
         vulkan
         nlohmann_json::nlohmann_json
         videoStream
-        ${OpenCV_LIBS})
+        ${OpenCV_LIBS}
+        )
 
 add_executable(engine main.cpp external/tinyobj/tiny_obj_loader.h )
 

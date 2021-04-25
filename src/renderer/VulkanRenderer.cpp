@@ -13,6 +13,7 @@
 #include "../include/stbi_image_write.h"
 #include "opencv2/opencv.hpp"
 #include "../include/helper_functions.h"
+#include "../Models/SceneObject.h"
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/qvm/mat_operations.hpp>
 #include <boost/numeric/ublas/io.hpp>
@@ -310,8 +311,6 @@ void VulkanRenderer::updateModel(glm::mat4 newModel, int index) {
 void VulkanRenderer::updateLightPos(glm::vec3 newPos, glm::mat4 transMat, int index) {
     models[index].setModel(glm::translate(transMat, newPos));
     fragmentColor.lightPos = glm::vec4(newPos, 1.0f);
-    fragmentColor.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
-    fragmentColor.objectColor = glm::vec4(0.5f, 0.5f, 0.31f, 0.0f);
 
 }
 
@@ -343,14 +342,24 @@ void VulkanRenderer::updateDisparityVideoTexture() {
     // printf("Texture and re-record cmd buffers time taken: %.7fs\n", (double) (clock() - Start) / CLOCKS_PER_SEC;);
 }
 
-void VulkanRenderer::drawScene(std::vector<std::map<std::string, std::string>> modelSettings) {
+void VulkanRenderer::setupSceneFromFile(std::vector<std::map<std::string, std::string>> modelSettings) {
 // Load in each model
     for (int i = 0; i < modelSettings.size(); ++i) {
 
         if (modelSettings[i].at("type") == "sphere")
-            loadTypeOneObject();
-        else if (modelSettings[i].at("type") == "cube")
-            loadTypeTwoObject();
+            loadSphereObjects();
+        else if (modelSettings[i].at("type") == "cube"){
+
+            SceneObject cube(modelSettings[i], arEngine);
+            cube.createDescriptors(descriptors, buffer);
+            cube.createPipeline(pipeline, renderPass);
+
+            // Push objects to global lists
+            models.push_back(cube.getMeshModel());
+            arDescriptors.push_back(cube.getArDescriptor());
+            arPipelines.push_back(cube.getArPipeline());
+
+        }
 
     }
 
@@ -365,7 +374,7 @@ void VulkanRenderer::updateScene() {
     glm::mat4 trans(1.0f);
     // Glasses
     for (int i = 0; i < models.size(); ++i) {
-        updateLightPos(glm::vec3(0.0f, 0.20f, (float) i * -3.0f), trans, i);
+        updateLightPos(glm::vec3(2 * (float)i, 0.20f, (float) i * -3.0f), trans, i);
     }
     // lightbox
 }
@@ -376,7 +385,7 @@ void VulkanRenderer::deleteLastObject() {
 }
 
 
-void VulkanRenderer::loadTypeOneObject() {
+void VulkanRenderer::loadSphereObjects() {
     // ArModel passes queue and cmd pool from arEngine and used to store buffers and memory
     ArModel arModel;
     arModel.transferCommandPool = arEngine.commandPool;
@@ -436,7 +445,7 @@ void VulkanRenderer::loadTypeOneObject() {
 
 }
 
-void VulkanRenderer::loadTypeTwoObject() {
+void VulkanRenderer::loadCubeObjects() {
 
     // Create Mesh
     ArModel arModel;
@@ -472,7 +481,6 @@ void VulkanRenderer::loadTypeTwoObject() {
     std::array<VkShaderStageFlags, 1> stageFlags = {VK_SHADER_STAGE_VERTEX_BIT};
     descriptorInfo.stageFlags = stageFlags.data();
 
-    // TODO Rewrite usage of vectors like this
     // Create descriptors
     ArDescriptor arDescriptor;
     meshModel.attachDescriptors(&arDescriptor, descriptorInfo, descriptors, buffer);
@@ -483,7 +491,7 @@ void VulkanRenderer::loadTypeTwoObject() {
     arPipeline.swapchainImageFormat = arEngine.swapchainFormat;
     arPipeline.swapchainExtent = arEngine.swapchainExtent;
 
-    // Create pipeline
+    // Create pipeline for object
     ArShadersPath shadersPath;
     shadersPath.vertexShader = "../shaders/lampVert";
     shadersPath.fragmentShader = "../shaders/lampFrag";
@@ -491,6 +499,11 @@ void VulkanRenderer::loadTypeTwoObject() {
 
     arDescriptors.push_back(arDescriptor);
     arPipelines.push_back(arPipeline);
+
+    // Update object position
+    unsigned long modelIndex = models.size();
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.0f, 0.0f));
+    model = glm::rotate(model, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
 }
 
@@ -643,7 +656,7 @@ void VulkanRenderer::vulkanComputeShaders() {
 
     stop = std::chrono::high_resolution_clock::now();
     endTime = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-    printf("summing ROI and updating pos: %ld ms\n", endTime.count() / 1000);
+    //printf("summing ROI and updating pos: %ld ms\n", endTime.count() / 1000);
     //cv::imwrite("../output.png", img);
 
 

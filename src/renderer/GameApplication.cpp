@@ -55,13 +55,23 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
 
     // execute vulkan compute sequence
     if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
-        //vulkanRenderer.loadTypeOneObject();
+        //vulkanRenderer.loadSphereObjects();
         //vulkanRenderer.updateScene();
         vulkanRenderer.startDisparityStream();
         vulkanRenderer.updateDisparityData();
 
+    };
+
+    if (key == GLFW_KEY_M && action == GLFW_PRESS) {
+        glm::mat4 model = glm::translate(glm::mat4(0.01f), glm::vec3(5.0f, 0.0f, -10.0f));
+        vulkanRenderer.updateModel(model, 2);
     }
 
+    if (key == GLFW_KEY_N && action == GLFW_PRESS) {
+        glm::mat4 model = glm::translate(glm::mat4(0.01f), glm::vec3(1.0f, 0.0f, -1.0f));
+        model = glm::scale(model, glm::vec3(0.07f, 0.07f, 0.07f));
+        vulkanRenderer.updateModel(model, 1);
+    }
 
     if (key == GLFW_KEY_ENTER && action == GLFW_PRESS) {
         vulkanRenderer.stopDisparityStream();

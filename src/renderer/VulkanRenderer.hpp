@@ -18,6 +18,7 @@
 #include "VulkanCompute.h"
 #include "../record/ThreadSpawner.h"
 #include "../pipeline/MeshModel.h"
+#include "../Models/SceneObject.h"
 #include <stdexcept>
 #include <vector>
 #include <iostream>
@@ -40,7 +41,7 @@ public:
     void updateDisparityVideoTexture(); // TODO TEST METHOD
     void vulkanComputeShaders(); //TODO Test method
 
-    void loadTypeOneObject(); // TODO Test Method
+    void loadSphereObjects(); // TODO Test Method
 
     void draw();
 
@@ -48,7 +49,7 @@ public:
 
     ~VulkanRenderer();
 
-    void drawScene(std::vector<std::map<std::string, std::string>> vector);
+    void setupSceneFromFile(std::vector<std::map<std::string, std::string>> modelSettings);
 
     void updateScene();
 
@@ -85,6 +86,7 @@ private:
 
     // Objects
     std::vector<MeshModel> models{};
+    std::vector<SceneObject> cubes;
 
     // Descriptors
     Descriptors *descriptors{};
@@ -123,7 +125,7 @@ private:
     void updateBuffer(uint32_t imageIndex);
 
 
-    void loadTypeTwoObject();
+    void loadCubeObjects();
 
     void initComputePipeline();
 

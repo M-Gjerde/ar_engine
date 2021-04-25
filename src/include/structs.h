@@ -147,5 +147,9 @@ struct Status {
     bool isRunning = false;
 };
 
+struct ArSceneObjectInfo {
+    //Descriptors descriptor;
+};
+
 
 #endif //AR_ENGINE_STRUCTS_H
