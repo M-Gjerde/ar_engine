@@ -373,10 +373,8 @@ void VulkanRenderer::updateScene() {
     // --- Translate models ---
     glm::mat4 trans(1.0f);
     // Glasses
-    for (int i = 0; i < models.size(); ++i) {
-        updateLightPos(glm::vec3(2 * (float)i, 0.20f, (float) i * -3.0f), trans, 0);
-    }
-    // lightbox
+    updateLightPos(glm::vec3(2 * (float)1, 0.20f, (float) 1 * -3.0f), trans, 0);
+
 }
 
 void VulkanRenderer::deleteLastObject() {
