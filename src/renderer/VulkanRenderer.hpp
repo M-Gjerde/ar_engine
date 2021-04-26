@@ -62,6 +62,8 @@ public:
 
     bool takePhoto = false;
 
+    void resetScene(); // TODO implement function
+
 private:
     // Vulkan components
     Platform *platform{};
@@ -81,7 +83,7 @@ private:
     bool updateDisparity = false;
 
     // Buffer
-    Buffer *buffer{};
+    Buffer *buffer{}; // TODO To be removed
 
 
     // Objects
@@ -89,7 +91,7 @@ private:
     std::vector<SceneObject> cubes;
 
     // Descriptors
-    Descriptors *descriptors{};
+    Descriptors *descriptors{}; // TODO To be removed
     std::vector<ArDescriptor> arDescriptors;
 
     // - Data structures for descriptors

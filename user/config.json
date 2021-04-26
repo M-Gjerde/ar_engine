@@ -22,32 +22,23 @@
         "texture_format": ".png",
         "vertex_shader": "lampVert",
         "fragment_shader": "lampFrag",
-        "descriptorSets": "1",
-        "descriptorSetLayouts": "1",
-        "posX": "0",
-        "posY": "0",
-        "posZ": "0",
-        "rotX": "0",
+        "lightProperty": "lightSource",
+        "descriptorSetCount": "1",
+        "descriptorSetLayoutsCount": "1",
+        "descriptorPoolCount": "1",
+        "descriptorCount": "1",
+        "DescriptorSplitCountSequence": "1",
+        "descriptorBindingSequence": "0",
+        "descriptorDataSizeSequence": "uboModel",
+        "pDescriptorType": "uniformBuffer",
+        "descriptorState": "vertex",
+        "posX": "5",
+        "posY": "1",
+        "posZ": "-10",
+        "rotX": "1",
         "rotY": "0",
-        "rotZ": "0"
-
-      },
-
-      {
-        "type": "cube",
-        "texture": "default",
-        "texture_format": ".png",
-        "vertex_shader": "lampVert",
-        "fragment_shader": "lampFrag",
-        "descriptorSets": "1",
-        "descriptorSetLayouts": "1",
-        "posX": "0",
-        "posY": "0",
-        "posZ": "0",
-        "rotX": "0",
-        "rotY": "0",
-        "rotZ": "0"
-
+        "rotZ": "0",
+        "rotAngle": "45"
       }
     ]
   },

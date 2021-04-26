@@ -12,15 +12,11 @@
 class Descriptors {
 public:
 
-    explicit Descriptors(const ArEngine& engine);
+    explicit Descriptors(const ArEngine &engine);
 
-    void createSetLayouts(std::vector<ArDescriptorInfo> info, ArDescriptor *pDescriptor);
     void createDescriptorsSampler(ArDescriptor *pDescriptor, ArTextureImage pTextureSampler);
-
     void cleanUp(ArDescriptor arDescriptor);
-
     void lightDescriptors(ArDescriptor *pDescriptor);
-
     void createDescriptors(ArDescriptorInfo descriptorInfo, ArDescriptor *pDescriptor);
 
 private:
@@ -28,21 +24,17 @@ private:
     ArDescriptor mArDescriptor;
     ArTextureImage arTextureSampler{};
 
-    void createSetLayout(ArDescriptorInfo info, ArDescriptor *pDescriptor);
-    void createSetPool(ArDescriptorInfo info, ArDescriptor *pDescriptor);
 
     void updateTextureSamplerDescriptor();
-
     void fragmentSetLayout();
     void fragmentDescriptorSet();
-
     void createLightPool();
 
-    void createSetPool(std::vector<ArDescriptorInfo> info, ArDescriptor *pDescriptor);
 
     void createDescriptorsSetLayout(ArDescriptorInfo info, ArDescriptor *pDescriptor);
-
     void createDescriptorSets(ArDescriptorInfo info, ArDescriptor *pDescriptor);
+    void createSetPool(ArDescriptorInfo info, ArDescriptor *pDescriptor);
+
 };
 
 

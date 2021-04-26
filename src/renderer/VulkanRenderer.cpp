@@ -26,8 +26,8 @@ VulkanRenderer::~VulkanRenderer() = default;
 int VulkanRenderer::init(GLFWwindow *newWindow) {
     try {
         platform = new Platform(newWindow, &arEngine);
-        buffer = new Buffer(arEngine.mainDevice);
-        descriptors = new Descriptors(arEngine);
+        buffer = new Buffer(arEngine.mainDevice); // TODO Remove this. Put it to use in abstract classes
+        descriptors = new Descriptors(arEngine); // TODO Remove this. Put it to use in abstract classes
         images = new Images(arEngine.mainDevice, arEngine.swapchainExtent);
 
         textures = new Textures(images);
@@ -286,14 +286,14 @@ void VulkanRenderer::updateBuffer(uint32_t imageIndex) {
         memcpy(data, &uboModelVar, arDescriptors[i].dataSizes[0]);
         vkUnmapMemory(arEngine.mainDevice.device, arDescriptors[i].bufferMemory[0]);
 
-
-        if (arDescriptors[i].bufferMemory.size() == 1) break; // TODO clean up this to be done dynamically
-        void *data2;
-        vkMapMemory(arEngine.mainDevice.device, arDescriptors[i].bufferMemory[1], 0, arDescriptors[i].dataSizes[1],
-                    0, &data2);
-        memcpy(data2, &fragmentColor, arDescriptors[i].dataSizes[1]);
-        vkUnmapMemory(arEngine.mainDevice.device, arDescriptors[i].bufferMemory[1]);
-
+        // If current model has two buffers (e.g. fragment shader input then continue)
+        if (arDescriptors[i].bufferMemory.size() == 2) {
+            void *data2;
+            vkMapMemory(arEngine.mainDevice.device, arDescriptors[i].bufferMemory[1], 0, arDescriptors[i].dataSizes[1],
+                        0, &data2);
+            memcpy(data2, &fragmentColor, arDescriptors[i].dataSizes[1]);
+            vkUnmapMemory(arEngine.mainDevice.device, arDescriptors[i].bufferMemory[1]);
+        }
     }
 }
 
@@ -351,7 +351,7 @@ void VulkanRenderer::setupSceneFromFile(std::vector<std::map<std::string, std::s
         else if (modelSettings[i].at("type") == "cube"){
 
             SceneObject cube(modelSettings[i], arEngine);
-            cube.createDescriptors(descriptors, buffer);
+
             cube.createPipeline(pipeline, renderPass);
 
             // Push objects to global lists
@@ -374,7 +374,7 @@ void VulkanRenderer::updateScene() {
     glm::mat4 trans(1.0f);
     // Glasses
     for (int i = 0; i < models.size(); ++i) {
-        updateLightPos(glm::vec3(2 * (float)i, 0.20f, (float) i * -3.0f), trans, i);
+        updateLightPos(glm::vec3(2 * (float)i, 0.20f, (float) i * -3.0f), trans, 0);
     }
     // lightbox
 }
@@ -442,68 +442,6 @@ void VulkanRenderer::loadSphereObjects() {
     models.push_back(meshModel);
     arDescriptors.push_back(arDescriptor);
     arPipelines.push_back(arPipeline);
-
-}
-
-void VulkanRenderer::loadCubeObjects() {
-
-    // Create Mesh
-    ArModel arModel;
-    arModel.transferCommandPool = arEngine.commandPool;
-    arModel.transferQueue = arEngine.graphicsQueue;
-
-    // ModelInfo
-    ArModelInfo arModelInfo;
-    arModelInfo.modelName = "standard/cube.obj";
-    arModelInfo.generateNormals = true;
-
-
-    MeshModel meshModel;
-    meshModel.setModelFileName("standard/cube.obj");
-    meshModel.loadModel(arEngine.mainDevice, arModel, arModelInfo);
-    models.push_back(meshModel);
-
-    // descriptor info
-    ArDescriptorInfo descriptorInfo{};
-    descriptorInfo.descriptorSetCount = 1;
-    descriptorInfo.descriptorSetLayoutCount = 1;
-    descriptorInfo.descriptorPoolCount = 1;
-    std::array<uint32_t, 1> sizes = {sizeof(uboModel)};
-    descriptorInfo.dataSizes = sizes.data();
-
-    descriptorInfo.descriptorCount = 1;
-    std::array<uint32_t, 1> descriptorCounts = {1};
-    descriptorInfo.pDescriptorSplitCount = descriptorCounts.data();
-    std::array<uint32_t, 1> bindings = {0};
-    descriptorInfo.pBindings = bindings.data();
-    std::array<VkDescriptorType, 1> types = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER};
-    descriptorInfo.pDescriptorType = types.data();
-    std::array<VkShaderStageFlags, 1> stageFlags = {VK_SHADER_STAGE_VERTEX_BIT};
-    descriptorInfo.stageFlags = stageFlags.data();
-
-    // Create descriptors
-    ArDescriptor arDescriptor;
-    meshModel.attachDescriptors(&arDescriptor, descriptorInfo, descriptors, buffer);
-
-
-    ArPipeline arPipeline{};
-    arPipeline.device = arEngine.mainDevice.device;
-    arPipeline.swapchainImageFormat = arEngine.swapchainFormat;
-    arPipeline.swapchainExtent = arEngine.swapchainExtent;
-
-    // Create pipeline for object
-    ArShadersPath shadersPath;
-    shadersPath.vertexShader = "../shaders/lampVert";
-    shadersPath.fragmentShader = "../shaders/lampFrag";
-    pipeline.arLightPipeline(renderPass, arDescriptor, shadersPath, &arPipeline);
-
-    arDescriptors.push_back(arDescriptor);
-    arPipelines.push_back(arPipeline);
-
-    // Update object position
-    unsigned long modelIndex = models.size();
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
 }
 
@@ -685,6 +623,10 @@ void VulkanRenderer::vulkanComputeShaders() {
 
     //stbi_write_png("../stbpng.png", width, height, 1, pixels, width * 1);
 
+
+}
+
+void VulkanRenderer::resetScene() {
 
 }
 

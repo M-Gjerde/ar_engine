@@ -45,7 +45,7 @@ void AppExtension::update() {
 
 
 float forward = 5, right = 0, rotation = 0;
-
+int modelIndex = 1;
 void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         std::cout << "exiting..." << std::endl;
@@ -67,10 +67,28 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
         vulkanRenderer.updateModel(model, 2);
     }
 
-    if (key == GLFW_KEY_N && action == GLFW_PRESS) {
+
+    if (key == GLFW_KEY_M && action == GLFW_PRESS) {
         glm::mat4 model = glm::translate(glm::mat4(0.01f), glm::vec3(1.0f, 0.0f, -1.0f));
-        model = glm::scale(model, glm::vec3(0.07f, 0.07f, 0.07f));
-        vulkanRenderer.updateModel(model, 1);
+        vulkanRenderer.updateModel(model, modelIndex);
+    }
+
+    if (key == GLFW_KEY_1 && action == GLFW_PRESS) {
+        modelIndex++;
+        printf("Model index: %d\n", modelIndex);
+    }
+
+    if (key == GLFW_KEY_2 && action == GLFW_PRESS) {
+        modelIndex--;
+        printf("Model index: %d\n", modelIndex);
+
+    }
+
+    if (key == GLFW_KEY_L && action == GLFW_PRESS) {
+        // Load scene objects according to settings file
+        vulkanRenderer.resetScene();
+        auto settingsMap = loadSettings.getSceneObjects();
+        vulkanRenderer.setupSceneFromFile(settingsMap);
     }
 
     if (key == GLFW_KEY_ENTER && action == GLFW_PRESS) {
@@ -85,12 +103,12 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
     if (key == GLFW_KEY_UP) {
         forward++;
         lightPos.z = forward;
-        vulkanRenderer.updateLightPos(lightPos, lightTrans, 1);
+        vulkanRenderer.updateLightPos(lightPos, lightTrans, modelIndex);
     }
     if (key == GLFW_KEY_DOWN) {
         forward--;
         lightPos.z = forward;
-        vulkanRenderer.updateLightPos(lightPos, lightTrans, 1);
+        vulkanRenderer.updateLightPos(lightPos, lightTrans, modelIndex);
     }
 
     if (key == GLFW_KEY_X && action == GLFW_PRESS) {
