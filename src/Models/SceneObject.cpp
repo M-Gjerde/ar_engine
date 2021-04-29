@@ -22,29 +22,41 @@ SceneObject::SceneObject(std::map<std::string, std::string> modelSettings, ArEng
     shadersPath.fragmentShader = "../shaders/" + modelSettings.at("fragment_shader");
 
     // Create mesh from model type
-    createMesh(modelSettings.at("type"));
+    createMesh(modelSettings);
     // Get descriptorInfo from file
     getDescriptorInfo(modelSettings);
     // Get object position
     getSceneObjectPose(modelSettings);
 
+    // Free pointer memory
+    delete descriptors;
+    delete buffer;
 
 
 }
 
 void SceneObject::getSceneObjectPose(std::map<std::string, std::string> modelSettings){
+    // pose
     float posX = std::stof(modelSettings.at("posX"));
     float posY = std::stof(modelSettings.at("posY"));
     float posZ = std::stof(modelSettings.at("posZ"));
     float rotX = std::stof(modelSettings.at("rotX"));
     float rotY = std::stof(modelSettings.at("rotY"));
     float rotZ = std::stof(modelSettings.at("rotZ"));
-    rotAngle = std::stof(modelSettings.at("rotAngle"));
+
+    // Scaling
+    float scaleX = std::stof(modelSettings.at("scaleX"));
+    float scaleY = std::stof(modelSettings.at("scaleY"));
+    float scaleZ = std::stof(modelSettings.at("scaleZ"));
     posVector = glm::vec3(posX, posY, posZ);
     rotVector = glm::vec3(rotX, rotY, rotZ);
+    scaleVector = glm::vec3(scaleX, scaleY, scaleZ);
+    rotAngle = std::stof(modelSettings.at("rotAngle"));
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, posVector);
+    model = glm::rotate(model, glm::radians(rotAngle), rotVector);
+    model = glm::scale(model, glm::vec3(scaleX, scaleY, scaleZ));
 
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), posVector);
-    model = glm::rotate(model, rotAngle, rotVector);
     meshModel.setModel(model);
 
 }
@@ -102,7 +114,10 @@ void SceneObject::getDescriptorInfoSequence(const std::string &type, std::vector
     while (getline(bindingSequence, intermediate, ' ')) {
         if (intermediate == "uboModel") {
             data->push_back(sizeof(uboModel));
-        } else {
+        } else if (intermediate == "FragmentColor"){
+            data->push_back(sizeof(FragmentColor));
+        }
+        else {
             data->push_back(std::stoi(intermediate));
 
         }
@@ -115,23 +130,26 @@ void SceneObject::getDescriptorInfoTypeAndStage(std::vector<VkDescriptorType> *d
 
     std::stringstream bindingSequence(modelSettings.at("pDescriptorType"));
     std::string intermediate;
-    // Tokenizing w.r.t. space ' '
+    // Descriptor types
     while (getline(bindingSequence, intermediate, ' ')) {
         if (intermediate == "uniformBuffer") {
             descriptorTypes->push_back(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
         }
     }
+    // Descriptor binding stages
     bindingSequence = std::stringstream(modelSettings.at("descriptorState"));
     while (getline(bindingSequence, intermediate, ' ')) {
         if (intermediate == "vertex") {
             stageFlags->push_back(VK_SHADER_STAGE_VERTEX_BIT);
+        } else if(intermediate == "fragment"){
+            stageFlags->push_back(VK_SHADER_STAGE_FRAGMENT_BIT);
         }
     }
 
 }
 
 
-void SceneObject::createMesh(std::string modelType) {
+void SceneObject::createMesh(std::map<std::string, std::string> modelSettings) {
 
     // Create Mesh
     ArModel arModel;
@@ -140,8 +158,8 @@ void SceneObject::createMesh(std::string modelType) {
 
     // ModelInfo
     ArModelInfo arModelInfo;
-    arModelInfo.modelName = "standard/" + modelType + ".obj";
-    arModelInfo.generateNormals = false;
+    arModelInfo.modelName = "standard/" + modelSettings.at("type") + ".obj";
+    arModelInfo.generateNormals = (modelSettings.at("normals") == "true");
 
     meshModel.loadModel(arEngine.mainDevice, arModel, arModelInfo);
 
@@ -149,7 +167,7 @@ void SceneObject::createMesh(std::string modelType) {
 }
 
 
-void SceneObject::createPipeline(Pipeline pipeline, VkRenderPass renderPass) {
+void SceneObject::createPipeline(VkRenderPass renderPass) {
     arPipeline.device = arEngine.mainDevice.device;
     arPipeline.swapchainImageFormat = arEngine.swapchainFormat;
     arPipeline.swapchainExtent = arEngine.swapchainExtent;
@@ -169,3 +187,32 @@ const ArPipeline &SceneObject::getArPipeline() const {
 MeshModel SceneObject::getMeshModel() {
     return meshModel;
 }
+
+const glm::mat4 &SceneObject::getModel() const {
+    return model;
+}
+
+void SceneObject::setModel(const glm::mat4 &model) {
+    SceneObject::model = model;
+}
+
+VkBuffer SceneObject::getVertexBuffer() const {
+    return meshModel.getVertexBuffer();
+}
+
+VkBuffer SceneObject::getIndexBuffer() const {
+    return meshModel.getIndexBuffer();
+}
+
+uint32_t SceneObject::getIndexCount() const {
+    return meshModel.indexCount;
+}
+
+void SceneObject::cleanUp(VkDevice device){
+    meshModel.cleanUp(device);
+}
+
+const glm::vec3 &SceneObject::getScaleVector() const {
+    return scaleVector;
+}
+

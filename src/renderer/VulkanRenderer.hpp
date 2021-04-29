@@ -31,8 +31,10 @@ public:
 
     int init(GLFWwindow *newWindow);
 
-    void updateModel(glm::mat4 newModel, int index);
+    void updateModel(glm::mat4 newModel, int index, bool isLight);
+
     void updateLightPos(glm::vec3 newPos, glm::mat4 transMat, int index);
+
     void updateSpecularLightCamera(glm::vec3 newPos);
 
     void updateCamera(glm::mat4 newView, glm::mat4 newProjection);
@@ -51,13 +53,14 @@ public:
 
     void setupSceneFromFile(std::vector<std::map<std::string, std::string>> modelSettings);
 
-    void updateScene();
-
     void deleteLastObject();
+
+    std::vector<SceneObject> getSceneObjects() const;
 
     void updateDisparityData();
 
     void startDisparityStream();
+
     void stopDisparityStream();
 
     bool takePhoto = false;
@@ -87,8 +90,8 @@ private:
 
 
     // Objects
-    std::vector<MeshModel> models{};
-    std::vector<SceneObject> cubes;
+    //std::vector<MeshModel> models{};
+    std::vector<SceneObject> objects;
 
     // Descriptors
     Descriptors *descriptors{}; // TODO To be removed
@@ -121,9 +124,13 @@ private:
     size_t currentFrame = 0;
 
     void createFrameBuffersAndRenderPass();
+
     void createCommandBuffers();
+
     void recordCommand();
+
     void createSyncObjects();
+
     void updateBuffer(uint32_t imageIndex);
 
 

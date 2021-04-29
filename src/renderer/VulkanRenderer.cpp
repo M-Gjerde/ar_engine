@@ -9,14 +9,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <chrono>
 #include "VulkanRenderer.hpp"
-#include "../pipeline/MeshModel.h"
 #include "../include/stbi_image_write.h"
 #include "opencv2/opencv.hpp"
-#include "../include/helper_functions.h"
-#include "../Models/SceneObject.h"
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/qvm/mat_operations.hpp>
-#include <boost/numeric/ublas/io.hpp>
+
 
 VulkanRenderer::VulkanRenderer() = default;
 
@@ -59,8 +54,8 @@ void VulkanRenderer::cleanup() {
 
     images->cleanUp(); // Clean up depth images
 
-    for (auto &meshmodels : models) {
-        meshmodels.cleanUp(arEngine.mainDevice.device);
+    for (auto &object : objects) {
+        object.cleanUp(arEngine.mainDevice.device);
     }
 
     // Clean descriptor sets
@@ -216,7 +211,7 @@ void VulkanRenderer::recordCommand() {
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = arEngine.swapchainExtent;
         std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = {0.05f, 0.25f, 0.05f, 1.0f};
+        clearValues[0].color = {0.25f, 0.25f, 0.25f, 1.0f};
         clearValues[1].depthStencil = {1.0f, 0};
 
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
@@ -224,13 +219,13 @@ void VulkanRenderer::recordCommand() {
 
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        for (int j = 0; j < models.size(); ++j) {
+        for (int j = 0; j < objects.size(); ++j) {
             vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, arPipelines[j].pipeline);
 
-            VkBuffer vertexBuffers[] = {models[j].getVertexBuffer()};
+            VkBuffer vertexBuffers[] = {objects[j].getVertexBuffer()};
             VkDeviceSize offsets[] = {0};
             vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
-            vkCmdBindIndexBuffer(commandBuffers[i], models[j].getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+            vkCmdBindIndexBuffer(commandBuffers[i], objects[j].getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
             vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
                                     arPipelines[j].pipelineLayout, 0, arDescriptors[j].descriptorSets.size(),
@@ -238,7 +233,7 @@ void VulkanRenderer::recordCommand() {
                                     nullptr);
 
 
-            vkCmdDrawIndexed(commandBuffers[i], models[j].indexCount, 1, 0, 0, 0);
+            vkCmdDrawIndexed(commandBuffers[i], objects[j].getIndexCount(), 1, 0, 0, 0);
 
         }
 
@@ -276,9 +271,9 @@ void VulkanRenderer::createSyncObjects() {
 }
 
 void VulkanRenderer::updateBuffer(uint32_t imageIndex) {
-    for (int i = 0; i < models.size(); ++i) {
+    for (int i = 0; i < objects.size(); ++i) {
 
-        uboModelVar.model = models[i].getModel();
+        uboModelVar.model = objects[i].getModel();
         // Copy vertex data
         void *data;
         vkMapMemory(arEngine.mainDevice.device, arDescriptors[i].bufferMemory[0], 0, arDescriptors[i].dataSizes[0],
@@ -304,13 +299,20 @@ void VulkanRenderer::updateCamera(glm::mat4 newView, glm::mat4 newProjection) {
 }
 
 // TODO can be combined with updateLightPos if a wrapper is written around those two
-void VulkanRenderer::updateModel(glm::mat4 newModel, int index) {
-    models[index].setModel(newModel);
+void VulkanRenderer::updateModel(glm::mat4 newModel, int index, bool isLight) {
+    objects[index].setModel(newModel);
+    if (isLight) {
+
+        fragmentColor.lightPos = glm::vec4(newModel[3].x, newModel[3].y, newModel[3].z, 1.0f);
+        fragmentColor.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
+        fragmentColor.objectColor = glm::vec4(0.5f, 0.5f, 0.31f, 0.0f);
+    }
 }
 
 void VulkanRenderer::updateLightPos(glm::vec3 newPos, glm::mat4 transMat, int index) {
-    models[index].setModel(glm::translate(transMat, newPos));
+    objects[index].setModel(glm::translate(transMat, newPos));
     fragmentColor.lightPos = glm::vec4(newPos, 1.0f);
+
 
 }
 
@@ -345,102 +347,21 @@ void VulkanRenderer::updateDisparityVideoTexture() {
 void VulkanRenderer::setupSceneFromFile(std::vector<std::map<std::string, std::string>> modelSettings) {
 // Load in each model
     for (int i = 0; i < modelSettings.size(); ++i) {
+        SceneObject object(modelSettings[i], arEngine);
+        object.createPipeline(renderPass);
 
-        if (modelSettings[i].at("type") == "sphere")
-            loadSphereObjects();
-        else if (modelSettings[i].at("type") == "cube"){
-
-            SceneObject cube(modelSettings[i], arEngine);
-
-            cube.createPipeline(pipeline, renderPass);
-
-            // Push objects to global lists
-            models.push_back(cube.getMeshModel());
-            arDescriptors.push_back(cube.getArDescriptor());
-            arPipelines.push_back(cube.getArPipeline());
-
-        }
+        // Push objects to global lists
+        arDescriptors.push_back(object.getArDescriptor());
+        arPipelines.push_back(object.getArPipeline());
+        objects.push_back(object);
 
     }
-
-    updateScene();
-}
-
-void VulkanRenderer::updateScene() {
-    // update command buffers
     recordCommand();
-
-    // --- Translate models ---
-    glm::mat4 trans(1.0f);
-    // Glasses
-    updateLightPos(glm::vec3(2 * (float)1, 0.20f, (float) 1 * -3.0f), trans, 0);
-
 }
 
 void VulkanRenderer::deleteLastObject() {
-    models.pop_back();
+    objects.pop_back();
     // TODO Clean up resources used with this object as well
-}
-
-
-void VulkanRenderer::loadSphereObjects() {
-    // ArModel passes queue and cmd pool from arEngine and used to store buffers and memory
-    ArModel arModel;
-    arModel.transferCommandPool = arEngine.commandPool;
-    arModel.transferQueue = arEngine.graphicsQueue;
-
-    // ModelInfo
-    ArModelInfo arModelInfo;
-    arModelInfo.modelName = "standard/sphere.obj";
-    arModelInfo.generateNormals = true;
-
-    MeshModel meshModel;
-    meshModel.setModelFileName("standard/sphere.obj");
-    meshModel.loadModel(arEngine.mainDevice, arModel, arModelInfo);
-
-
-    // Define the descriptor type attached to object
-    ArDescriptorInfo descriptorInfo{};
-    descriptorInfo.descriptorSetCount = 2;
-    descriptorInfo.descriptorSetLayoutCount = 2;
-    descriptorInfo.descriptorPoolCount = 1;
-    // What kind of data into descriptor
-    std::array<uint32_t, 2> sizes = {sizeof(uboModel), sizeof(FragmentColor)};
-    descriptorInfo.dataSizes = sizes.data();
-    descriptorInfo.descriptorCount = 2;
-    std::array<uint32_t, 2> descriptorCounts = {1, 1};
-    descriptorInfo.pDescriptorSplitCount = descriptorCounts.data();
-    std::array<uint32_t, 2> bindings = {0, 1};
-    descriptorInfo.pBindings = bindings.data();
-    std::array<VkDescriptorType, 2> types = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER};
-    descriptorInfo.pDescriptorType = types.data();
-    std::array<VkShaderStageFlags, 2> stageFlags = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
-    descriptorInfo.stageFlags = stageFlags.data();
-
-    // Descriptor handle
-    ArDescriptor arDescriptor;
-    // Create descriptors
-    meshModel.attachDescriptors(&arDescriptor, descriptorInfo, descriptors, buffer);
-
-
-    ArPipeline arPipeline{};
-    arPipeline.device = arEngine.mainDevice.device;
-    arPipeline.swapchainImageFormat = arEngine.swapchainFormat;
-    arPipeline.swapchainExtent = arEngine.swapchainExtent;
-
-    // Create pipeline
-    ArShadersPath shadersPath;
-    shadersPath.vertexShader = "../shaders/defaultVert";
-    shadersPath.fragmentShader = "../shaders/phongLightFrag";
-    pipeline.arLightPipeline(renderPass, arDescriptor, shadersPath, &arPipeline);
-    fragmentColor.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
-    fragmentColor.objectColor = glm::vec4(0.5f, 0.5f, 0.31f, 0.0f);
-
-    // Push objects to global lists
-    models.push_back(meshModel);
-    arDescriptors.push_back(arDescriptor);
-    arPipelines.push_back(arPipeline);
-
 }
 
 
@@ -550,15 +471,15 @@ void VulkanRenderer::vulkanComputeShaders() {
     cv::dilate(img, img, kernel);
 
     // Convert back to flopmappedMemoryat format to save and display
-    img.convertTo(img, CV_32FC1, (float)  1 /65535);
+    img.convertTo(img, CV_32FC1, (float) 1 / 65535);
     if (takePhoto) {
         cv::imwrite("../home_disparity" + std::to_string(loop) + ".exr", img);
         vulkanCompute->takePhoto = true;
     }
     img.convertTo(img, CV_8UC1, 255);
 
-     stop = std::chrono::high_resolution_clock::now();
-     endTime = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    stop = std::chrono::high_resolution_clock::now();
+    endTime = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
     printf("Filtering and converting: %ld ms\n", endTime.count() / 1000);
 
     // -- CALCULATE POINT CLOUD
@@ -576,7 +497,7 @@ void VulkanRenderer::vulkanComputeShaders() {
     uint32_t roiSize = 0;
     for (int i = roi.x; i < roi.y; ++i) {
         for (int j = roi.z; j < roi.w; ++j) {
-            if (img.at<uchar>(i, j) > 1){
+            if (img.at<uchar>(i, j) > 1) {
                 disparitySum += img.at<uchar>(i, j);
                 roiSize++;
             }
@@ -626,6 +547,10 @@ void VulkanRenderer::vulkanComputeShaders() {
 
 void VulkanRenderer::resetScene() {
 
+}
+
+std::vector<SceneObject> VulkanRenderer::getSceneObjects() const {
+    return objects;
 }
 
 

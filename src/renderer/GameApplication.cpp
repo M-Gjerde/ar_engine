@@ -25,9 +25,9 @@ void AppExtension::update() {
         angle += 50.0f * static_cast<float>(deltaTime);
         if (angle > 360) angle -= 360.0f;
         glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.0f, 0.0f));
-        rotateMat = glm::rotate(trans, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        rotateMat = glm::rotate(trans, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, -1.0f));
         rotateMat = glm::rotate(rotateMat, glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
-        vulkanRenderer.updateModel(rotateMat, 0);
+        vulkanRenderer.updateModel(rotateMat, 2, false);
 
     }
 
@@ -45,7 +45,9 @@ void AppExtension::update() {
 
 
 float forward = 5, right = 0, rotation = 0;
+float model_angle = 0;
 int modelIndex = 1;
+
 void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         std::cout << "exiting..." << std::endl;
@@ -60,35 +62,47 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
         vulkanRenderer.startDisparityStream();
         vulkanRenderer.updateDisparityData();
 
-    };
-
-    if (key == GLFW_KEY_M && action == GLFW_PRESS) {
-        glm::mat4 model = glm::translate(glm::mat4(0.01f), glm::vec3(5.0f, 0.0f, -10.0f));
-        vulkanRenderer.updateModel(model, 2);
     }
 
-
-    if (key == GLFW_KEY_M && action == GLFW_PRESS) {
-        glm::mat4 model = glm::translate(glm::mat4(0.01f), glm::vec3(1.0f, 0.0f, -1.0f));
-        vulkanRenderer.updateModel(model, modelIndex);
+    float rotAngle = 1;
+    std::vector<SceneObject> objects = vulkanRenderer.getSceneObjects();
+    glm::mat4 model = objects[modelIndex].getModel();
+    glm::vec3 scale = objects[modelIndex].getScaleVector();
+    float increment = (float) 0.25 / scale[0];
+    switch (key) {
+        case GLFW_KEY_KP_8:
+            model = glm::translate(model, glm::vec3(0, -increment, 0));
+            break;
+        case GLFW_KEY_KP_2:
+            model = glm::translate(model, glm::vec3(0, increment, 0));
+            break;
+        case GLFW_KEY_KP_4:
+            model = glm::translate(model, glm::vec3(increment, 0, 0));
+            break;
+        case GLFW_KEY_KP_6:
+            model = glm::translate(model, glm::vec3(-increment, 0, 0));
+            break;
+        case GLFW_KEY_KP_7:
+            model = glm::rotate(model, glm::radians(-rotAngle), glm::vec3(0, 0, 1));
+            break;
+        case GLFW_KEY_KP_9:
+            model = glm::rotate(model, glm::radians(rotAngle), glm::vec3(0, 0, 1));
+            break;
+        default:
+            break;
     }
 
-    if (key == GLFW_KEY_1 && action == GLFW_PRESS) {
-        modelIndex++;
-        printf("Model index: %d\n", modelIndex);
+    if (modelIndex == 1) {
+        vulkanRenderer.updateModel(model, modelIndex, true);
     }
 
-    if (key == GLFW_KEY_2 && action == GLFW_PRESS) {
-        modelIndex--;
-        printf("Model index: %d\n", modelIndex);
-
-    }
+    vulkanRenderer.updateModel(model, modelIndex, false);
 
     if (key == GLFW_KEY_L && action == GLFW_PRESS) {
         // Load scene objects according to settings file
         vulkanRenderer.resetScene();
         auto settingsMap = loadSettings.getSceneObjects();
-        vulkanRenderer.setupSceneFromFile(settingsMap);
+        //vulkanRenderer.setupSceneFromFile(settingsMap);
     }
 
     if (key == GLFW_KEY_ENTER && action == GLFW_PRESS) {
@@ -100,26 +114,20 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
         vulkanRenderer.takePhoto = true;
     }
 
-    if (key == GLFW_KEY_UP) {
-        forward++;
-        lightPos.z = forward;
-        vulkanRenderer.updateLightPos(lightPos, lightTrans, modelIndex);
+    if (key == GLFW_KEY_1 && action == GLFW_PRESS) {
+        modelIndex++;
+        printf("modelIndex: %d\n", modelIndex);
     }
-    if (key == GLFW_KEY_DOWN) {
-        forward--;
-        lightPos.z = forward;
-        vulkanRenderer.updateLightPos(lightPos, lightTrans, modelIndex);
+    if (key == GLFW_KEY_2 && action == GLFW_PRESS) {
+        modelIndex--;
+        printf("modelIndex: %d\n", modelIndex);
+
     }
 
     if (key == GLFW_KEY_X && action == GLFW_PRESS) {
-        if (rotate)
-            rotate = false;
-        else
-            rotate = true;
 
-        vulkanRenderer.updateModel(rotateMat, 0);
+
     }
-
 
 
     if (key == GLFW_KEY_RIGHT)

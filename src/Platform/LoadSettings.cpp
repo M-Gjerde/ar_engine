@@ -6,10 +6,10 @@
 #include "LoadSettings.h"
 
 void LoadSettings::init() {
-    nlohmann::json json;
 
     // read a JSON file
     std::ifstream jsonStream("../user/config.json");
+
     // Put into JSON object
     jsonStream >> json;
 
@@ -34,10 +34,32 @@ void LoadSettings::init() {
         }
     }
 
+    json["settings"]["objects"][0]["posX"] = "-10";
+
+
 
     printf("Finished reading scene settings\n");
 }
 
 const std::vector<std::map<std::string, std::string>> &LoadSettings::getSceneObjects() const {
     return sceneObjects;
+}
+
+void LoadSettings::saveScene(VulkanRenderer vulkanRenderer) {
+    std::vector<SceneObject> objects = vulkanRenderer.getSceneObjects();
+
+    for (int i = 0; i < objects.size(); ++i) {
+        glm::mat4 model = objects[i].getModel();
+        // Save positions (Last column of model matrix)
+        json["settings"]["objects"][i]["posX"] = std::to_string(model[3].x);
+        json["settings"]["objects"][i]["posY"] = std::to_string(model[3].y);
+        json["settings"]["objects"][i]["posZ"] = std::to_string(model[3].z);
+
+        // TODO Save scaling and rotation too.
+
+    }
+
+    std::ofstream file("../user/config.json");
+    file << json;
+
 }

@@ -32,7 +32,7 @@ Camera::Camera() {
 
     view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
-    projection = glm::perspective(glm::radians(45.0f), (float) viewport.WIDTH / (float) viewport.HEIGHT, 0.1f, 100.0f);
+    projection = glm::perspective(glm::radians(45.0f), (float) viewport.WIDTH / (float) viewport.HEIGHT, 0.1f, 10000.0f);
     projection[1][1] *= -1;
 
 }
