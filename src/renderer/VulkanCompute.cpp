@@ -297,13 +297,19 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
         cv::rectangle(img1, object, cv::Scalar(0, 255, 0));
     }
     int yMax = 0, xMax = 0;
+    ROI.active = false;
+    int nRoi = 50 ;// variable to increase ROI window size;
     glm::vec4 roi(0, 0, 0, 0);
-
     if (!objects.empty()) {
-        yMax = objects[0].y + objects[0].height;
-        xMax = objects[0].x + objects[0].width;
-        roi = glm::vec4(objects[0].y, yMax, objects[0].x, xMax);
-        setRoi(roi);
+        yMax = objects[0].y + objects[0].height + nRoi;
+        xMax = objects[0].x + objects[0].width + nRoi;
+        roi = glm::vec4(objects[0].y - nRoi, yMax, objects[0].x - nRoi , xMax);
+
+        ROI.y = objects[0].y -nRoi;
+        ROI.x = objects[0].x -nRoi;
+        ROI.width = objects[0].width + nRoi;
+        ROI.height =  objects[0].height + nRoi;
+        ROI.active = true;
     }
 
     // Put region of interest into vec4 for shader compatability
@@ -393,12 +399,8 @@ void VulkanCompute::startDisparityStream() {
 
 }
 
-const glm::vec4 &VulkanCompute::getRoi() const {
+const ArROI &VulkanCompute::getRoi() const {
     return ROI;
-}
-
-void VulkanCompute::setRoi(const glm::vec4 &roi) {
-    ROI = roi;
 }
 
 void VulkanCompute::setupFaceDetector() {

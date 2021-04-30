@@ -11,6 +11,7 @@
 #include "VulkanRenderer.hpp"
 #include "../include/stbi_image_write.h"
 #include "opencv2/opencv.hpp"
+#include "../include/helper_functions.h"
 
 
 VulkanRenderer::VulkanRenderer() = default;
@@ -436,7 +437,7 @@ void VulkanRenderer::vulkanComputeShaders() {
     }
     auto stop = std::chrono::high_resolution_clock::now();
     auto endTime = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-    printf("Queue submit Time taken: %ld ms\n", endTime.count() / 1000);
+    //printf("Queue submit Time taken: %ld ms\n", endTime.count() / 1000);
 
 
     // --- Retrieve data from compute pipeline ---
@@ -470,47 +471,65 @@ void VulkanRenderer::vulkanComputeShaders() {
     cv::Mat kernel = cv::Mat::ones(5, 5, CV_32F);
     cv::dilate(img, img, kernel);
 
-    // Convert back to flopmappedMemoryat format to save and display
+    // Convert back to float format to save and display
     img.convertTo(img, CV_32FC1, (float) 1 / 65535);
+
+    ArROI roi = vulkanCompute->getRoi();
+    std::vector<glm::vec3> pointPositions;
+    if (roi.active) {
+        disparityToPoint(img, roi, &pointPositions);
+        //disparityToPointWriteToFile(img, roi, &pointPositions);
+
+        int k = pointPositions.size() / 2;
+        if (pointPositions[k].x > -10 && pointPositions[k].x < 10) {
+
+            float sumX = 0;
+            float sumY = 0;
+            float sumZ = 0;
+            for (int i = 0; i < 10; ++i) {
+                sumX += pointPositions[k + i - 5].x;
+                sumY += pointPositions[k + i - 5].y;
+                sumZ += pointPositions[k + i - 5].z;
+
+            }
+
+            glm::vec3 trans(sumX / 10, sumY / 10, -sumZ / 10);
+            glm::mat4 model = glm::translate(glm::mat4(2.0f), trans);
+            model = glm::scale(model, glm::vec3(0.1, 0.1, 0.1));
+            updateModel(model, 1, true);
+            printf("cube_pos: %f, %f, %f\n", pointPositions[k].x, pointPositions[k].y, pointPositions[k].z);
+
+        }
+
+        //disparityToPointWriteToFile(img, roi, &pointPositions);
+
+    }
     if (takePhoto) {
         cv::imwrite("../home_disparity" + std::to_string(loop) + ".exr", img);
         vulkanCompute->takePhoto = true;
+
     }
     img.convertTo(img, CV_8UC1, 255);
 
     stop = std::chrono::high_resolution_clock::now();
     endTime = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-    printf("Filtering and converting: %ld ms\n", endTime.count() / 1000);
+    //printf("Filtering and converting: %ld ms\n", endTime.count() / 1000);
 
     // -- CALCULATE POINT CLOUD
     //createPointCloudWriteToPCD(img, "/home/magnus/CLionProjects/bachelor_project/pcl_data/3d_points"+std::to_string(loop)+".pcd");
-
-
 
 
     //cv::normalize(img, img, 0, 1, cv::NORM_MINMAX);
 
     cv::imshow("Raw disparity", img);
 
-    glm::vec4 roi = vulkanCompute->getRoi();
-    uint32_t disparitySum = 0;
-    uint32_t roiSize = 0;
-    for (int i = roi.x; i < roi.y; ++i) {
-        for (int j = roi.z; j < roi.w; ++j) {
-            if (img.at<uchar>(i, j) > 1) {
-                disparitySum += img.at<uchar>(i, j);
-                roiSize++;
-            }
-        }
-    }
 
-    glm::vec3 lightPos = glm::vec3(5.0f, 0.0f, (float) disparitySum / roiSize);
-    glm::mat4 lightTrans(1.0f);
+    uint32_t roiSize = roi.width * roi.height;
 
-    updateLightPos(lightPos, lightTrans, 1);
+    //boost::numeric::ublas::matrix<float> pointMat(4, roiSize);
+
 
     //printf("avg disp: %f\n", (float) disparitySum/roiSize);
-
     stop = std::chrono::high_resolution_clock::now();
     endTime = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
     //printf("summing ROI and updating pos: %ld ms\n", endTime.count() / 1000);

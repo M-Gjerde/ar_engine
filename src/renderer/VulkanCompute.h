@@ -27,8 +27,8 @@ public:
 
     void previewVideoStreams();
 
-    const glm::vec4 &getRoi() const;
-    void setRoi(const glm::vec4 &roi);
+    const ArROI &getRoi() const;
+
     void loadImagePreviewData(ArCompute arCompute, Buffer *pBuffer) const;
 
     bool takePhoto = false;
@@ -45,7 +45,7 @@ private:
     ThreadSpawner threadSpawner;
     ArSharedMemory * memP;
 
-    glm::vec4 ROI;
+    ArROI ROI;
     cv::CascadeClassifier classifier;
 
     void setupFaceDetector();

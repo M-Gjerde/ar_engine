@@ -14,6 +14,14 @@
 #include <string>
 #include <array>
 
+struct ArROI {
+    int x;
+    int y;
+    int width;
+    int height;
+    bool active = false;
+};
+
 struct ArShadersPath {
     std::string vertexShader;
     std::string fragmentShader;
