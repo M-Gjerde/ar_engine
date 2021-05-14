@@ -478,7 +478,7 @@ void VulkanRenderer::vulkanComputeShaders() {
     std::vector<glm::vec3> pointPositions;
     if (roi.active) {
         disparityToPoint(img, roi, &pointPositions);
-        //disparityToPointWriteToFile(img, roi, &pointPositions);
+        disparityToPointWriteToFile(img, roi, &pointPositions);
 
         int k = pointPositions.size() / 2;
         if (pointPositions[k].x > -10 && pointPositions[k].x < 10) {
@@ -520,6 +520,7 @@ void VulkanRenderer::vulkanComputeShaders() {
 
 
     //cv::normalize(img, img, 0, 1, cv::NORM_MINMAX);
+    cv::equalizeHist(img, img);
 
     cv::imshow("Raw disparity", img);
 

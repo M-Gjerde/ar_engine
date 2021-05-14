@@ -33,7 +33,8 @@ void main()
     uint gCol = index % 640;
 
     const int k = 15;                               // Kernel size i.e k * k
-    uint disparityLevel = 128;                      // Pixels in x-direction to search for correspondence
+    uint disparityLevel = 256;                      // Pixels in x-direction to search for correspondence
+
 
     // Check we are only computing necessary rows
     if (gRow < (opt.roi.x) || gRow > (opt.roi.y)){
@@ -52,7 +53,7 @@ void main()
         return;
     }
 
-    const int disparityLevelArraySize = 128;        // Pixels in x-direction to search for correspondence (const int for array declaration)
+    const int disparityLevelArraySize = 256;        // Pixels in x-direction to search for correspondence (const int for array declaration)
     int stride = 640;                               // Width of input image (Assume identical L/R dimmensions
     float minThreshold = 150000;                       // Threshold value for minimzer for cost fuction
 
@@ -124,9 +125,12 @@ void main()
         imgOut.imgData[index].x = 0;
         return;
     }
+    float disp = disparity;
 
+    imgOut.imgData[index].x = disp / 255;
 
     // --- SUBPIXEL ESTIMATION ---
+    /*
     float x1, y1, x2, y2, x3, y3;
     x1 = disparity;
     x2 = disparity - 1;
@@ -163,5 +167,5 @@ void main()
     //if (index == (640 * 240 + 320))
     //debugPrintfEXT("disparity: %d\n", disparity);
 
-
+*/
 }
