@@ -294,7 +294,7 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
     classifier.detectMultiScale(img1, objects, 1.1, 8);
 
     for (auto &object : objects) {
-        cv::rectangle(img1, object, cv::Scalar(0, 255, 0));
+        //cv::rectangle(img1, object, cv::Scalar(0, 255, 0));
     }
     int yMax = 0, xMax = 0;
     ROI.active = false;
@@ -306,7 +306,7 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
     ROI.height = 480;
     ROI.active = true;
 
-    if (!objects.empty()) {
+   /* if (!objects.empty()) {
         yMax = objects[0].y + objects[0].height + nRoi;
         xMax = objects[0].x + objects[0].width + nRoi;
         roi = glm::vec4(objects[0].y - nRoi, yMax, objects[0].x - nRoi, xMax);
@@ -316,7 +316,7 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
         ROI.width = objects[0].width + nRoi;
         ROI.height = objects[0].height + nRoi;
     }
-
+*/
     // Put region of interest into vec4 for shader compatability
 
     cv::imshow("left", img1);
