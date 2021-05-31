@@ -5,18 +5,10 @@
 #include "FaceDetector.h"
 
 FaceDetector::FaceDetector() {
-
-
-}
-
-void FaceDetector::detectFaceRegion(cv::Mat img) {
-    const cv::Scalar meanVal(104.0, 177.0, 123.0);
-
-
     std::string protoTxtFileName = "../user/NNM/deploy.prototxt";
     std::string caffeModel = "../user/NNM/res10_300x300_ssd_iter_140000.caffemodel";
 
-    cv::dnn::Net net = cv::dnn::readNetFromCaffe(protoTxtFileName, caffeModel);
+    net = cv::dnn::readNetFromCaffe(protoTxtFileName, caffeModel);
 
     if (net.empty())
     {
@@ -26,10 +18,14 @@ void FaceDetector::detectFaceRegion(cv::Mat img) {
         exit(-1);
     }
 
+}
+
+void FaceDetector::detectFaceRegion(cv::Mat img) {
+    const cv::Scalar meanVal(104.0, 177.0, 123.0);
+
+
     // Resize image to 300x300 res
     cv::Mat imgResized;
-    cv::Mat img2 = cv::imread("../user/NNM/bald_guys.jpg");
-    img2 = cv::imread("../left.png");
     cv::resize(img, imgResized, cv::Size(300, 300));
 
     cv::Mat blob;
@@ -64,7 +60,4 @@ void FaceDetector::detectFaceRegion(cv::Mat img) {
         }
     }
     imshow("detections", img);
-    cv::waitKey();
-
-
 }

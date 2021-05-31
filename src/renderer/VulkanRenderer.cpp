@@ -375,16 +375,15 @@ void VulkanRenderer::updateDisparityData() {
     //cv::namedWindow("window", cv::WINDOW_FREERATIO);
     //cv::namedWindow("window2", cv::WINDOW_FREERATIO);
     //cv::namedWindow("Disparity image", cv::WINDOW_FREERATIO);
-    cv::Mat img(cv::Size(640, 480), CV_8U);
-    vulkanCompute->loadComputeData(&img);
-    cv::imshow("imgshow", img);
-    cv::waitKey(500);
+    cv::Mat img = cv::imread("../left.png", cv::IMREAD_GRAYSCALE);     // Imread a dummy image to populate the cv::Mat img object
+    vulkanCompute->loadComputeData(&img);                                           // Load stereo images into GPU. also copy one to be used as face recognition
+    cv::cvtColor(img, img, cv::COLOR_GRAY2BGR);                       // cvtColor to make img a valid input for OpenCv's DNN caffe implementation
     faceDetector.detectFaceRegion(img);
 
 
-    vulkanCompute->executeComputeCommandBuffer();
+    //vulkanCompute->executeComputeCommandBuffer();
     //vulkanCompute->loadImagePreviewData(arCompute, buffer);
-    vulkanCompute->readComputeResult();
+    //vulkanCompute->readComputeResult();
 
     if (cv::waitKey(1) == 27) {
         updateDisparity = false;
