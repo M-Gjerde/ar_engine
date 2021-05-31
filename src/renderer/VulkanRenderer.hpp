@@ -19,6 +19,7 @@
 #include "../FaceAugment/ThreadSpawner.h"
 #include "../pipeline/MeshModel.h"
 #include "../Models/SceneObject.h"
+#include "../FaceAugment/FaceDetector.h"
 #include <stdexcept>
 #include <vector>
 #include <iostream>
@@ -77,9 +78,10 @@ private:
 
     // Compute pipeline
     VulkanCompute *vulkanCompute{};
-    ArCompute arCompute;
     VkFence computeFence{};
     bool updateDisparity = false;
+    FaceDetector faceDetector;
+
 
     // Buffer
     Buffer *buffer{}; // TODO To be removed

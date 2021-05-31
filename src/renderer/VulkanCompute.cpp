@@ -384,7 +384,7 @@ void VulkanCompute::loadComputeData(cv::Mat* rImg) {
 
     cv::Mat img1(height, width, CV_8UC1);
     img1.data = reinterpret_cast<uchar *>(memPixelOne);
-    *rImg = img1;
+    rImg->data = reinterpret_cast<uchar *>(memPixelOne);
     /*
     // initialize two opencv images used for frontal face classifier
     cv::Mat img1(height, width, CV_8UC1);

@@ -11,8 +11,6 @@
 #include "VulkanRenderer.hpp"
 #include "../include/stbi_image_write.h"
 #include "opencv2/opencv.hpp"
-#include "../include/helper_functions.h"
-#include "../FaceAugment/FaceDetector.h"
 
 
 VulkanRenderer::VulkanRenderer() = default;
@@ -372,15 +370,15 @@ void VulkanRenderer::initComputePipeline() {
 
 }
 
-FaceDetector faceDetector;
 
 void VulkanRenderer::updateDisparityData() {
     //cv::namedWindow("window", cv::WINDOW_FREERATIO);
     //cv::namedWindow("window2", cv::WINDOW_FREERATIO);
     //cv::namedWindow("Disparity image", cv::WINDOW_FREERATIO);
-    cv::Mat img;
+    cv::Mat img(cv::Size(640, 480), CV_8U);
     vulkanCompute->loadComputeData(&img);
-
+    cv::imshow("imgshow", img);
+    cv::waitKey(500);
     faceDetector.detectFaceRegion(img);
 
 
