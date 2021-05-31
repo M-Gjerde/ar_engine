@@ -5016,7 +5016,7 @@ static int stbi__parse_png_file(stbi__png *z, int scan, int req_comp)
                stbi__de_iphone(z);
             if (pal_img_n) {
                // pal_img_n == 3 or 4
-               s->img_n = pal_img_n; // record the actual colors we had
+               s->img_n = pal_img_n; // FaceAugment the actual colors we had
                s->img_out_n = pal_img_n;
                if (req_comp >= 3) s->img_out_n = req_comp;
                if (!stbi__expand_png_palette(z, palette, pal_len, s->img_out_n))

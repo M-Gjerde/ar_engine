@@ -10,7 +10,7 @@
 #include "../pipeline/Descriptors.h"
 #include "../Platform/Platform.h"
 #include "../include/stb_image.h"
-#include "../record/ThreadSpawner.h"
+#include "../FaceAugment/ThreadSpawner.h"
 
 class VulkanCompute {
 
@@ -19,21 +19,22 @@ public:
 
     ~VulkanCompute() = default;
 
-    ArCompute setupComputePipeline(Buffer *pBuffer, Descriptors *pDescriptors, Platform *pPlatform, Pipeline pipeline);
-    void loadComputeData(ArCompute arCompute, Buffer *pBuffer);
+    void setupComputePipeline(Buffer *pBuffer, Descriptors *pDescriptors, Platform *pPlatform, Pipeline pipeline);
+
+    void loadComputeData();
+    void loadComputeData(cv::Mat *rImg);
+
     void stopDisparityStream();
+
     void startDisparityStream();
+
     void cleanup();
-
-    void previewVideoStreams();
-
-    const ArROI &getRoi() const;
 
     void loadImagePreviewData(ArCompute arCompute, Buffer *pBuffer) const;
 
-    bool takePhoto = false;
+    void executeComputeCommandBuffer();
 
-
+    void readComputeResult();
 
 private:
 
@@ -41,14 +42,17 @@ private:
     ArDescriptor arDescriptor{};
     VkCommandPool commandPool{};
     ArPipeline computePipeline{};
+    VkFence computeFence{};
+    ArCompute arCompute;
 
     ThreadSpawner threadSpawner;
-    ArSharedMemory * memP;
+    ArSharedMemory *memP;
 
     ArROI ROI;
     cv::CascadeClassifier classifier;
 
     void setupFaceDetector();
+
 };
 
 

@@ -60,7 +60,6 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
         //vulkanRenderer.loadSphereObjects();
         //vulkanRenderer.updateScene();
         vulkanRenderer.startDisparityStream();
-        vulkanRenderer.updateDisparityData();
 
     }
 
@@ -111,7 +110,6 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
     }
 
     if (key == GLFW_KEY_C && action == GLFW_PRESS) {
-        vulkanRenderer.takePhoto = true;
     }
 
     if (key == GLFW_KEY_1 && action == GLFW_PRESS) {

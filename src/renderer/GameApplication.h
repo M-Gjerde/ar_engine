@@ -19,7 +19,7 @@
 #include "VulkanRenderer.hpp"
 #include "../pipeline/Camera.h"
 #include "../Platform/LoadSettings.h"
-#include "../record/ThreadSpawner.h"
+#include "../FaceAugment/ThreadSpawner.h"
 
 class GameApplication {
 

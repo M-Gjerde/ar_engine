@@ -44,8 +44,8 @@ void VulkanCompute::cleanup() {
 
 }
 
-ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDescriptors, Platform *pPlatform,
-                                              Pipeline pipeline) {
+void VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDescriptors, Platform *pPlatform,
+                                         Pipeline pipeline) {
 
     setupFaceDetector();
 
@@ -187,10 +187,19 @@ ArCompute VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDes
     // If Vulkan setup finished retrieve pointer to memory for camera data IPC.
     memP = threadSpawner.getVideoMemoryPointer();
 
-    ArCompute arCompute;
+    // -- CREATE COMPUTE QUEUE FENCES ---
+    VkFenceCreateInfo fenceCreateInfo = {};
+    fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceCreateInfo.flags = 0;
+    result = vkCreateFence(arEngine.mainDevice.device, &fenceCreateInfo, NULL, &computeFence);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to create fence");
+
+    vkResetFences(arEngine.mainDevice.device, 1, &computeFence);
+
     arCompute.commandBuffer = commandBuffer;
     arCompute.descriptor = arDescriptor;
-    return arCompute;
+
 }
 
 void VulkanCompute::loadImagePreviewData(ArCompute arCompute, Buffer *pBuffer) const {
@@ -256,12 +265,107 @@ void VulkanCompute::loadImagePreviewData(ArCompute arCompute, Buffer *pBuffer) c
 
 }
 
-int loopp = 0;
 
-void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
+void VulkanCompute::readComputeResult(){
+    // --- RETRIEVE DATA FROM GPU ---
+    //int width = 1282, height = 1110;
+    //int width = 1280, height = 720;
+    //int width = 427, height = 370;
+    int width = 640, height = 480;
+    //int width = 450, height = 375;
+    //int width = 256, height = 256;
+
+    int imageSize = (width * height);
+
+    void *mappedMemory = nullptr;
+    // Map the buffer memory, so that we can read from it on the CPU.
+    vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[3], 0, imageSize * sizeof(float), 0,
+                &mappedMemory);
+    auto *pmappedMemory = (float *) mappedMemory;
 
 
-    //int imageSize = memP->imgLen1 / 2;
+    // Create float type image at fill it with data from gpu
+    cv::Mat img(height, width, CV_32FC1);
+    img.data = reinterpret_cast<uchar *>(pmappedMemory);
+
+    // convert image to 16 bit uc1 to apply medianBlur and dilate filters
+    img.convertTo(img, CV_16UC1, 65535);
+
+    // Remove salt 'n pepper noise - must be a 8 or 16 bit type.
+    cv::medianBlur(img, img, 5);
+    cv::Mat kernel = cv::Mat::ones(5, 5, CV_32F);
+    cv::dilate(img, img, kernel);
+
+    // Convert back to float format to save and display
+    img.convertTo(img, CV_32FC1, (float) 1 / 65535);
+
+    // --- TRANSFORM MODEL BASED ON STEREO VISION DATA
+    /*
+    ArROI roi = vulkanCompute->getRoi();
+    std::vector<glm::vec3> pointPositions;
+    if (roi.active) {
+        disparityToPoint(img, roi, &pointPositions);
+        disparityToPointWriteToFile(img, roi, &pointPositions);
+
+        int k = pointPositions.size() / 2;
+        if (pointPositions[k].x > -10 && pointPositions[k].x < 10) {
+
+            float sumX = 0;
+            float sumY = 0;
+            float sumZ = 0;
+            for (int i = 0; i < 10; ++i) {
+                sumX += pointPositions[k + i - 5].x;
+                sumY += pointPositions[k + i - 5].y;
+                sumZ += pointPositions[k + i - 5].z;
+
+            }
+
+            glm::vec3 trans(sumX / 10, sumY / 10, -sumZ / 10);
+            glm::mat4 model = glm::translate(glm::mat4(2.0f), trans);
+            model = glm::scale(model, glm::vec3(0.1, 0.1, 0.1));
+            updateModel(model, 1, true);
+            printf("cube_pos: %f, %f, %f\n", pointPositions[k].x, pointPositions[k].y, pointPositions[k].z);
+
+        }
+
+        //disparityToPointWriteToFile(img, roi, &pointPositions);
+
+    }
+*/
+    img.convertTo(img, CV_8UC1, 255);
+
+    cv::imshow("Result Raw", img);
+
+    vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[3]);
+}
+
+void VulkanCompute::executeComputeCommandBuffer(){
+    // --- EXECUTE COMMAND BUFFER ---
+    auto start = std::chrono::high_resolution_clock::now();
+    vkResetFences(arEngine.mainDevice.device, 1, &computeFence);
+
+    VkSubmitInfo submitInfo = {};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1; // submit a single command buffer
+    submitInfo.pCommandBuffers = &arCompute.commandBuffer; // the command buffer to submit.
+
+    VkResult result = vkQueueSubmit(arEngine.computeQueue, 1, &submitInfo, computeFence);
+    if (result != VK_SUCCESS) {
+        throw std::runtime_error("Failed to submit queue");
+    }
+
+    //printf("Waiting for fences\n");
+    result = vkWaitForFences(arEngine.mainDevice.device, 1, &computeFence, VK_TRUE, UINT64_MAX);
+    if (result != VK_SUCCESS) {
+        throw std::runtime_error("Failed to wait for fence");
+    }
+
+}
+
+
+void VulkanCompute::loadComputeData(cv::Mat* rImg) {
+
+    // Fixed image size
     int imageSize = 640 * 480;
     int width = 640, height = 480;
 
@@ -271,24 +375,22 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
     auto origOne = imgOnePixel;
     auto origTwo = imgTwoPixel;
 
+    // Get pointers for memory where R and L images are. The data is put there by the RealsenseStreamer class
     auto memPixelOne = (unsigned char *) memP->imgOne;
     auto memPixelTwo = (unsigned char *) memP->imgTwo;
 
+    // Ful image ROI
+    glm::vec4 roi(0, 480, 0, 640);
 
+    cv::Mat img1(height, width, CV_8UC1);
+    img1.data = reinterpret_cast<uchar *>(memPixelOne);
+    *rImg = img1;
+    /*
+    // initialize two opencv images used for frontal face classifier
     cv::Mat img1(height, width, CV_8UC1);
     cv::Mat img2(height, width, CV_8UC1);
 
-    // memcpy(imgOnePixel, memPixelOne, imageSize/sizeof(float)*sizeof(float));
-    //memcpy(imgTwoPixel, memPixelTwo, imageSize/sizeof(float)*sizeof(float));
-
-    //const auto *memPixelOne = reinterpret_cast<const float*>(memP->imgOne);
-
     img1.data = reinterpret_cast<uchar *>(memPixelOne);
-    img2.data = memPixelTwo;
-
-    //glm::vec4 roi(0, 0, 480, 640);
-
-    // OpenCV Face detection
 
     std::vector<cv::Rect> objects;
     classifier.detectMultiScale(img1, objects, 1.1, 8);
@@ -316,11 +418,11 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
         ROI.width = objects[0].width + nRoi;
         ROI.height = objects[0].height + nRoi;
     }
-*/
     // Put region of interest into vec4 for shader compatability
 
     cv::imshow("left", img1);
     //cv::imshow("right", img2);
+
 
     if (takePhoto) {
         cv::imwrite("../left" + std::to_string(loopp) + ".png", img1);
@@ -330,7 +432,9 @@ void VulkanCompute::loadComputeData(ArCompute arCompute, Buffer *pBuffer) {
     }
     cv::imwrite("../left.png", img1);
 
+*/
 
+    // Copy data from image to a floats
     for (int i = 0; i < imageSize; ++i) {
         *imgOnePixel = *memPixelOne;
         *imgTwoPixel = *memPixelTwo;
@@ -400,13 +504,10 @@ void VulkanCompute::stopDisparityStream() {
 
 void VulkanCompute::startDisparityStream() {
     threadSpawner.startChildProcess();
-    //threadSpawner.waitForExistence();
+    threadSpawner.waitForExistence();
 
 }
 
-const ArROI &VulkanCompute::getRoi() const {
-    return ROI;
-}
 
 void VulkanCompute::setupFaceDetector() {
     classifier = cv::CascadeClassifier("../user/haarcascade_frontalface_default.xml");

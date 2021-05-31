@@ -12,6 +12,7 @@
 #include "../include/stbi_image_write.h"
 #include "opencv2/opencv.hpp"
 #include "../include/helper_functions.h"
+#include "../FaceAugment/FaceDetector.h"
 
 
 VulkanRenderer::VulkanRenderer() = default;
@@ -241,7 +242,7 @@ void VulkanRenderer::recordCommand() {
         vkCmdEndRenderPass(commandBuffers[i]);
 
         if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
-            throw std::runtime_error("failed to record command buffer!");
+            throw std::runtime_error("failed to FaceAugment command buffer!");
         }
     }
 }
@@ -342,7 +343,7 @@ void VulkanRenderer::updateDisparityVideoTexture() {
     recordCommand();
      */
 
-    // printf("Texture and re-record cmd buffers time taken: %.7fs\n", (double) (clock() - Start) / CLOCKS_PER_SEC;);
+    // printf("Texture and re-FaceAugment cmd buffers time taken: %.7fs\n", (double) (clock() - Start) / CLOCKS_PER_SEC;);
 }
 
 void VulkanRenderer::setupSceneFromFile(std::vector<std::map<std::string, std::string>> modelSettings) {
@@ -367,26 +368,25 @@ void VulkanRenderer::deleteLastObject() {
 
 
 void VulkanRenderer::initComputePipeline() {
-    arCompute = vulkanCompute->setupComputePipeline(buffer, descriptors, platform, pipeline);
+    vulkanCompute->setupComputePipeline(buffer, descriptors, platform, pipeline);
 
-    VkFenceCreateInfo fenceCreateInfo = {};
-    fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceCreateInfo.flags = 0;
-    VkResult result = vkCreateFence(arEngine.mainDevice.device, &fenceCreateInfo, NULL, &computeFence);
-    if (result != VK_SUCCESS)
-        throw std::runtime_error("Failed to create fence");
-
-    vkResetFences(arEngine.mainDevice.device, 1, &computeFence);
 }
+
+FaceDetector faceDetector;
 
 void VulkanRenderer::updateDisparityData() {
     //cv::namedWindow("window", cv::WINDOW_FREERATIO);
     //cv::namedWindow("window2", cv::WINDOW_FREERATIO);
     //cv::namedWindow("Disparity image", cv::WINDOW_FREERATIO);
+    cv::Mat img;
+    vulkanCompute->loadComputeData(&img);
 
-    vulkanCompute->loadComputeData(arCompute, buffer);
+    faceDetector.detectFaceRegion(img);
+
+
+    vulkanCompute->executeComputeCommandBuffer();
     //vulkanCompute->loadImagePreviewData(arCompute, buffer);
-    vulkanComputeShaders();
+    vulkanCompute->readComputeResult();
 
     if (cv::waitKey(1) == 27) {
         updateDisparity = false;
@@ -400,170 +400,6 @@ void VulkanRenderer::updateDisparityData() {
 */
 }
 
-void VulkanRenderer::startDisparityStream() {
-    vulkanCompute->startDisparityStream();
-    updateDisparity = true;
-}
-
-void VulkanRenderer::stopDisparityStream() {
-    vulkanCompute->stopDisparityStream();
-}
-
-
-int loop = 0;
-
-void VulkanRenderer::vulkanComputeShaders() {
-
-
-    auto start = std::chrono::high_resolution_clock::now();
-    vkResetFences(arEngine.mainDevice.device, 1, &computeFence);
-
-    VkSubmitInfo submitInfo = {};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1; // submit a single command buffer
-    submitInfo.pCommandBuffers = &arCompute.commandBuffer; // the command buffer to submit.
-
-    VkResult result = vkQueueSubmit(arEngine.computeQueue, 1, &submitInfo, computeFence);
-    if (result != VK_SUCCESS) {
-        printf("result: %d\n", result);
-        throw std::runtime_error("Failed to wait for fence");
-    }
-
-    //printf("Waiting for fences\n");
-    result = vkWaitForFences(arEngine.mainDevice.device, 1, &computeFence, VK_TRUE, UINT64_MAX);
-    if (result != VK_SUCCESS) {
-        printf("result: %d\n", result);
-        throw std::runtime_error("Failed to wait for fence");
-    }
-    auto stop = std::chrono::high_resolution_clock::now();
-    auto endTime = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-    //printf("Queue submit Time taken: %ld ms\n", endTime.count() / 1000);
-
-
-    // --- Retrieve data from compute pipeline ---
-    //int width = 1282, height = 1110;
-    //int width = 1280, height = 720;
-    //int width = 427, height = 370;
-    int width = 640, height = 480;
-    //int width = 450, height = 375;
-    //int width = 256, height = 256;
-
-    int imageSize = (width * height);
-
-    void *mappedMemory = nullptr;
-    // Map the buffer memory, so that we can read from it on the CPU.
-    vkMapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[3], 0, imageSize * sizeof(float), 0,
-                &mappedMemory);
-    auto *pmappedMemory = (float *) mappedMemory;
-
-
-
-
-    // Create float type image at fill it with data from gpu
-    cv::Mat img(height, width, CV_32FC1);
-    img.data = reinterpret_cast<uchar *>(pmappedMemory);
-
-    // convert image to 16 bit uc1
-    img.convertTo(img, CV_16UC1, 65535);
-
-    // Remove salt 'n pepper noise - must be a 8 or 16 bit type.
-    cv::medianBlur(img, img, 5);
-    cv::Mat kernel = cv::Mat::ones(5, 5, CV_32F);
-    cv::dilate(img, img, kernel);
-
-    // Convert back to float format to save and display
-    img.convertTo(img, CV_32FC1, (float) 1 / 65535);
-
-    ArROI roi = vulkanCompute->getRoi();
-    std::vector<glm::vec3> pointPositions;
-    if (roi.active) {
-        disparityToPoint(img, roi, &pointPositions);
-        disparityToPointWriteToFile(img, roi, &pointPositions);
-
-        int k = pointPositions.size() / 2;
-        if (pointPositions[k].x > -10 && pointPositions[k].x < 10) {
-
-            float sumX = 0;
-            float sumY = 0;
-            float sumZ = 0;
-            for (int i = 0; i < 10; ++i) {
-                sumX += pointPositions[k + i - 5].x;
-                sumY += pointPositions[k + i - 5].y;
-                sumZ += pointPositions[k + i - 5].z;
-
-            }
-
-            glm::vec3 trans(sumX / 10, sumY / 10, -sumZ / 10);
-            glm::mat4 model = glm::translate(glm::mat4(2.0f), trans);
-            model = glm::scale(model, glm::vec3(0.1, 0.1, 0.1));
-            updateModel(model, 1, true);
-            printf("cube_pos: %f, %f, %f\n", pointPositions[k].x, pointPositions[k].y, pointPositions[k].z);
-
-        }
-
-        //disparityToPointWriteToFile(img, roi, &pointPositions);
-
-    }
-    if (takePhoto) {
-        cv::imwrite("../home_disparity" + std::to_string(loop) + ".exr", img);
-        vulkanCompute->takePhoto = true;
-
-    }
-    img.convertTo(img, CV_8UC1, 255);
-
-    stop = std::chrono::high_resolution_clock::now();
-    endTime = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-    //printf("Filtering and converting: %ld ms\n", endTime.count() / 1000);
-
-    // -- CALCULATE POINT CLOUD
-    //createPointCloudWriteToPCD(img, "/home/magnus/CLionProjects/bachelor_project/pcl_data/3d_points"+std::to_string(loop)+".pcd");
-
-
-    //cv::normalize(img, img, 0, 1, cv::NORM_MINMAX);
-    cv::equalizeHist(img, img);
-
-    cv::imshow("Raw disparity", img);
-
-
-    uint32_t roiSize = roi.width * roi.height;
-
-    //boost::numeric::ublas::matrix<float> pointMat(4, roiSize);
-
-
-    //printf("avg disp: %f\n", (float) disparitySum/roiSize);
-    stop = std::chrono::high_resolution_clock::now();
-    endTime = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-    //printf("summing ROI and updating pos: %ld ms\n", endTime.count() / 1000);
-    //cv::imwrite("../output.png", img);
-
-
-    /*
-    // -- VISUALIZE
-    cv::Mat bwImg = img;
-    cv::Mat jetmapImage;
-    cv::equalizeHist(img, img);
-
-    cv::applyColorMap(img, jetmapImage, cv::COLORMAP_JET);
-
-    //cv::circle(jetmapImage,cv::Point(320, 240),2,cv::Scalar(255, 255, 255),cv::FILLED,cv::LINE_8);
-    //cv::circle(bwImg,cv::Point(320, 240),5,cv::Scalar(255, 255, 255),cv::FILLED,cv::LINE_8);
-    if (takePhoto) {
-        cv::imwrite("../home_disparity_jet" + std::to_string(loop) + ".png", jetmapImage);
-        loop++;
-        takePhoto = false;
-
-    }
-
-    cv::imshow("Jet Disparity image", jetmapImage);
-    cv::imshow("BW Disparity image", bwImg);
-
-*/
-    vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[3]);
-
-    //stbi_write_png("../stbpng.png", width, height, 1, pixels, width * 1);
-
-
-}
 
 void VulkanRenderer::resetScene() {
 
@@ -571,6 +407,15 @@ void VulkanRenderer::resetScene() {
 
 std::vector<SceneObject> VulkanRenderer::getSceneObjects() const {
     return objects;
+}
+
+void VulkanRenderer::startDisparityStream() {
+    vulkanCompute->startDisparityStream();
+    updateDisparity = true;
+}
+
+void VulkanRenderer::stopDisparityStream() {
+    vulkanCompute->stopDisparityStream();
 }
 
 

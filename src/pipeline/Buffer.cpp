@@ -102,7 +102,7 @@ VkCommandBuffer Buffer::beginCommandBuffer(VkCommandPool commandPool) {
     // Allocate command buffer from pool
     vkAllocateCommandBuffers(device, &allocateInfo, &commandBuffer);
 
-    // Information to begin the command buffer record
+    // Information to begin the command buffer FaceAugment
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;      // We're only using the command buffer once, so set up for one time submit

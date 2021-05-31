@@ -16,7 +16,7 @@
 #include "../pipeline/Images.h"
 #include "../pipeline/Textures.h"
 #include "VulkanCompute.h"
-#include "../record/ThreadSpawner.h"
+#include "../FaceAugment/ThreadSpawner.h"
 #include "../pipeline/MeshModel.h"
 #include "../Models/SceneObject.h"
 #include <stdexcept>
@@ -43,8 +43,6 @@ public:
     void updateDisparityVideoTexture(); // TODO TEST METHOD
     void vulkanComputeShaders(); //TODO Test method
 
-    void loadSphereObjects(); // TODO Test Method
-
     void draw();
 
     void cleanup();
@@ -62,8 +60,6 @@ public:
     void startDisparityStream();
 
     void stopDisparityStream();
-
-    bool takePhoto = false;
 
     void resetScene(); // TODO implement function
 
@@ -87,7 +83,6 @@ private:
 
     // Buffer
     Buffer *buffer{}; // TODO To be removed
-
 
     // Objects
     //std::vector<MeshModel> models{};

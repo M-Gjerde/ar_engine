@@ -17,10 +17,12 @@ set(JSON_BuildTests OFF CACHE INTERNAL "")
 add_subdirectory(external/json)
 
 add_library(videoStream
-        src/record/ThreadSpawner.cpp
-        src/record/ThreadSpawner.h
-        src/record/RealsenseStreamer.cpp
-        src/record/RealsenseStreamer.h)
+        src/FaceAugment/ThreadSpawner.cpp
+        src/FaceAugment/ThreadSpawner.h
+        src/FaceAugment/RealsenseStreamer.cpp
+        src/FaceAugment/RealsenseStreamer.h
+        src/FaceAugment/FaceDetector.cpp
+        src/FaceAugment/FaceDetector.h)
 
 target_link_libraries(videoStream
         ${OpenCV_LIBS}
