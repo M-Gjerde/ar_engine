@@ -7,6 +7,13 @@
 
 
 #include "opencv4/opencv2/opencv.hpp"
+#include <dlib/image_processing/frontal_face_detector.h>
+#include <dlib/image_processing/render_face_detections.h>
+#include <dlib/image_processing.h>
+#include <dlib/gui_widgets.h>
+#include <dlib/image_io.h>
+#include <dlib/opencv/cv_image.h>
+#include <glm/vec3.hpp>
 
 class FaceDetector {
 public:
@@ -14,10 +21,19 @@ public:
     FaceDetector();
     void detectFaceRegion(cv::Mat img);
 
+    const cv::Rect &getRoiFace() const;
+
+    bool isFaceFound() const;
+
+    const glm::vec3 &getFaceRotVector() const;
+
 private:
-
     cv::dnn::Net net;
+    cv::Rect roiFace;
 
+    bool foundFace = false;
+    dlib::shape_predictor shapePredictor;
+    glm::vec3 rotVec;
 
 };
 

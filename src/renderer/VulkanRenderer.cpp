@@ -379,7 +379,12 @@ void VulkanRenderer::updateDisparityData() {
     vulkanCompute->loadComputeData(&img);                                           // Load stereo images into GPU. also copy one to be used as face recognition
     cv::cvtColor(img, img, cv::COLOR_GRAY2BGR);                       // cvtColor to make img a valid input for OpenCv's DNN caffe implementation
     faceDetector.detectFaceRegion(img);
+    glm::vec3 rot = faceDetector.getFaceRotVector();
 
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(1,0,1));
+    model = glm::scale(model, glm::vec3(0.1, 0.1, 0.1));
+    model = glm::rotate(model, glm::length(rot), rot);
+    updateModel(model, 1, true);
 
     //vulkanCompute->executeComputeCommandBuffer();
     //vulkanCompute->loadImagePreviewData(arCompute, buffer);
