@@ -47,8 +47,6 @@ void VulkanCompute::cleanup() {
 void VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDescriptors, Platform *pPlatform,
                                          Pipeline pipeline) {
 
-    setupFaceDetector();
-
     //int width = 1280, height = 720;
     //int width = 427, height = 370;
     int width = 640, height = 480;
@@ -184,8 +182,6 @@ void VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDescript
     if (result != VK_SUCCESS)
         throw std::runtime_error("Failed to end command buffers");
 
-    // If Vulkan setup finished retrieve pointer to memory for camera data IPC.
-    memP = threadSpawner.getVideoMemoryPointer();
 
     // -- CREATE COMPUTE QUEUE FENCES ---
     VkFenceCreateInfo fenceCreateInfo = {};
@@ -363,7 +359,7 @@ void VulkanCompute::executeComputeCommandBuffer(){
 }
 
 
-void VulkanCompute::loadComputeData(cv::Mat* rImg) {
+void VulkanCompute::loadComputeData(glm::vec4 roi, ArSharedMemory *memP) {
 
     // Fixed image size
     int imageSize = 640 * 480;
@@ -379,12 +375,9 @@ void VulkanCompute::loadComputeData(cv::Mat* rImg) {
     auto memPixelOne = (unsigned char *) memP->imgOne;
     auto memPixelTwo = (unsigned char *) memP->imgTwo;
 
-    // Ful image ROI
-    glm::vec4 roi(0, 480, 0, 640);
 
     cv::Mat img1(height, width, CV_8UC1);
     img1.data = reinterpret_cast<uchar *>(memPixelOne);
-    rImg->data = reinterpret_cast<uchar *>(memPixelOne);
     /*
     // initialize two opencv images used for frontal face classifier
     cv::Mat img1(height, width, CV_8UC1);
@@ -498,18 +491,10 @@ void VulkanCompute::loadComputeData(cv::Mat* rImg) {
 
 
 void VulkanCompute::stopDisparityStream() {
-    threadSpawner.stopChildProcess();
 
 }
 
 void VulkanCompute::startDisparityStream() {
-    threadSpawner.startChildProcess();
-    threadSpawner.waitForExistence();
 
-}
-
-
-void VulkanCompute::setupFaceDetector() {
-    classifier = cv::CascadeClassifier("../user/haarcascade_frontalface_default.xml");
 
 }

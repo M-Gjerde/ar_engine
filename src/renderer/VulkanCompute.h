@@ -21,8 +21,7 @@ public:
 
     void setupComputePipeline(Buffer *pBuffer, Descriptors *pDescriptors, Platform *pPlatform, Pipeline pipeline);
 
-    void loadComputeData();
-    void loadComputeData(cv::Mat *rImg);
+    void loadComputeData(glm::vec4 roi, ArSharedMemory *memP);
 
     void stopDisparityStream();
 
@@ -44,14 +43,6 @@ private:
     ArPipeline computePipeline{};
     VkFence computeFence{};
     ArCompute arCompute;
-
-    ThreadSpawner threadSpawner;
-    ArSharedMemory *memP;
-
-    ArROI ROI;
-    cv::CascadeClassifier classifier;
-
-    void setupFaceDetector();
 
 };
 

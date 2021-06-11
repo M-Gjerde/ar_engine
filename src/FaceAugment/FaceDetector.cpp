@@ -30,7 +30,7 @@ FaceDetector::FaceDetector() {
 }
 
 void FaceDetector::detectFaceRegion(cv::Mat img) {
-    const cv::Scalar meanVal(104.0, 177.0, 123.0);
+    const cv::Scalar meanVal(123.0, 177.0, 123.0);
 
 
     // Resize image to 300x300 res

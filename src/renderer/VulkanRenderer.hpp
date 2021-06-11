@@ -81,7 +81,8 @@ private:
     VkFence computeFence{};
     bool updateDisparity = false;
     FaceDetector faceDetector;
-
+    ThreadSpawner threadSpawner;
+    ArSharedMemory *memP;
 
     // Buffer
     Buffer *buffer{}; // TODO To be removed
