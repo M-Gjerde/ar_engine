@@ -11,6 +11,7 @@
 #include "VulkanRenderer.hpp"
 #include "../include/stbi_image_write.h"
 #include "opencv2/opencv.hpp"
+#include "../include/helper_functions.h"
 
 
 VulkanRenderer::VulkanRenderer() = default;
@@ -211,7 +212,9 @@ void VulkanRenderer::recordCommand() {
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = arEngine.swapchainExtent;
         std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = {0.25f, 0.25f, 0.25f, 1.0f};
+        //clearValues[0].color = {0.25f, 0.25f, 0.25f, 1.0f}; // gray
+        clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};      // Black
+
         clearValues[1].depthStencil = {1.0f, 0};
 
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
@@ -386,17 +389,54 @@ void VulkanRenderer::updateDisparityData() {
     vulkanCompute->loadComputeData(roi, memP);                                           // Load stereo images into GPU. also copy one to be used as face recognition
 
 
-
-    glm::vec3 rot = faceDetector.getFaceRotVector();
-
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(1,0,1));
-    model = glm::scale(model, glm::vec3(0.1, 0.1, 0.1));
-    model = glm::rotate(model, (glm::length(rot) * 1.5f), rot);
-    updateModel(model, 1, true);
-
     vulkanCompute->executeComputeCommandBuffer();
     //vulkanCompute->loadImagePreviewData(arCompute, buffer);
-    vulkanCompute->readComputeResult();
+    cv::Mat disparityImg = vulkanCompute->readComputeResult();
+
+
+
+    // -- TRANSLATION
+    std::vector<glm::vec3> pointPositions;
+    disparityImg.convertTo(disparityImg, CV_8UC1,  255);
+    //cv::imwrite("../disparity_output.png", disparityImg);
+    int avgDisp = 0;
+    int elements = 0;
+    for (int i = 0; i < disparityImg.cols; ++i) {
+        for (int j = 0; j < disparityImg.rows; ++j) {
+            int pixel = disparityImg.at<uchar>(i, j);
+            if (pixel > 0 && pixel < 200){
+                avgDisp += disparityImg.at<uchar>(i, j);
+                elements++;
+            }
+        }
+    }
+
+    float disparity = (float) avgDisp / (float) elements;
+    printf("Disparity: %f\n", disparity);
+    glm::vec3 position;
+    disparityToPoint(disparity, &position, faceDetector.getNosePoint2d());
+    position *= glm::vec3(0, 0, 10);
+    position -= glm::vec3(0, 0, 5);
+
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, position );
+    printf("Pos: %f %f %f\n", position.x, position.y, position.z);
+
+    // -- ROTATION
+    glm::vec3 rot = faceDetector.getFaceRotVector();
+    //printf("Rot: %f %f %f, length: %f\n", rot.x, rot.y, rot.z, glm::length(rot));
+    model = glm::rotate(model, glm::radians(180.0f), glm::vec3(1, 0, 0));
+
+    //model = glm::scale(model, glm::vec3(0.1, 0.1, 0.1));
+    //model = glm::rotate(model, (glm::length(rot.y) * 2), glm::vec3(0, 1, 0)); // Yaw
+    //model = glm::rotate(model, glm::length(rot.x) + 0.2f, glm::vec3(1, 0, 0));   // Pitch
+    //model = glm::rotate(model, (glm::length(rot.z)), glm::vec3(0, 0, 1)); // roll
+    float angle = glm::length(rot);
+    model = glm::rotate(model, -angle, rot);
+
+    if (glm::length(rot) < 2)
+        updateModel(model, 0, true);
+
 
     if (cv::waitKey(1) == 27) {
         updateDisparity = false;

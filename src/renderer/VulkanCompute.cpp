@@ -262,7 +262,7 @@ void VulkanCompute::loadImagePreviewData(ArCompute arCompute, Buffer *pBuffer) c
 }
 
 
-void VulkanCompute::readComputeResult(){
+cv::Mat VulkanCompute::readComputeResult(){
     // --- RETRIEVE DATA FROM GPU ---
     //int width = 1282, height = 1110;
     //int width = 1280, height = 720;
@@ -291,6 +291,7 @@ void VulkanCompute::readComputeResult(){
     cv::medianBlur(img, img, 5);
     cv::Mat kernel = cv::Mat::ones(5, 5, CV_32F);
     cv::dilate(img, img, kernel);
+    cv::imshow("Result Raw", img);
 
     // Convert back to float format to save and display
     img.convertTo(img, CV_32FC1, (float) 1 / 65535);
@@ -328,11 +329,10 @@ void VulkanCompute::readComputeResult(){
 
     }
 */
-    img.convertTo(img, CV_8UC1, 255);
 
-    cv::imshow("Result Raw", img);
 
     vkUnmapMemory(arEngine.mainDevice.device, arCompute.descriptor.bufferMemory[3]);
+    return img;
 }
 
 void VulkanCompute::executeComputeCommandBuffer(){

@@ -26,6 +26,7 @@ public:
     bool isFaceFound() const;
 
     const glm::vec3 &getFaceRotVector() const;
+    cv::Point2d getNosePoint2d();
 
 private:
     cv::dnn::Net net;
@@ -34,6 +35,7 @@ private:
     bool foundFace = false;
     dlib::shape_predictor shapePredictor;
     glm::vec3 rotVec;
+    cv::Point2d nosePoint2d;
 
 };
 

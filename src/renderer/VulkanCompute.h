@@ -33,7 +33,7 @@ public:
 
     void executeComputeCommandBuffer();
 
-    void readComputeResult();
+    cv::Mat readComputeResult();
 
 private:
 
