@@ -119,24 +119,7 @@ void FaceDetector::detectFaceRegion(cv::Mat img) {
                 }
                 line++;
             }
-            /*
-            model_points.push_back(cv::Point3d(0.0f, 0.0f, 0.0f));               // Nose tip
-            model_points.push_back(cv::Point3d(0.0f, -330.0f, -65.0f));          // Chin
-            model_points.push_back(cv::Point3d(-225.0f, 170.0f, -135.0f));       // Left eye left corner
-            model_points.push_back(cv::Point3d(225.0f, 170.0f, -135.0f));        // Right eye right corner
-            model_points.push_back(cv::Point3d(-150.0f, -150.0f, -125.0f));      // Left Mouth corner
-            model_points.push_back(cv::Point3d(150.0f, -150.0f, -125.0f));       // Right mouth corner
 
-
-            // 2D image points. If you change the image, you need to change vector
-            std::vector<cv::Point2d> image_points;
-            image_points.push_back(cv::Point2d(shape.part(33).x(), shape.part(33).y()));    // Nose tip
-            image_points.push_back(cv::Point2d(shape.part(8).x(), shape.part(8).y()));    // Chin
-            image_points.push_back(cv::Point2d(shape.part(36).x(), shape.part(36).y()));     // Left eye left corner
-            image_points.push_back(cv::Point2d(shape.part(45).x(), shape.part(45).y()));    // Right eye right corner
-            image_points.push_back(cv::Point2d(shape.part(48).x(), shape.part(48).y()));    // Left Mouth corner
-            image_points.push_back(cv::Point2d(shape.part(54).x(), shape.part(54).y()));    // Right mouth corner
-             */
             std::vector<cv::Point2d> image_points;
             for (int j = 0; j < shape.num_parts(); ++j) {
                 image_points.push_back(cv::Point2d(shape.part(j).x(), shape.part(j).y()));    // Nose tip
