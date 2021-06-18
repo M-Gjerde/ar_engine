@@ -435,7 +435,7 @@ void ThreadSpawner::setChildProcessStatus(bool status){
 
 void ThreadSpawner::waitForExistence() const {
     clock_t Start = clock();
-    double timeOut_ms = 2000;
+    double timeOut_ms = 10000;
 
     auto memP = getStatusMemoryPointer();
 
