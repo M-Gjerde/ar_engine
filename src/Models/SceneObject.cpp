@@ -5,7 +5,7 @@
 #include <string>
 #include <map>
 #include <utility>
-#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <sstream>
 #include "SceneObject.h"
 #include "../include/structs.h"

@@ -30,7 +30,7 @@ void Platform::createInstance() {
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "AR_ENGINE";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_2;
+    //appInfo.apiVersion = VK_API_VERSION_1_2;
 
     VkInstanceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -53,6 +53,7 @@ void Platform::createInstance() {
         createInfo.ppEnabledLayerNames = validationLayers.data();
         Validation::populateDebugMessengerCreateInfo(debugCreateInfo);
 
+        /*
         // Enable shader Debug validation layers
         VkValidationFeaturesEXT validationFeaturesExt{};
         validationFeaturesExt.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
@@ -67,7 +68,7 @@ void Platform::createInstance() {
         validationFeaturesExt.pDisabledValidationFeatures = disabled;
         validationFeaturesExt.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
         createInfo.pNext = &validationFeaturesExt;
-
+*/
     } else {
         createInfo.enabledLayerCount = 0;
         createInfo.pNext = nullptr;

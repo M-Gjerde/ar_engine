@@ -395,7 +395,7 @@ void VulkanRenderer::updateDisparityData() {
 
 
 
-    // -- TRANSLATION
+    // -- TRANSLATION --
     std::vector<glm::vec3> pointPositions;
     disparityImg.convertTo(disparityImg, CV_8UC1,  255);
     //cv::imwrite("../disparity_output.png", disparityImg);
@@ -422,7 +422,7 @@ void VulkanRenderer::updateDisparityData() {
     model = glm::translate(model, position );
     printf("Pos: %f %f %f\n", position.x, position.y, position.z);
 
-    // -- ROTATION
+    // -- ROTATION --
     glm::vec3 rot = faceDetector.getFaceRotVector();
     //printf("Rot: %f %f %f, length: %f\n", rot.x, rot.y, rot.z, glm::length(rot));
     model = glm::rotate(model, glm::radians(180.0f), glm::vec3(1, 0, 0));
