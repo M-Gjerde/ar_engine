@@ -212,8 +212,8 @@ void VulkanRenderer::recordCommand() {
         renderPassInfo.renderArea.offset = {0, 0};
         renderPassInfo.renderArea.extent = arEngine.swapchainExtent;
         std::array<VkClearValue, 2> clearValues{};
-        //clearValues[0].color = {0.25f, 0.25f, 0.25f, 1.0f}; // gray
-        clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};      // Black
+        clearValues[0].color = {0.10f, 0.35f, 0.15f, 1.0f}; // gray
+        //clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};      // Black
 
         clearValues[1].depthStencil = {1.0f, 0};
 

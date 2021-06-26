@@ -169,7 +169,6 @@ void ThreadSpawner::realsenseVideoStream() {
         std::cerr << "Some other error occurred!" << std::endl;
     }
 
-    cv::destroyAllWindows();
 }
 
 Status *ThreadSpawner::getStatusMemoryPointer() const {

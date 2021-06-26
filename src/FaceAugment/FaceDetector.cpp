@@ -93,7 +93,7 @@ void FaceDetector::detectFaceRegion(cv::Mat img) {
             rectangle(img, roiFace, cv::Scalar(0, 255, 0), 2);
 
             // POSE ESTIMATION
-            // 3D model points.
+            // 3D model points for landmarks match.
             std::vector<cv::Point3d> model_points(68);
             std::ifstream in("../user/NNM/face_model.txt");
             std::string str;
@@ -101,7 +101,7 @@ void FaceDetector::detectFaceRegion(cv::Mat img) {
             int coord = 0;
             cv::Point3d point;
             while (std::getline(in, str)) {
-                if (str.size() > 0) {
+                if (!str.empty()) {
                    int index = line % 68;
                     if (line == 68) coord++;
                     if (line == 128) coord++;
@@ -113,36 +113,17 @@ void FaceDetector::detectFaceRegion(cv::Mat img) {
                             model_points[index].y = stof(str);
                             break;
                         case 2:
-                            model_points[index].z = stof(str);
+                            model_points[index].z = stof(str) * -1;  // Transform the model into a front view by multiplying -1
                             break;
                     }
                 }
                 line++;
             }
-            /*
-            model_points.push_back(cv::Point3d(0.0f, 0.0f, 0.0f));               // Nose tip
-            model_points.push_back(cv::Point3d(0.0f, -330.0f, -65.0f));          // Chin
-            model_points.push_back(cv::Point3d(-225.0f, 170.0f, -135.0f));       // Left eye left corner
-            model_points.push_back(cv::Point3d(225.0f, 170.0f, -135.0f));        // Right eye right corner
-            model_points.push_back(cv::Point3d(-150.0f, -150.0f, -125.0f));      // Left Mouth corner
-            model_points.push_back(cv::Point3d(150.0f, -150.0f, -125.0f));       // Right mouth corner
 
-
-            // 2D image points. If you change the image, you need to change vector
-            std::vector<cv::Point2d> image_points;
-            image_points.push_back(cv::Point2d(shape.part(33).x(), shape.part(33).y()));    // Nose tip
-            image_points.push_back(cv::Point2d(shape.part(8).x(), shape.part(8).y()));    // Chin
-            image_points.push_back(cv::Point2d(shape.part(36).x(), shape.part(36).y()));     // Left eye left corner
-            image_points.push_back(cv::Point2d(shape.part(45).x(), shape.part(45).y()));    // Right eye right corner
-            image_points.push_back(cv::Point2d(shape.part(48).x(), shape.part(48).y()));    // Left Mouth corner
-            image_points.push_back(cv::Point2d(shape.part(54).x(), shape.part(54).y()));    // Right mouth corner
-             */
             std::vector<cv::Point2d> image_points;
             for (int j = 0; j < shape.num_parts(); ++j) {
                 image_points.push_back(cv::Point2d(shape.part(j).x(), shape.part(j).y()));    // Nose tip
 
-                // Transform the model into a front view.
-                model_points[j].z *= -1;
             }
             // Camera internals
             cv::Mat camera_matrix = (cv::Mat_<double>(3, 3) << 331.8015, 0, 314.2519, 0, 363.9482, 247.4047, 0, 0, 1);

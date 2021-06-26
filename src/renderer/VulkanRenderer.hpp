@@ -82,7 +82,7 @@ private:
     bool updateDisparity = false;
     FaceDetector faceDetector;
     ThreadSpawner threadSpawner;
-    ArSharedMemory *memP;
+    ArSharedMemory *memP{};
 
     // Buffer
     Buffer *buffer{}; // TODO To be removed
