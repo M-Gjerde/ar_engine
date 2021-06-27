@@ -9,7 +9,7 @@
 
 #include "glm/glm.hpp"
 #include <glm/gtc/matrix_transform.hpp>
-#include "../Platform/Platform.h"
+#include "Platform.h"
 
 
 class Camera {
@@ -25,20 +25,25 @@ public:
     glm::mat4 getProjection();
     glm::mat4 getView();
 
+    void lookAround(double xPos, double yPos);
+
     void moveLeft();
     void moveRight();
     void forward();
     void backward();
     void rotateRight();
     void rotateLeft();
-    void roll();
+    void setRoll();
 
-    float yaw = -90;
-    float roll_value = 0;
+    double yaw = -90;
+    double roll = 0;
+    double pitch = 0;
 private:
 
     glm::mat4 projection{};
     glm::mat4 view{};
+    bool firstMouse = true;          //
+    double lastX = 400, lastY = 300; // First mousePos initializing
 
 };
 

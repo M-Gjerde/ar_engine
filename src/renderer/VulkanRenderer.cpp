@@ -358,6 +358,12 @@ void VulkanRenderer::setupSceneFromFile(std::vector<std::map<std::string, std::s
         arPipelines.push_back(object.getArPipeline());
         objects.push_back(object);
 
+        if (modelSettings[i].at("lightProperty") == "lightSource")
+            updateModel(object.getModel(), i, true);
+        else
+            updateModel(object.getModel(), i, false);
+
+
     }
     recordCommand();
 }
@@ -379,14 +385,17 @@ void VulkanRenderer::updateDisparityData() {
     //cv::namedWindow("window", cv::WINDOW_FREERATIO);
     //cv::namedWindow("window2", cv::WINDOW_FREERATIO);
     //cv::namedWindow("Disparity image", cv::WINDOW_FREERATIO);
-    cv::Mat img = cv::imread("../left.png", cv::IMREAD_GRAYSCALE);     // Imread a dummy image to populate the cv::Mat img object
-    img.data = reinterpret_cast<uchar *>((unsigned char*) memP->imgTwo);
-    cv::cvtColor(img, img, cv::COLOR_GRAY2BGR);                       // cvtColor to make img a valid input for OpenCv's DNN caffe implementation
+    cv::Mat img = cv::imread("../left.png",
+                             cv::IMREAD_GRAYSCALE);     // Imread a dummy image to populate the cv::Mat img object
+    img.data = reinterpret_cast<uchar *>((unsigned char *) memP->imgTwo);
+    cv::cvtColor(img, img,
+                 cv::COLOR_GRAY2BGR);                       // cvtColor to make img a valid input for OpenCv's DNN caffe implementation
     faceDetector.detectFaceRegion(img);
     cv::Rect rect = faceDetector.getRoiFace();
 
     glm::vec4 roi(rect.y, rect.y + rect.height, rect.x, rect.x + rect.width);
-    vulkanCompute->loadComputeData(roi, memP);                                           // Load stereo images into GPU. also copy one to be used as face recognition
+    vulkanCompute->loadComputeData(roi,
+                                   memP);                                           // Load stereo images into GPU. also copy one to be used as face recognition
 
 
     vulkanCompute->executeComputeCommandBuffer();
@@ -397,14 +406,14 @@ void VulkanRenderer::updateDisparityData() {
 
     // -- TRANSLATION --
     std::vector<glm::vec3> pointPositions;
-    disparityImg.convertTo(disparityImg, CV_8UC1,  255);
+    disparityImg.convertTo(disparityImg, CV_8UC1, 255);
     //cv::imwrite("../disparity_output.png", disparityImg);
     int avgDisp = 0;
     int elements = 0;
     for (int i = 0; i < disparityImg.cols; ++i) {
         for (int j = 0; j < disparityImg.rows; ++j) {
             int pixel = disparityImg.at<uchar>(i, j);
-            if (pixel > 0 && pixel < 200){
+            if (pixel > 0 && pixel < 200) {
                 avgDisp += disparityImg.at<uchar>(i, j);
                 elements++;
             }
@@ -419,7 +428,7 @@ void VulkanRenderer::updateDisparityData() {
     position -= glm::vec3(0, 0, 5);
 
     glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, position );
+    model = glm::translate(model, position);
     printf("Pos: %f %f %f\n", position.x, position.y, position.z);
 
     // -- ROTATION --
@@ -430,7 +439,7 @@ void VulkanRenderer::updateDisparityData() {
     //model = glm::scale(model, glm::vec3(0.1, 0.1, 0.1));
     //model = glm::rotate(model, (glm::length(rot.y) * 2), glm::vec3(0, 1, 0)); // Yaw
     //model = glm::rotate(model, glm::length(rot.x) + 0.2f, glm::vec3(1, 0, 0));   // Pitch
-    //model = glm::rotate(model, (glm::length(rot.z)), glm::vec3(0, 0, 1)); // roll
+    //model = glm::rotate(model, (glm::length(rot.z)), glm::vec3(0, 0, 1)); // setRoll
     float angle = glm::length(rot);
     model = glm::rotate(model, -angle, rot);
 
@@ -466,6 +475,8 @@ void VulkanRenderer::startDisparityStream() {
 }
 
 void VulkanRenderer::stopDisparityStream() {
+    updateDisparity = false;
+    cv::destroyAllWindows();
     threadSpawner.stopChildProcess();
 }
 

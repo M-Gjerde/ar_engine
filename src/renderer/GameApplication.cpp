@@ -63,67 +63,13 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
 
     }
 
-    float rotAngle = 1;
-    std::vector<SceneObject> objects = vulkanRenderer.getSceneObjects();
-    glm::mat4 model = objects[modelIndex].getModel();
-    glm::vec3 scale = objects[modelIndex].getScaleVector();
-    float increment = (float) 0.25 / scale[0];
-    switch (key) {
-        case GLFW_KEY_KP_8:
-            model = glm::translate(model, glm::vec3(0, -increment, 0));
-            break;
-        case GLFW_KEY_KP_2:
-            model = glm::translate(model, glm::vec3(0, increment, 0));
-            break;
-        case GLFW_KEY_KP_4:
-            model = glm::translate(model, glm::vec3(increment, 0, 0));
-            break;
-        case GLFW_KEY_KP_6:
-            model = glm::translate(model, glm::vec3(-increment, 0, 0));
-            break;
-        case GLFW_KEY_KP_7:
-            model = glm::rotate(model, glm::radians(-rotAngle), glm::vec3(0, 0, 1));
-            break;
-        case GLFW_KEY_KP_9:
-            model = glm::rotate(model, glm::radians(rotAngle), glm::vec3(0, 0, 1));
-            break;
-        default:
-            break;
-    }
-
-    if (modelIndex == 1) {
-        vulkanRenderer.updateModel(model, modelIndex, true);
-    }
-
-    vulkanRenderer.updateModel(model, modelIndex, false);
-
-    if (key == GLFW_KEY_L && action == GLFW_PRESS) {
-        // Load scene objects according to settings file
-        vulkanRenderer.resetScene();
-        auto settingsMap = loadSettings.getSceneObjects();
-        //vulkanRenderer.setupSceneFromFile(settingsMap);
-    }
-
     if (key == GLFW_KEY_ENTER && action == GLFW_PRESS) {
         vulkanRenderer.stopDisparityStream();
 
     }
 
-    if (key == GLFW_KEY_C && action == GLFW_PRESS) {
-    }
-
-    if (key == GLFW_KEY_1 && action == GLFW_PRESS) {
-        modelIndex++;
-        printf("modelIndex: %d\n", modelIndex);
-    }
-    if (key == GLFW_KEY_2 && action == GLFW_PRESS) {
-        modelIndex--;
-        printf("modelIndex: %d\n", modelIndex);
-
-    }
 
     if (key == GLFW_KEY_X && action == GLFW_PRESS) {
-
 
     }
 
@@ -146,17 +92,25 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
 
 }
 
-double xPos, yPos;
-
 void AppExtension::cursorPosCallback(GLFWwindow *window, double _xPos, double _yPos) {
-    xPos = _xPos;
-    yPos = _yPos;
+    camera.lookAround(_xPos, _yPos);
+    vulkanRenderer.updateCamera(camera.getView(), camera.getProjection());
 
 }
 
+bool hiddenCursor = true;
+
 void AppExtension::mouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-        printf("Mouse click at pos: %f, %f\n", xPos, yPos);
+
+        if (hiddenCursor) {
+            hiddenCursor = false;
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); //FPS mode mouse input
+        } else {
+            hiddenCursor = true;
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //Normal mouse mode input
+
+        }
 
         printf("____________________________________________\n "
                "Camera data: yaw = %f\n", camera.yaw);

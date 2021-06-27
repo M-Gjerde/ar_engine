@@ -54,6 +54,7 @@ void ThreadSpawner::stopChildProcess() {
     } else {
         kill(pidStreamer, SIGKILL);
         pidStreamer = -1;
+        setChildProcessStatus(false);
     }
 }
 

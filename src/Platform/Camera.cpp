@@ -75,9 +75,43 @@ void Camera::rotateRight() {
     cameraFront = glm::normalize(direction);
 }
 
-void Camera::roll(){
-    roll_value++;
+void Camera::setRoll(){
     glm::vec3 direction;
-    direction.z = sin(glm::radians(roll_value));
+    direction.z = sin(glm::radians(roll));
     cameraFront = glm::normalize(direction);
+}
+
+void Camera::lookAround(double xPos, double yPos) {
+
+    if (firstMouse)
+    {
+        lastX = xPos;
+        lastY = yPos;
+        firstMouse = false;
+    }
+
+    double xoffset = xPos - lastX;
+    double yoffset = lastY - yPos;
+    lastX = xPos;
+    lastY = yPos;
+
+    float sensitivity = 0.1f;
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
+
+    yaw   -= xoffset;
+    pitch -= yoffset;
+
+    if(pitch > 89.0f)
+        pitch = 89.0f;
+    if(pitch < -89.0f)
+        pitch = -89.0f;
+
+    glm::vec3 direction;
+    direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    direction.y = sin(glm::radians(pitch));
+    direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    cameraFront = glm::normalize(direction);
+
+
 }

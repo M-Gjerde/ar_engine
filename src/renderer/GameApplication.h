@@ -17,7 +17,7 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include "VulkanRenderer.hpp"
-#include "../pipeline/Camera.h"
+#include "../Platform/Camera.h"
 #include "../Platform/LoadSettings.h"
 #include "../FaceAugment/ThreadSpawner.h"
 

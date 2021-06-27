@@ -17,7 +17,7 @@ set(JSON_BuildTests OFF CACHE INTERNAL "")
 add_subdirectory(external/json)
 
 #DLIB
- add_subdirectory($ENV{HOME}/libraries/dlib dlib_build)
+add_subdirectory($ENV{HOME}/libraries/dlib dlib_build)
 # If you have cmake 3.14 or newer you can even use FetchContent instead of
 # add_subdirectory() to pull in dlib as a dependency.  So instead of using the
 # above add_subdirectory() command, you could use the following three commands
@@ -61,11 +61,9 @@ add_library(VulkanRenderer
         src/pipeline/Mesh.h
         src/pipeline/Descriptors.cpp
         src/pipeline/Descriptors.h
-        src/renderer/GameApplication.cpp
-        src/renderer/GameApplication.h
         src/include/structs.h
-        src/pipeline/Camera.cpp
-        src/pipeline/Camera.h
+        src/Platform/Camera.cpp
+        src/Platform/Camera.h
         src/pipeline/Images.cpp
         src/pipeline/Images.h
         src/pipeline/Textures.cpp
@@ -92,7 +90,10 @@ target_link_libraries(VulkanRenderer
         ${OpenCV_LIBS}
         )
 
-add_executable(engine main.cpp external/tinyobj/tiny_obj_loader.h )
+add_executable(engine main.cpp
+        external/tinyobj/tiny_obj_loader.h
+        src/renderer/GameApplication.cpp
+        src/renderer/GameApplication.h)
 
 target_link_libraries(engine
         glfw ${GLFW_LIBRARIES}
