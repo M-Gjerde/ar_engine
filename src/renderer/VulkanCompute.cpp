@@ -291,7 +291,7 @@ cv::Mat VulkanCompute::readComputeResult(){
     cv::medianBlur(img, img, 5);
     cv::Mat kernel = cv::Mat::ones(5, 5, CV_32F);
     cv::dilate(img, img, kernel);
-    cv::imshow("Result Raw", img);
+    //cv::imshow("Result Raw", img);
 
     // Convert back to float format to save and display
     img.convertTo(img, CV_32FC1, (float) 1 / 65535);
