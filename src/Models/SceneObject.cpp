@@ -151,7 +151,7 @@ void SceneObject::getDescriptorInfoTypeAndStage(std::vector<VkDescriptorType> *d
 void SceneObject::getMiscProperties(std::map<std::string, std::string> map) {
     std::string lightProperty = map.at("lightProperty");
     if (lightProperty == "lightSource")
-        lightSource = true;
+       lightSource = true;
 
 }
 

@@ -76,8 +76,6 @@ add_library(VulkanRenderer
         src/Platform/LoadSettings.h
         src/renderer/VulkanCompute.cpp
         src/renderer/VulkanCompute.h
-        src/objects/BufferObject.cpp
-        src/objects/BufferObject.h
         src/include/helper_functions.h
         src/Models/SceneObject.cpp
         src/Models/SceneObject.h

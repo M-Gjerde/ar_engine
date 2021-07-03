@@ -8,13 +8,11 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 
 #include "../include/stbi_image_write.h"
-#include "../objects/BufferObject.h"
 
 #include <utility>
 #include <array>
 #include <opencv2/core.hpp>
-#include <opencv2/highgui.hpp>
-#include <opencv2/calib3d.hpp>
+
 
 
 VulkanCompute::VulkanCompute(ArEngine mArEngine) {

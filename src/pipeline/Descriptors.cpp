@@ -17,17 +17,6 @@ void Descriptors::createDescriptors(ArDescriptorInfo descriptorInfo, ArDescripto
     createDescriptorSets(descriptorInfo, pDescriptor);
 }
 
-void Descriptors::lightDescriptors(ArDescriptor *pDescriptor) {
-    mArDescriptor = *pDescriptor;
-
-    fragmentSetLayout();
-    createLightPool();
-    fragmentDescriptorSet();
-
-    // Return descriptors
-    *pDescriptor = mArDescriptor;
-}
-
 
 void Descriptors::createDescriptorsSampler(ArDescriptor *pDescriptor, ArTextureImage pTextureSampler) {
     arTextureSampler = pTextureSampler;
@@ -221,16 +210,3 @@ void Descriptors::updateTextureSamplerDescriptor() {
                                writeDescriptorSetlist.data(), 0, nullptr);
     }
 }
-
-void Descriptors::createLightPool() {
-
-}
-
-void Descriptors::fragmentDescriptorSet() {
-
-}
-
-void Descriptors::fragmentSetLayout() {
-
-}
-

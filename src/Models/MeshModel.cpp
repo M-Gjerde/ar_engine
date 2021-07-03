@@ -11,8 +11,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 
 #include "../../external/tinyobj/tiny_obj_loader.h"
-#include "../include/structs.h"
-#include "../pipeline/Descriptors.h"
+
 
 void MeshModel::loadModel(MainDevice mainDevice, ArModel arModel, const ArModelInfo& arModelInfo) {
 

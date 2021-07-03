@@ -16,7 +16,6 @@ public:
 
     void createDescriptorsSampler(ArDescriptor *pDescriptor, ArTextureImage pTextureSampler);
     void cleanUp(ArDescriptor arDescriptor);
-    void lightDescriptors(ArDescriptor *pDescriptor);
     void createDescriptors(ArDescriptorInfo descriptorInfo, ArDescriptor *pDescriptor);
 
 private:
