@@ -3,12 +3,20 @@
 //
 
 #include <fstream>
+#include <utility>
 #include "LoadSettings.h"
+
+
+LoadSettings::LoadSettings(std::string file) {
+    fPath = std::move(file);
+    init();
+}
+
 
 void LoadSettings::init() {
 
     // read a JSON file
-    std::ifstream jsonStream("../user/config.json");
+    std::ifstream jsonStream("../user/"+fPath+".json");
 
     // Put into JSON object
     jsonStream >> json;
@@ -34,18 +42,16 @@ void LoadSettings::init() {
         }
     }
 
-    json["settings"]["objects"][0]["posX"] = "-10";
+    // Indexing specific elements
+    //json["settings"]["objects"][0]["posX"] = "-10";
 
-
-
-    printf("Finished reading scene settings\n");
 }
 
 const std::vector<std::map<std::string, std::string>> &LoadSettings::getSceneObjects() const {
     return sceneObjects;
 }
 
-void LoadSettings::saveScene(VulkanRenderer vulkanRenderer) {
+void LoadSettings::saveScene(const VulkanRenderer& vulkanRenderer) {
     std::vector<SceneObject> objects = vulkanRenderer.getSceneObjects();
 
     for (int i = 0; i < objects.size(); ++i) {
@@ -63,3 +69,4 @@ void LoadSettings::saveScene(VulkanRenderer vulkanRenderer) {
     file << json;
 
 }
+

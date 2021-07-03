@@ -2,51 +2,22 @@
 // Created by magnus on 9/21/20.
 //
 
-#include <zconf.h>
 #include <thread>
 #include "GameApplication.h"
 
-bool rotate = false;
-float angle = 0;
-float rColor = 0;
-glm::mat4 rotateMat;
-
-glm::vec3 lightPos = glm::vec3(5.0f, 0.0f, 3.0f);
-glm::mat4 lightTrans(1.0f);
-
 void AppExtension::update() {
-
     double now = glfwGetTime();
     deltaTime = now - lastTime;
     lastTime = now;
 
-
-    if (rotate) {
-        angle += 50.0f * static_cast<float>(deltaTime);
-        if (angle > 360) angle -= 360.0f;
-        glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.0f, 0.0f));
-        rotateMat = glm::rotate(trans, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, -1.0f));
-        rotateMat = glm::rotate(rotateMat, glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
-        vulkanRenderer.updateModel(rotateMat, 2, false);
-
-    }
-
-
-    /*
     // Keep update function at 24 frames per second
     if (deltaTime < 0.03) {
-        double timeToSleep = (0.03 - deltaTime) * 1000;
+        auto timeToSleep = (unsigned int) ((0.03 - deltaTime) * 1000);
         usleep(timeToSleep);
     }
-*/
 
-    //vulkanRenderer.updateSpecularLightCamera(camera.cameraPos);
+
 }
-
-
-float forward = 5, right = 0, rotation = 0;
-float model_angle = 0;
-int modelIndex = 1;
 
 void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
@@ -70,7 +41,7 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
 
 
     if (key == GLFW_KEY_X && action == GLFW_PRESS) {
-
+        vulkanRenderer.resetScene();
     }
 
 

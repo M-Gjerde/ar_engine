@@ -27,7 +27,7 @@ public:
     GLFWwindow *window;
     VulkanRenderer vulkanRenderer;
     Camera camera;
-    LoadSettings loadSettings;
+    LoadSettings *loadSettings;
 
     explicit GameApplication(const std::string &title) {
 
@@ -41,7 +41,7 @@ public:
         glfwSetErrorCallback(error_callback);
 
         // Load settings
-        loadSettings.init();
+        loadSettings = new LoadSettings("config");
 
         // Init vulkan renderer engine
         if (vulkanRenderer.init(window) == EXIT_FAILURE)
@@ -51,7 +51,7 @@ public:
         vulkanRenderer.updateCamera(camera.getView(), camera.getProjection());
 
         // Load scene objects according to settings file
-        auto settingsMap = loadSettings.getSceneObjects();
+        auto settingsMap = loadSettings->getSceneObjects();
         vulkanRenderer.setupSceneFromFile(settingsMap);
 
     }
@@ -69,7 +69,7 @@ public:
             vulkanRenderer.draw();
             update();
         }
-        loadSettings.saveScene(vulkanRenderer);
+        loadSettings->saveScene(vulkanRenderer);
         vulkanRenderer.cleanup();
         glfwDestroyWindow(window);
         glfwTerminate();

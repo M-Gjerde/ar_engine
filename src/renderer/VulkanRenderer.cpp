@@ -76,19 +76,23 @@ void VulkanRenderer::cleanup() {
         vkDestroyFramebuffer(arEngine.mainDevice.device, framebuffer, nullptr);
     }
 
-    for (int i = 0; i < arPipelines.size(); ++i) {
-        pipeline.cleanUp(arPipelines[i]);
+    for (auto & arPipeline : arPipelines) {
+        pipeline.cleanUp(arPipeline);
 
     }
     platform->cleanUp();
 }
 
 
+bool genericBool = false;
+
 void VulkanRenderer::draw() {
     // 1. Get next available image to draw to and set something to signal when we're finished with the image (a semaphore)
     // 2. Submit command buffer to queue for execution, making sure it waits for the image to be signalled as available before drawing
     // and signals when it has finished rendering
     // 3. Present image to screen when it has signaled finished rendering
+
+    while(genericBool);
 
     vkWaitForFences(arEngine.mainDevice.device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
@@ -120,6 +124,7 @@ void VulkanRenderer::draw() {
 
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffers[imageIndex];
+
 
     VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
     submitInfo.signalSemaphoreCount = 1;
@@ -301,21 +306,6 @@ void VulkanRenderer::updateCamera(glm::mat4 newView, glm::mat4 newProjection) {
     uboModelVar.projection = newProjection;
 }
 
-// TODO can be combined with updateLightPos if a wrapper is written around those two
-void VulkanRenderer::updateModel(glm::mat4 newModel, int index, bool isLight) {
-
-}
-
-void VulkanRenderer::updateLightPos(glm::vec3 newPos, glm::mat4 transMat, int index) {
-    objects[index].setModel(glm::translate(transMat, newPos));
-    fragmentColor.lightPos = glm::vec4(newPos, 1.0f);
-
-
-}
-
-void VulkanRenderer::updateSpecularLightCamera(glm::vec3 newPos) {
-    fragmentColor.viewPos = glm::vec4(newPos, 1.0f);
-}
 
 void VulkanRenderer::updateTextureImage(std::string fileName) {
 
@@ -352,9 +342,7 @@ void VulkanRenderer::setupSceneFromFile(std::vector<std::map<std::string, std::s
         arPipelines.push_back(object.getArPipeline());
         objects.push_back(object);
 
-
-
-        if (objects[i].isLight()){
+        if (objects[i].isLight()) {
             glm::mat4 newModel = objects[i].getModel();
             fragmentColor.lightPos = glm::vec4(newModel[3].x, newModel[3].y, newModel[3].z, 1.0f);
             fragmentColor.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
@@ -379,9 +367,7 @@ void VulkanRenderer::initComputePipeline() {
 
 
 void VulkanRenderer::updateDisparityData() {
-    //cv::namedWindow("window", cv::WINDOW_FREERATIO);
-    //cv::namedWindow("window2", cv::WINDOW_FREERATIO);
-    //cv::namedWindow("Disparity image", cv::WINDOW_FREERATIO);
+
     cv::Mat img = cv::imread("../left.jpg",
                              cv::IMREAD_GRAYSCALE);     // Imread a dummy image to populate the cv::Mat img object
     img.data = reinterpret_cast<uchar *>((unsigned char *) memP->imgTwo);
@@ -440,11 +426,9 @@ void VulkanRenderer::updateDisparityData() {
     float angle = glm::length(rot);
     model = glm::rotate(model, -angle, rot);
 
-    if (glm::length(rot) < 2){
+    if (glm::length(rot) < 2) {
         objects[0].setModel(model);
     }
-        //updateModel(model, 0, true);
-
 
     if (cv::waitKey(1) == 27) {
         updateDisparity = false;
@@ -461,6 +445,19 @@ void VulkanRenderer::updateDisparityData() {
 
 void VulkanRenderer::resetScene() {
 
+
+    SceneObject object(arEngine);
+    // Push objects to global lists
+    arDescriptors.push_back(object.getArDescriptor());
+    arPipelines.push_back(object.getArPipeline());
+    objects.push_back(object);
+
+    genericBool = true;
+    vkWaitForFences(arEngine.mainDevice.device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+    recordCommand();
+    vkResetFences(arEngine.mainDevice.device, 1, &inFlightFences[currentFrame]);
+
+    genericBool = false;
 }
 
 std::vector<SceneObject> VulkanRenderer::getSceneObjects() const {

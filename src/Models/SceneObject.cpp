@@ -10,8 +10,41 @@
 #include "SceneObject.h"
 #include "../include/structs.h"
 #include "MeshModel.h"
+#include "../Platform/LoadSettings.h"
 
+// Create sceneobjects from file
 SceneObject::SceneObject(std::map<std::string, std::string> modelSettings, ArEngine mArEngine) {
+    arEngine = std::move(mArEngine);
+    // Helper classes handles
+    descriptors = new Descriptors(arEngine);
+    buffer = new Buffer(arEngine.mainDevice);
+
+    // Create pipeline for object
+    shadersPath.vertexShader = "../shaders/" + modelSettings.at("vertex_shader");
+    shadersPath.fragmentShader = "../shaders/" + modelSettings.at("fragment_shader");
+
+    // Create mesh from model type
+    createMesh(modelSettings);
+    // Get descriptorInfo from file
+    getDescriptorInfo(modelSettings);
+    // Get object position
+    getSceneObjectPose(modelSettings);
+    // misc properties (lightSource etc..)
+    getMiscProperties(modelSettings);
+
+    // Free pointer memory
+    delete descriptors;
+    delete buffer;
+
+
+}
+
+// Create template sceneobject
+SceneObject::SceneObject(ArEngine mArEngine) {
+    LoadSettings loadSettings("templates");
+
+    auto modelSettings = loadSettings.getSceneObjects()[0];
+
     arEngine = std::move(mArEngine);
     // Helper classes handles
     descriptors = new Descriptors(arEngine);
@@ -226,6 +259,8 @@ bool SceneObject::refresh() const {
 bool SceneObject::isLight() const {
     return lightSource;
 }
+
+
 
 
 

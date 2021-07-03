@@ -16,19 +16,28 @@
 class SceneObject {
 
 public:
-    [[nodiscard]] const glm::mat4 &getModel() const;
-    void setModel(const glm::mat4 &model);
+
+
     SceneObject(std::map<std::string, std::string> modelSettings, ArEngine mArEngine);
+    SceneObject();
+
+    SceneObject(ArEngine mArEngine);
+
     void createPipeline(VkRenderPass renderPass);
     void createMesh(std::map<std::string, std::string> modelSettings);
+
+    void setModel(const glm::mat4 &model);
+    void setRefresh(bool state);
+
+    [[nodiscard]] const glm::mat4 &getModel() const;
     [[nodiscard]] const ArDescriptor &getArDescriptor() const;
     [[nodiscard]] const ArPipeline &getArPipeline() const;
     [[nodiscard]] bool refresh() const;
-    bool isLight() const;
-    void setRefresh(bool state);
+    [[nodiscard]] bool isLight() const;
     [[nodiscard]] VkBuffer getVertexBuffer() const;
     [[nodiscard]] VkBuffer getIndexBuffer() const;
     [[nodiscard]] uint32_t getIndexCount() const;
+
     void cleanUp(VkDevice device);
 
 private:

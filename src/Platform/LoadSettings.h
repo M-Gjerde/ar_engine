@@ -14,12 +14,15 @@ class LoadSettings {
 
 private:
     nlohmann::json json;
-
+    std::string fPath;
     std::vector<std::map<std::string, std::string>> sceneObjects;
 public:
+
+    LoadSettings(std::string file);
+
     void init();
-    void saveScene(VulkanRenderer vulkanRenderer);
-    const std::vector<std::map<std::string, std::string>> &getSceneObjects() const;
+    void saveScene(const VulkanRenderer& vulkanRenderer);
+    [[nodiscard]] const std::vector<std::map<std::string, std::string>> &getSceneObjects() const;
 };
 
 
