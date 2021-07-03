@@ -303,13 +303,7 @@ void VulkanRenderer::updateCamera(glm::mat4 newView, glm::mat4 newProjection) {
 
 // TODO can be combined with updateLightPos if a wrapper is written around those two
 void VulkanRenderer::updateModel(glm::mat4 newModel, int index, bool isLight) {
-    objects[index].setModel(newModel);
-    if (isLight) {
 
-        fragmentColor.lightPos = glm::vec4(newModel[3].x, newModel[3].y, newModel[3].z, 1.0f);
-        fragmentColor.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
-        fragmentColor.objectColor = glm::vec4(0.5f, 0.5f, 0.31f, 0.0f);
-    }
 }
 
 void VulkanRenderer::updateLightPos(glm::vec3 newPos, glm::mat4 transMat, int index) {
@@ -358,11 +352,14 @@ void VulkanRenderer::setupSceneFromFile(std::vector<std::map<std::string, std::s
         arPipelines.push_back(object.getArPipeline());
         objects.push_back(object);
 
-        if (modelSettings[i].at("lightProperty") == "lightSource")
-            updateModel(object.getModel(), i, true);
-        else
-            updateModel(object.getModel(), i, false);
 
+
+        if (objects[i].isLight()){
+            glm::mat4 newModel = objects[i].getModel();
+            fragmentColor.lightPos = glm::vec4(newModel[3].x, newModel[3].y, newModel[3].z, 1.0f);
+            fragmentColor.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
+            fragmentColor.objectColor = glm::vec4(0.5f, 0.5f, 0.31f, 0.0f);
+        }
 
     }
     recordCommand();
@@ -385,7 +382,7 @@ void VulkanRenderer::updateDisparityData() {
     //cv::namedWindow("window", cv::WINDOW_FREERATIO);
     //cv::namedWindow("window2", cv::WINDOW_FREERATIO);
     //cv::namedWindow("Disparity image", cv::WINDOW_FREERATIO);
-    cv::Mat img = cv::imread("../left.png",
+    cv::Mat img = cv::imread("../left.jpg",
                              cv::IMREAD_GRAYSCALE);     // Imread a dummy image to populate the cv::Mat img object
     img.data = reinterpret_cast<uchar *>((unsigned char *) memP->imgTwo);
     cv::cvtColor(img, img,
@@ -443,8 +440,10 @@ void VulkanRenderer::updateDisparityData() {
     float angle = glm::length(rot);
     model = glm::rotate(model, -angle, rot);
 
-    if (glm::length(rot) < 2)
-        updateModel(model, 0, true);
+    if (glm::length(rot) < 2){
+        objects[0].setModel(model);
+    }
+        //updateModel(model, 0, true);
 
 
     if (cv::waitKey(1) == 27) {

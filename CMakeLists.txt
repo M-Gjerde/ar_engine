@@ -57,8 +57,8 @@ add_library(VulkanRenderer
         src/pipeline/Pipeline.h
         src/Platform/Platform.cpp
         src/Platform/Platform.h
-        src/pipeline/Mesh.cpp
-        src/pipeline/Mesh.h
+        src/Models/Mesh.cpp
+        src/Models/Mesh.h
         src/pipeline/Descriptors.cpp
         src/pipeline/Descriptors.h
         src/include/structs.h
@@ -70,8 +70,8 @@ add_library(VulkanRenderer
         src/pipeline/Textures.h
         src/include/stb_image.h
         src/include/stbi_image_write.h
-        src/pipeline/MeshModel.cpp
-        src/pipeline/MeshModel.h
+        src/Models/MeshModel.cpp
+        src/Models/MeshModel.h
         src/Platform/LoadSettings.cpp
         src/Platform/LoadSettings.h
         src/renderer/VulkanCompute.cpp

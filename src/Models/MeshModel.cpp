@@ -12,7 +12,7 @@
 
 #include "../../external/tinyobj/tiny_obj_loader.h"
 #include "../include/structs.h"
-#include "Descriptors.h"
+#include "../pipeline/Descriptors.h"
 
 void MeshModel::loadModel(MainDevice mainDevice, ArModel arModel, const ArModelInfo& arModelInfo) {
 
@@ -145,13 +145,6 @@ void MeshModel::getDataFromModel(ArModel *arModel, const ArModelInfo& arModelInf
 }
 
 
-const glm::mat4 &MeshModel::getModel() const {
-    return model1.model;
-}
-
-void MeshModel::setModel(const glm::mat4 &_model) {
-    model1.model = _model;
-}
 
 VkBuffer MeshModel::getVertexBuffer() const {
     return arModel1.vertexBuffer;
@@ -159,30 +152,5 @@ VkBuffer MeshModel::getVertexBuffer() const {
 
 VkBuffer MeshModel::getIndexBuffer() const {
     return arModel1.indexBuffer;
-}
-
-void MeshModel::attachDescriptors(ArDescriptor *arDescriptor, ArDescriptorInfo arDescriptorInfo, Descriptors *descriptors,
-                             Buffer *buffer) {
-
-
-    std::vector<ArBuffer> buffers(arDescriptorInfo.descriptorSetCount);
-    // Create and fill buffers
-    for (int j = 0; j < arDescriptorInfo.descriptorSetCount; ++j) {
-        buffers[j].bufferSize = arDescriptorInfo.dataSizes[j];
-        buffers[j].bufferUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        buffers[j].sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        buffers[j].bufferProperties =
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-        buffer->createBuffer(&buffers[j]);
-        arDescriptor->buffer.push_back(buffers[j].buffer);
-        arDescriptor->bufferMemory.push_back(buffers[j].bufferMemory);
-
-        // Copy over datasizes
-        arDescriptor->dataSizes.resize(arDescriptorInfo.descriptorSetCount);
-        arDescriptor->dataSizes[j] = arDescriptorInfo.dataSizes[j];
-    }
-
-    descriptors->createDescriptors(arDescriptorInfo, arDescriptor);
-
 }
 

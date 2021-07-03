@@ -6,7 +6,7 @@
 #define AR_ENGINE_MESH_H
 
 
-#include "Buffer.h"
+#include "../pipeline/Buffer.h"
 #include <cstring>
 
 class Mesh : Buffer {

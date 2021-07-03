@@ -163,7 +163,6 @@ void FaceDetector::detectFaceRegion(cv::Mat img) {
 
         }
     }
-    //imshow("detections", img);
 }
 
 const cv::Rect &FaceDetector::getRoiFace() const {

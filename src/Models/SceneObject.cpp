@@ -9,7 +9,7 @@
 #include <sstream>
 #include "SceneObject.h"
 #include "../include/structs.h"
-#include "../pipeline/MeshModel.h"
+#include "MeshModel.h"
 
 SceneObject::SceneObject(std::map<std::string, std::string> modelSettings, ArEngine mArEngine) {
     arEngine = std::move(mArEngine);
@@ -27,6 +27,8 @@ SceneObject::SceneObject(std::map<std::string, std::string> modelSettings, ArEng
     getDescriptorInfo(modelSettings);
     // Get object position
     getSceneObjectPose(modelSettings);
+    // misc properties (lightSource etc..)
+    getMiscProperties(modelSettings);
 
     // Free pointer memory
     delete descriptors;
@@ -56,8 +58,6 @@ void SceneObject::getSceneObjectPose(std::map<std::string, std::string> modelSet
     model = glm::translate(model, posVector);
     model = glm::rotate(model, glm::radians(rotAngle), rotVector);
     model = glm::scale(model, glm::vec3(scaleX, scaleY, scaleZ));
-
-    meshModel.setModel(model);
 
 }
 void SceneObject::getDescriptorInfo(std::map<std::string, std::string> modelSettings) {
@@ -148,6 +148,12 @@ void SceneObject::getDescriptorInfoTypeAndStage(std::vector<VkDescriptorType> *d
 
 }
 
+void SceneObject::getMiscProperties(std::map<std::string, std::string> map) {
+    std::string lightProperty = map.at("lightProperty");
+    if (lightProperty == "lightSource")
+        lightSource = true;
+
+}
 
 void SceneObject::createMesh(std::map<std::string, std::string> modelSettings) {
 
@@ -184,16 +190,17 @@ const ArPipeline &SceneObject::getArPipeline() const {
 }
 
 
-MeshModel SceneObject::getMeshModel() {
-    return meshModel;
-}
-
 const glm::mat4 &SceneObject::getModel() const {
     return model;
 }
 
-void SceneObject::setModel(const glm::mat4 &model) {
-    SceneObject::model = model;
+void SceneObject::setModel(const glm::mat4 &newModel) {
+    model = newModel;
+    setRefresh(true);
+}
+
+void SceneObject::setRefresh(bool state) {
+    refreshModel = state;
 }
 
 VkBuffer SceneObject::getVertexBuffer() const {
@@ -212,7 +219,13 @@ void SceneObject::cleanUp(VkDevice device){
     meshModel.cleanUp(device);
 }
 
-const glm::vec3 &SceneObject::getScaleVector() const {
-    return scaleVector;
+bool SceneObject::refresh() const {
+    return refreshModel;
 }
+
+bool SceneObject::isLight() const {
+    return lightSource;
+}
+
+
 
