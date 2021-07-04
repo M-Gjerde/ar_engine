@@ -69,7 +69,7 @@ public:
             vulkanRenderer.draw();
             update();
         }
-        loadSettings->saveScene(vulkanRenderer);
+        //loadSettings->saveScene(vulkanRenderer);
         vulkanRenderer.cleanup();
         glfwDestroyWindow(window);
         glfwTerminate();

@@ -62,7 +62,7 @@ public:
 
     void stopDisparityStream();
 
-    void resetScene(); // TODO implement function
+    void testFunction(); // TODO implement function
 
 private:
     // Vulkan components

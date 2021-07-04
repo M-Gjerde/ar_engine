@@ -39,7 +39,7 @@ int main() {
     glfwSetCursorPosCallback(app->window, cursor_position_callback);
     glfwSetMouseButtonCallback(app->window, mouse_button_callback);
 
-    glfwSetInputMode(app->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //FPS mode mouse input
+    glfwSetInputMode(app->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); //Normal mode mouse input
 
     app->gameLoop();
     return 0;

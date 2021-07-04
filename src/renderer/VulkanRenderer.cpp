@@ -84,15 +84,12 @@ void VulkanRenderer::cleanup() {
 }
 
 
-bool genericBool = false;
 
 void VulkanRenderer::draw() {
     // 1. Get next available image to draw to and set something to signal when we're finished with the image (a semaphore)
     // 2. Submit command buffer to queue for execution, making sure it waits for the image to be signalled as available before drawing
     // and signals when it has finished rendering
     // 3. Present image to screen when it has signaled finished rendering
-
-    while(genericBool);
 
     vkWaitForFences(arEngine.mainDevice.device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
@@ -201,6 +198,8 @@ void VulkanRenderer::createCommandBuffers() {
 }
 
 void VulkanRenderer::recordCommand() {
+
+
     for (size_t i = 0; i < commandBuffers.size(); i++) {
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -240,7 +239,6 @@ void VulkanRenderer::recordCommand() {
                                     arDescriptors[j].descriptorSets.data(), 0,
                                     nullptr);
 
-
             vkCmdDrawIndexed(commandBuffers[i], objects[j].getIndexCount(), 1, 0, 0, 0);
 
         }
@@ -251,6 +249,7 @@ void VulkanRenderer::recordCommand() {
             throw std::runtime_error("failed to FaceAugment command buffer!");
         }
     }
+
 }
 
 void VulkanRenderer::createSyncObjects() {
@@ -350,6 +349,8 @@ void VulkanRenderer::setupSceneFromFile(std::vector<std::map<std::string, std::s
         }
 
     }
+
+
     recordCommand();
 }
 
@@ -443,21 +444,19 @@ void VulkanRenderer::updateDisparityData() {
 }
 
 
-void VulkanRenderer::resetScene() {
+void VulkanRenderer::testFunction() {
 
 
     SceneObject object(arEngine);
+    object.createPipeline(renderPass);
+
     // Push objects to global lists
     arDescriptors.push_back(object.getArDescriptor());
     arPipelines.push_back(object.getArPipeline());
     objects.push_back(object);
 
-    genericBool = true;
-    vkWaitForFences(arEngine.mainDevice.device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
-    recordCommand();
-    vkResetFences(arEngine.mainDevice.device, 1, &inFlightFences[currentFrame]);
+    recordCommand(); // TODO do in separate thread in order to speed up application
 
-    genericBool = false;
 }
 
 std::vector<SceneObject> VulkanRenderer::getSceneObjects() const {

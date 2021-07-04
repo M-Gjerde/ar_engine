@@ -41,7 +41,7 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
 
 
     if (key == GLFW_KEY_X && action == GLFW_PRESS) {
-        vulkanRenderer.resetScene();
+        vulkanRenderer.testFunction();
     }
 
 
@@ -69,17 +69,17 @@ void AppExtension::cursorPosCallback(GLFWwindow *window, double _xPos, double _y
 
 }
 
-bool hiddenCursor = true;
+bool hiddenCursor = false;
 
 void AppExtension::mouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
 
         if (hiddenCursor) {
             hiddenCursor = false;
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); //FPS mode mouse input
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); //Normal mouse mode input
         } else {
             hiddenCursor = true;
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //Normal mouse mode input
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // FPS mode mouse input
 
         }
 

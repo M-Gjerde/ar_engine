@@ -21,7 +21,8 @@ void LoadSettings::init() {
     // Put into JSON object
     jsonStream >> json;
 
-    int numberOfDifferentObjects = 3; //TODO Different method for this
+    size_t numberOfDifferentObjects = json["settings"]["objects"].size();
+
     sceneObjects.resize(numberOfDifferentObjects); // Create a map containing different objects
 
 
