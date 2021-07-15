@@ -14,7 +14,7 @@
 
 class Camera {
 public:
-    float cameraSpeed = 0.25f;
+    float cameraSpeed = 0.05f;
     glm::vec3 cameraPos{};
     glm::vec3 cameraFront{};
     glm::vec3 cameraUp{};

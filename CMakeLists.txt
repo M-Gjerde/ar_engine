@@ -86,6 +86,7 @@ target_link_libraries(VulkanRenderer
         nlohmann_json::nlohmann_json
         videoStream
         ${OpenCV_LIBS}
+        -lnoise
         )
 
 add_executable(engine main.cpp

@@ -446,14 +446,24 @@ void VulkanRenderer::updateDisparityData() {
 
 void VulkanRenderer::testFunction() {
 
+    for (int i = 0; i < 256; ++i) {
+        SceneObject object(arEngine);
+        object.createPipeline(renderPass);
+        // Push objects to global lists 
+        arDescriptors.push_back(object.getArDescriptor());
+        arPipelines.push_back(object.getArPipeline());
 
-    SceneObject object(arEngine);
-    object.createPipeline(renderPass);
+        glm::mat4 model = object.getModel();
+        model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
 
-    // Push objects to global lists
-    arDescriptors.push_back(object.getArDescriptor());
-    arPipelines.push_back(object.getArPipeline());
-    objects.push_back(object);
+        glm::vec3 noiseCoordinates(1.25f, (float) i, 0.75f);
+        double noiseValue = getNoise(noiseCoordinates) * 10;
+        std::cout << noiseValue << std::endl;
+        model = glm::translate(model, glm::vec3(1.0f, (float) i * 0.1f, (float) noiseValue));
+        object.setModel(model);
+
+        objects.push_back(object);
+    }
 
     recordCommand(); // TODO do in separate thread in order to speed up application
 

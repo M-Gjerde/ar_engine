@@ -72,6 +72,7 @@ void MeshModel::getDataFromModel(ArModel *arModel, const ArModelInfo& arModelInf
     float vy1, vy2, vy3 = 0.f; // vertex 2
     float vz1, vz2, vz3 = 0.f; // vertex 3
 
+
     // Load vertex data // TODO Load index data as well
     for (int i = 0; i < shapes.size(); ++i) {
         for (int j = 0; j < shapes[i].mesh.indices.size(); ++j) {
@@ -89,6 +90,13 @@ void MeshModel::getDataFromModel(ArModel *arModel, const ArModelInfo& arModelInf
             // calculate normals for plane
             if (arModelInfo.generateNormals) {
 
+
+                vertex.normal = {attrib.normals[3 * shapes[i].mesh.indices[j].normal_index + 0],
+                        attrib.normals[3 * shapes[i].mesh.indices[j].normal_index + 1],
+                        attrib.normals[3 * shapes[i].mesh.indices[j].normal_index + 2]};
+
+            }
+                /*
                 float x = attrib.vertices[3 * shapes[i].mesh.indices[j].vertex_index + 0];
                 float y = attrib.vertices[3 * shapes[i].mesh.indices[j].vertex_index + 1];
                 float z = attrib.vertices[3 * shapes[i].mesh.indices[j].vertex_index + 2];
@@ -135,6 +143,7 @@ void MeshModel::getDataFromModel(ArModel *arModel, const ArModelInfo& arModelInf
                         break;
                 }
             }
+                 */
             arModel->vertices.push_back(vertex);
             arModel->indices.push_back(arModel->indices.size());
         }
