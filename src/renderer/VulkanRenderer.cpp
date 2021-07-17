@@ -445,24 +445,29 @@ void VulkanRenderer::updateDisparityData() {
 
 
 void VulkanRenderer::testFunction() {
+    float xyScale = 2.1;
+    float zScale = 5;
+    float scale = 5;
 
-    for (int i = 0; i < 256; ++i) {
-        SceneObject object(arEngine);
-        object.createPipeline(renderPass);
-        // Push objects to global lists 
-        arDescriptors.push_back(object.getArDescriptor());
-        arPipelines.push_back(object.getArPipeline());
+    for (int i = 0; i < 32; ++i) {
+        for (int j = 0; j < 32; ++j) {
+            SceneObject object(arEngine);
+            object.createPipeline(renderPass);
+            // Push objects to global lists
+            arDescriptors.push_back(object.getArDescriptor());
+            arPipelines.push_back(object.getArPipeline());
 
-        glm::mat4 model = object.getModel();
-        model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
+            glm::mat4 model = object.getModel();
+            model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
 
-        glm::vec3 noiseCoordinates(1.25f, (float) i, 0.75f);
-        double noiseValue = getNoise(noiseCoordinates) * 10;
-        std::cout << noiseValue << std::endl;
-        model = glm::translate(model, glm::vec3(1.0f, (float) i * 0.1f, (float) noiseValue));
-        object.setModel(model);
+            glm::vec3 noiseCoordinates((float) j * xyScale, (float) i * xyScale, 0.075f * zScale);
+            float noiseValue = -abs(getNoise(noiseCoordinates)) * scale;
+            std::cout << noiseValue << std::endl;
+            model = glm::translate(model, glm::vec3((float)j * 2, noiseValue, (float) i*2));
+            object.setModel(model);
 
-        objects.push_back(object);
+            objects.push_back(object);
+        }
     }
 
     recordCommand(); // TODO do in separate thread in order to speed up application

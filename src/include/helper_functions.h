@@ -15,10 +15,10 @@
 #include <vector>
 #include <libnoise/noise.h>
 
-double getNoise(glm::vec3 coord){
+float getNoise(glm::vec3 coord){
     noise::module::Perlin myModule;
 
-    double value = myModule.GetValue (coord.x, coord.y, coord.z);
+    float value = (float) myModule.GetValue (coord.x, coord.y, coord.z);
 
     return value;
 }
