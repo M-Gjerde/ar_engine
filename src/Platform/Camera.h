@@ -18,6 +18,7 @@ public:
     glm::vec3 cameraPos{};
     glm::vec3 cameraFront{};
     glm::vec3 cameraUp{};
+    glm::mat4 view{};
 
     Camera();
     void setProjection(glm::mat4 newProjection);
@@ -35,13 +36,12 @@ public:
     void rotateLeft();
     void setRoll();
 
-    double yaw = -90;
+    double yaw = 0;
     double roll = 0;
     double pitch = 0;
 private:
 
     glm::mat4 projection{};
-    glm::mat4 view{};
     bool firstMouse = true;          //
     double lastX = 400, lastY = 300; // First mousePos initializing
 

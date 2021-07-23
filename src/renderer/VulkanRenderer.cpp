@@ -51,7 +51,6 @@ void VulkanRenderer::cleanup() {
     vkDeviceWaitIdle(arEngine.mainDevice.device); // wait for GPU to finish rendering before we clean up resources
 
     vulkanCompute->cleanup();
-    vkDestroyFence(arEngine.mainDevice.device, computeFence, NULL);
 
     images->cleanUp(); // Clean up depth images
 
@@ -68,6 +67,7 @@ void VulkanRenderer::cleanup() {
         vkDestroySemaphore(arEngine.mainDevice.device, renderFinishedSemaphores[i], nullptr);
         vkDestroySemaphore(arEngine.mainDevice.device, imageAvailableSemaphores[i], nullptr);
         vkDestroyFence(arEngine.mainDevice.device, inFlightFences[i], nullptr);
+
     }
 
     vkDestroyRenderPass(arEngine.mainDevice.device, renderPass, nullptr);
@@ -349,15 +349,9 @@ void VulkanRenderer::setupSceneFromFile(std::vector<std::map<std::string, std::s
         }
 
     }
-
-
     recordCommand();
 }
 
-void VulkanRenderer::deleteLastObject() {
-    objects.pop_back();
-    // TODO Clean up resources used with this object as well
-}
 
 
 void VulkanRenderer::initComputePipeline() {

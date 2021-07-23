@@ -28,40 +28,23 @@
 class VulkanRenderer {
 
 public:
+    std::vector<SceneObject> objects;
+
+
+
     VulkanRenderer();
-
     int init(GLFWwindow *newWindow);
-
-    void updateModel(glm::mat4 newModel, int index, bool isLight);
-
-    void updateLightPos(glm::vec3 newPos, glm::mat4 transMat, int index);
-
-    void updateSpecularLightCamera(glm::vec3 newPos);
-
     void updateCamera(glm::mat4 newView, glm::mat4 newProjection);
-
     void updateTextureImage(std::string fileName); // TODO TEST METHOD
     void updateDisparityVideoTexture(); // TODO TEST METHOD
-    void vulkanComputeShaders(); //TODO Test method
-
     void draw();
-
     void cleanup();
-
     ~VulkanRenderer();
-
     void setupSceneFromFile(std::vector<std::map<std::string, std::string>> modelSettings);
-
-    void deleteLastObject();
-
-    std::vector<SceneObject> getSceneObjects() const;
-
+    [[nodiscard]] std::vector<SceneObject> getSceneObjects() const;
     void updateDisparityData();
-
     void startDisparityStream();
-
     void stopDisparityStream();
-
     void testFunction(); // TODO implement function
 
 private:
@@ -89,7 +72,6 @@ private:
 
     // Objects
     //std::vector<MeshModel> models{};
-    std::vector<SceneObject> objects;
 
     // Descriptors
     Descriptors *descriptors{}; // TODO To be removed
@@ -122,18 +104,10 @@ private:
     size_t currentFrame = 0;
 
     void createFrameBuffersAndRenderPass();
-
     void createCommandBuffers();
-
     void recordCommand();
-
     void createSyncObjects();
-
     void updateBuffer(uint32_t imageIndex);
-
-
-    void loadCubeObjects();
-
     void initComputePipeline();
 
 };

@@ -19,6 +19,7 @@ void AppExtension::update() {
 
 }
 
+int cameraIndex = 0;
 void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         std::cout << "exiting..." << std::endl;
@@ -44,29 +45,71 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
         vulkanRenderer.testFunction();
     }
 
+    if (key == GLFW_KEY_1 && action == GLFW_PRESS) {
+        // Switch to different camera
+        cameras[1] = new Camera();
+        cameras[1]->cameraPos = glm::vec3(4.0f, -4.5f, 4.0f);
+        cameras[1]->cameraFront = glm::vec3(-1.0f, 1.0f, -1.0f);
+        cameras[1]->cameraUp = glm::vec3(0.0f, -1.0f, 0.0f);
+        cameras[1]->view = glm::lookAt(cameras[1]->cameraPos, cameras[1]->cameraPos + cameras[1]->cameraFront,
+                                       cameras[1]->cameraUp);
+        cameraIndex++;
+
+        if (cameraIndex == 2)
+            cameraIndex = 0;
+    }
+
 
     if (key == GLFW_KEY_RIGHT)
-        camera.rotateRight();
+        cameras[0]->rotateRight();
     if (key == GLFW_KEY_LEFT)
-        camera.rotateLeft();
+        cameras[0]->rotateLeft();
     if (key == GLFW_KEY_W)
-        camera.forward();
+        cameras[0]->forward();
     if (key == GLFW_KEY_S)
-        camera.backward();
+        cameras[0]->backward();
     if (key == GLFW_KEY_A)
-        camera.moveLeft();
+        cameras[0]->moveLeft();
     if (key == GLFW_KEY_D)
-        camera.moveRight();
+        cameras[0]->moveRight();
+    //glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f, 0.1f, 0.1f));
+
+    // TODO Make variables inside some class
+    glm::mat4 model(1.0f);
+    // translate model to camerapos
+
+    model = glm::translate(model, cameras[0]->cameraPos);
+
+    // rotate model according to yaw
+    model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    if (cameraIndex == 1){
+        model = glm::rotate(model,  glm::radians((float)cameras[0]->yaw), glm::vec3(0.0f, -1.0f, 0.0f));
+    }
+
+    // Make the model look nice
+    model = glm::rotate(model, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));
+    model = glm::translate(model, glm::vec3(0.0f, -2.0f, 0.0f));
+    vulkanRenderer.objects[0].setModel(model);
 
 
-    vulkanRenderer.updateCamera(camera.getView(), camera.getProjection());
-
+    vulkanRenderer.updateCamera(cameras[cameraIndex]->getView(), cameras[cameraIndex]->getProjection());
 }
 
 void AppExtension::cursorPosCallback(GLFWwindow *window, double _xPos, double _yPos) {
-    camera.lookAround(_xPos, _yPos);
-    vulkanRenderer.updateCamera(camera.getView(), camera.getProjection());
+    cameras[0]->lookAround(_xPos, _yPos);
 
+    // If we are in 3rd person mode then disable up and down movement
+    if (cameraIndex == 1) {
+        cameras[0]->cameraFront.y = 0.0f;
+        cameras[0]->cameraFront = glm::normalize(cameras[0]->cameraFront);;
+    }
+
+    // Only update 1st person camera for cursor callback
+    if (cameraIndex == 0) {
+        vulkanRenderer.updateCamera(cameras[0]->getView(), cameras[0]->getProjection());
+    }
 }
 
 bool hiddenCursor = false;
@@ -84,9 +127,10 @@ void AppExtension::mouseButtonCallback(GLFWwindow *window, int button, int actio
         }
 
         printf("____________________________________________\n "
-               "Camera data: yaw = %f\n", camera.yaw);
+               "Camera data: yaw = %f\n", cameras[cameraIndex]->yaw);
 
-        printf("cameraFront (x,y,z): %f, %f, %f\n", camera.cameraFront.x, camera.cameraFront.y, camera.cameraFront.z);
+        printf("cameraFront (x,y,z): %f, %f, %f\n", cameras[cameraIndex]->cameraFront.x,
+               cameras[cameraIndex]->cameraFront.y, cameras[cameraIndex]->cameraFront.z);
     }
 
 }

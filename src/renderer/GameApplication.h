@@ -26,7 +26,7 @@ class GameApplication {
 public:
     GLFWwindow *window;
     VulkanRenderer vulkanRenderer;
-    Camera camera;
+    std::vector<Camera*> cameras;
     LoadSettings *loadSettings;
 
     explicit GameApplication(const std::string &title) {
@@ -48,7 +48,9 @@ public:
             throw std::runtime_error("Failed to init");
 
         // Initialize camera
-        vulkanRenderer.updateCamera(camera.getView(), camera.getProjection());
+        cameras.resize(2);
+        cameras[0] = new Camera;
+        vulkanRenderer.updateCamera(cameras[0]->getView(), cameras[0]->getProjection());
 
         // Load scene objects according to settings file
         auto settingsMap = loadSettings->getSceneObjects();

@@ -19,20 +19,17 @@ glm::mat4 Camera::getProjection() {
 }
 
 glm::mat4 Camera::getView() {
-    return view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+    return view = glm::lookAt(cameraPos, cameraPos+cameraFront, cameraUp);
 
 }
 
 Camera::Camera() {
 
-    cameraPos = glm::vec3(0.0f, 0.0f, 0.0f);
-    cameraFront = glm::vec3(0.0f, 0.0f, 1.0f);
+    cameraPos = glm::vec3(-2.0f, -0.5f, -2.0f);
+    cameraFront = glm::vec3(1.0f, 0.0f, 1.0f);
     cameraUp = glm::vec3(0.0f, -1.0f, 0.0f);
 
-
-    view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-
-    projection = glm::perspective(glm::radians(45.0f), (float) viewport.WIDTH / (float) viewport.HEIGHT, 0.1f, 10000.0f);
+    projection = glm::perspective(glm::radians(45.0f), (float) viewport.WIDTH / (float) viewport.HEIGHT, 0.001f, 10000.0f);
     projection[1][1] *= -1;
 
 }

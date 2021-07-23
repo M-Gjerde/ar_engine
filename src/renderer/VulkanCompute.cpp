@@ -23,6 +23,10 @@ VulkanCompute::VulkanCompute(ArEngine mArEngine) {
 void VulkanCompute::cleanup() {
     // Clean up
 
+    // fences
+    vkDestroyFence(arEngine.mainDevice.device, computeFence, nullptr);
+
+    // Buffers
     for (int i = 0; i < arDescriptor.buffer.size(); ++i) {
         vkFreeMemory(arEngine.mainDevice.device, arDescriptor.bufferMemory[i], nullptr);
         vkDestroyBuffer(arEngine.mainDevice.device, arDescriptor.buffer[i], nullptr);
