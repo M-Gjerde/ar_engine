@@ -96,54 +96,7 @@ void MeshModel::getDataFromModel(ArModel *arModel, const ArModelInfo& arModelInf
                         attrib.normals[3 * shapes[i].mesh.indices[j].normal_index + 2]};
 
             }
-                /*
-                float x = attrib.vertices[3 * shapes[i].mesh.indices[j].vertex_index + 0];
-                float y = attrib.vertices[3 * shapes[i].mesh.indices[j].vertex_index + 1];
-                float z = attrib.vertices[3 * shapes[i].mesh.indices[j].vertex_index + 2];
 
-                switch (j % 3) {
-                    case 0:
-                        vx1 = x;
-                        vy1 = y;
-                        vz1 = z;
-                        break;
-                    case 1:
-                        vx2 = x;
-                        vy2 = y;
-                        vz2 = z;
-                        break;
-                    case 2:
-                        // Defining third point in a triangle
-                        vx3 = x;
-                        vy3 = y;
-                        vz3 = z;
-                        float qx, qy, qz, px, py, pz;
-                        // Calculate q vector
-                        qx = vx2 - vx1;
-                        qy = vy2 - vy1;
-                        qz = vz2 - vz1;
-                        // Calculate p vector
-                        px = vx3 - vx1;
-                        py = vy3 - vy1;
-                        pz = vz3 - vz1;
-                        // Calculate normal
-                        nx = py * qz - pz * qy;
-                        ny = pz * qx - px * qz;
-                        nz = px * qy - py * qx;
-                        // Scale to unit vector
-                        float s = std::sqrt(nx * nx + ny * ny + nz * nz);
-                        nx /= s;
-                        ny /= s;
-                        nz /= s;
-
-                        normal.x = nx;
-                        normal.y = ny;
-                        normal.z = nz;
-                        vertex.normal = -normal;
-                        break;
-                }
-            }
-                 */
             arModel->vertices.push_back(vertex);
             arModel->indices.push_back(arModel->indices.size());
         }

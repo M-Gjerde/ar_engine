@@ -449,8 +449,8 @@ void VulkanRenderer::testFunction() {
     float zScale = 5;
     float scale = 5;
 
-    for (int i = 0; i < 32; ++i) {
-        for (int j = 0; j < 32; ++j) {
+    for (int i = 0; i < 16; ++i) {
+        for (int j = 0; j < 16; ++j) {
             SceneObject object(arEngine);
             object.createPipeline(renderPass);
             // Push objects to global lists
