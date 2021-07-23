@@ -36,6 +36,8 @@ private:
 
     VkShaderModule createShaderModule(VkDevice device, const std::vector<char> &code);
 
+    void textRenderPipeline(VkRenderPass renderPass, ArDescriptor arDescriptor, const ArShadersPath &shaderPath,
+                            ArPipeline *pipeline);
 };
 
 

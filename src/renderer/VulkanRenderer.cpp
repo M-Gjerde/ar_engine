@@ -76,13 +76,12 @@ void VulkanRenderer::cleanup() {
         vkDestroyFramebuffer(arEngine.mainDevice.device, framebuffer, nullptr);
     }
 
-    for (auto & arPipeline : arPipelines) {
+    for (auto &arPipeline : arPipelines) {
         pipeline.cleanUp(arPipeline);
 
     }
     platform->cleanUp();
 }
-
 
 
 void VulkanRenderer::draw() {
@@ -353,7 +352,6 @@ void VulkanRenderer::setupSceneFromFile(std::vector<std::map<std::string, std::s
 }
 
 
-
 void VulkanRenderer::initComputePipeline() {
     vulkanCompute->setupComputePipeline(buffer, descriptors, platform, pipeline);
     memP = threadSpawner.getVideoMemoryPointer();
@@ -437,14 +435,58 @@ void VulkanRenderer::updateDisparityData() {
 */
 }
 
-void VulkanRenderer::textRenderTest(){
+void VulkanRenderer::textRenderTest() {
 
     stb_fontchar stbFontData[STB_FONT_consolas_24_latin1_NUM_CHARS];
     uint32_t numLetters;
 
-    enum TextAlign { alignLeft, alignCenter, alignRight };
+    enum TextAlign {
+        alignLeft, alignCenter, alignRight
+    };
     bool visible = true;
 
+    const uint32_t fontWidth = STB_FONT_consolas_24_latin1_BITMAP_WIDTH;
+    const uint32_t fontHeight = STB_FONT_consolas_24_latin1_BITMAP_WIDTH;
+
+    static unsigned char font24pixels[fontWidth][fontHeight];
+    stb_font_consolas_24_latin1(stbFontData, font24pixels, fontHeight);
+
+    // Vertex TEXTOVERLAY_MAX_CHAR_COUNT
+
+    ArBuffer arBuffer{};
+    arBuffer.bufferSize = 2048 * sizeof(glm::vec4);
+    arBuffer.bufferUsage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    arBuffer.bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+    arBuffer.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    buffer->createBuffer(&arBuffer);
+
+    VkImage image;
+    VkDeviceMemory imageMemory;
+    VkMemoryRequirements memoryRequirements{};
+    images->createImage(fontWidth, fontHeight, VK_FORMAT_R8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                        VK_IMAGE_LAYOUT_UNDEFINED,
+                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory, &memoryRequirements);
+
+
+    // Staging
+    ArBuffer stagingBuffer{};
+    stagingBuffer.bufferSize = memoryRequirements.size;
+    stagingBuffer.bufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    stagingBuffer.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    buffer->createBuffer(&stagingBuffer);
+    uint8_t *data;
+    vkMapMemory(arEngine.mainDevice.device, stagingBuffer.bufferMemory, 0, stagingBuffer.bufferSize, 0, (void **)&data);
+    memcpy(data, &font24pixels[0][0], fontWidth * fontHeight);
+    vkUnmapMemory(arEngine.mainDevice.device, stagingBuffer.bufferMemory);
+
+    // Copy buffer to image
+    images->copyBufferToImage(stagingBuffer.buffer, image, fontWidth, fontHeight, arEngine.commandPool, arEngine.graphicsQueue);
+
+
+    /// --- RENDER PASS ---
     // Color attachment
     VkAttachmentDescription colorAttachment{};
     colorAttachment.format = arEngine.swapchainFormat;
@@ -529,9 +571,10 @@ void VulkanRenderer::textRenderTest(){
 
     vkCreateRenderPass(arEngine.mainDevice.device, &renderPassInfo, nullptr, &textRenderPass);
 
+    VkDeviceMemory memory;
+
 
 }
-
 
 
 void VulkanRenderer::testFunction() {
@@ -553,7 +596,7 @@ void VulkanRenderer::testFunction() {
             glm::vec3 noiseCoordinates((float) j * xyScale, (float) i * xyScale, 0.075f * zScale);
             float noiseValue = -abs(getNoise(noiseCoordinates)) * scale;
             std::cout << noiseValue << std::endl;
-            model = glm::translate(model, glm::vec3((float)j * 2, noiseValue, (float) i*2));
+            model = glm::translate(model, glm::vec3((float) j * 2, noiseValue, (float) i * 2));
             object.setModel(model);
 
             objects.push_back(object);

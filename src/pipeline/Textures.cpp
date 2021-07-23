@@ -71,9 +71,9 @@ void Textures::createTextureImage(std::string fileName, ArTextureImage *arTextur
 
     // Create image and bind image memory
     images->createImage(texWidth, texHeight, format, VK_IMAGE_TILING_LINEAR,
-                        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, arTextureSampler->textureImage,
-                        arTextureSampler->textureImageMemory, VK_IMAGE_LAYOUT_UNDEFINED);
+                        arTextureSampler->textureImageMemory, nullptr);
 
     // Transition image to transfer destination
     transitionImageLayout(arTextureSampler->textureImage, format, VK_IMAGE_LAYOUT_UNDEFINED,
@@ -126,8 +126,9 @@ void Textures::createTextureImage(ArTextureImage *arTexture, ArBuffer *textureBu
     // Create image and bind image memory
     images->createImage(arTexture->width, arTexture->height, format, VK_IMAGE_TILING_LINEAR,
                         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                        VK_IMAGE_LAYOUT_UNDEFINED,
                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, arTexture->textureImage, arTexture->textureImageMemory,
-                        VK_IMAGE_LAYOUT_UNDEFINED);
+                        nullptr);
 
     // Creating staging buffer
     textureBuffer->bufferSize = imageSize;

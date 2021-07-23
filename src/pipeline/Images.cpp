@@ -18,10 +18,12 @@ Images::Images(Images *pImages) : Buffer(pImages->mainDevice) {
 
 void Images::createDepthImageView(VkImageView *depthImageView) {
     VkFormat depthFormat = findDepthFormat();
+    VkMemoryRequirements memoryRequirements;
     createImage(arDepthResource.swapChainExtent.width, arDepthResource.swapChainExtent.height, depthFormat,
                 VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                VK_IMAGE_LAYOUT_UNDEFINED,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, arDepthResource.depthImage, arDepthResource.depthImageMemory,
-                VK_IMAGE_LAYOUT_UNDEFINED);
+                &memoryRequirements);
     arDepthResource.depthImageView = createImageView(arDepthResource.depthImage, depthFormat,
                                                      VK_IMAGE_ASPECT_DEPTH_BIT);
 
@@ -72,8 +74,8 @@ VkImageView Images::createImageView(VkImage image, VkFormat format, VkImageAspec
 
 void
 Images::createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
-                    VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory,
-                    VkImageLayout initialLayout) {
+                    VkImageLayout initialLayout, VkMemoryPropertyFlags properties, VkImage &image,
+                    VkDeviceMemory &imageMemory, VkMemoryRequirements *memRequirements) {
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -93,13 +95,13 @@ Images::createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTil
         throw std::runtime_error("failed to create image!");
     }
 
-    VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(mainDevice.device, image, &memRequirements);
+
+    vkGetImageMemoryRequirements(mainDevice.device, image, memRequirements);
 
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryTypeIndex(memRequirements.memoryTypeBits, properties);
+    allocInfo.allocationSize = memRequirements->size;
+    allocInfo.memoryTypeIndex = findMemoryTypeIndex(memRequirements->memoryTypeBits, properties);
 
     if (vkAllocateMemory(mainDevice.device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate image memory!");

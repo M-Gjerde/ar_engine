@@ -26,8 +26,8 @@ public:
     void createBuffer(ArBuffer* pArBuffer) override;
 
     void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
-                     VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory,
-                     VkImageLayout initialLayout);
+                     VkImageLayout initialLayout, VkMemoryPropertyFlags properties, VkImage &image,
+                     VkDeviceMemory &imageMemory, VkMemoryRequirements *memRequirements);
 
     VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) const;
 
