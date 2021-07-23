@@ -58,6 +58,7 @@ private:
     Images *images{};
     ArDepthResource arDepthResource{};
     VkRenderPass renderPass{};
+    VkRenderPass textRenderPass{};
 
     // Compute pipeline
     VulkanCompute *vulkanCompute{};
@@ -110,6 +111,7 @@ private:
     void updateBuffer(uint32_t imageIndex);
     void initComputePipeline();
 
+    void textRenderTest();
 };
 
 
