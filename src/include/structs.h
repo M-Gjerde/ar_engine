@@ -61,6 +61,8 @@ struct ArDescriptorInfo {
     uint32_t descriptorSetLayoutCount;  // How many descriptor layouts
     uint32_t descriptorSetCount;
     uint32_t *dataSizes;
+    VkSampler sampler;
+    VkImageView view;
 };
 
 

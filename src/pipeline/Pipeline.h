@@ -28,6 +28,8 @@ public:
 
     void cleanUp(ArPipeline arPipeline) const;
 
+    void textRenderPipeline(VkRenderPass renderPass, ArDescriptor arDescriptor, const ArShadersPath &shaderPath,
+                            ArPipeline *pipeline, VkPipelineCache cache);
 
     void
     computePipeline(ArDescriptor arDescriptor, const ArShadersPath &shaderPath, ArPipeline *pipeline);
@@ -36,8 +38,7 @@ private:
 
     VkShaderModule createShaderModule(VkDevice device, const std::vector<char> &code);
 
-    void textRenderPipeline(VkRenderPass renderPass, ArDescriptor arDescriptor, const ArShadersPath &shaderPath,
-                            ArPipeline *pipeline);
+
 };
 
 

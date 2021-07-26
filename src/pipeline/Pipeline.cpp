@@ -197,7 +197,7 @@ VkShaderModule Pipeline::createShaderModule(VkDevice device, const std::vector<c
 
 
 void Pipeline::textRenderPipeline(VkRenderPass renderPass, ArDescriptor arDescriptor, const ArShadersPath &shaderPath,
-                               ArPipeline *pipeline) {
+                                  ArPipeline *pipeline, VkPipelineCache cache) {
 
     auto vertShaderCode = readFile(shaderPath.vertexShader + ".spv");
     auto fragShaderCode = readFile(shaderPath.fragmentShader + ".spv");
@@ -206,7 +206,6 @@ void Pipeline::textRenderPipeline(VkRenderPass renderPass, ArDescriptor arDescri
     VkShaderModule fragShaderModule = createShaderModule(pipeline->device, fragShaderCode);
 
     //SHADER SETUP
-
     // Vertex shader info
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
     vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -222,42 +221,65 @@ void Pipeline::textRenderPipeline(VkRenderPass renderPass, ArDescriptor arDescri
     fragShaderStageInfo.pName = "main";
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
 
-
+/*
     VkVertexInputBindingDescription bindingDescription = {};
     bindingDescription.binding = 0;                             // Can bind multiple streams of data, this defined which one
-    bindingDescription.stride = sizeof(Vertex);                 // Size of a single vertex object
+    bindingDescription.stride = sizeof(Text);                 // Size of a single vertex object
     bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
-    std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
+    std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
     // Position attribute
     attributeDescriptions[0].location = 0;
     attributeDescriptions[0].binding = 0;
-    attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;          // Vec 2 size
-    attributeDescriptions[0].offset = offsetof(Vertex, pos);
+    attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;          // Vec 2 size
+    attributeDescriptions[0].offset = offsetof(Text, pos);
 
     // Texture attributes
     attributeDescriptions[1].binding = 0;
     attributeDescriptions[1].location = 1;
     attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
-    attributeDescriptions[1].offset = offsetof(Vertex, texCoord);
+    attributeDescriptions[1].offset = offsetof(Text, texCoord);
+*/
 
-    // Normal attribute
-    attributeDescriptions[2].binding = 0;
-    attributeDescriptions[2].location = 2;
-    attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-    attributeDescriptions[2].offset = offsetof(Vertex, normal);
+    VkVertexInputBindingDescription bindingDescription = {};
+    bindingDescription.binding = 0;                             // Can bind multiple streams of data, this defined which one
+    bindingDescription.stride = sizeof(glm::vec4);                // Size of a single vertex object
+    bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    VkVertexInputBindingDescription bindingDescription2 = {};
+    bindingDescription2.binding = 1;                             // Can bind multiple streams of data, this defined which one
+    bindingDescription2.stride = sizeof(glm::vec4);                 // Size of a single vertex object
+    bindingDescription2.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    std::array<VkVertexInputBindingDescription, 2> vertexInputBindings = {
+            bindingDescription,
+            bindingDescription2,
+    };
+
+    std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+    // Position attribute
+    attributeDescriptions[0].location = 0;
+    attributeDescriptions[0].binding = 0;
+    attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;          // Vec 2 size
+    attributeDescriptions[0].offset = 0;
+
+    // Texture attributes
+    attributeDescriptions[1].binding = 1;
+    attributeDescriptions[1].location = 1;
+    attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
+    attributeDescriptions[1].offset = sizeof(glm::vec2);
 
     // Vertex input into pipeline
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 1;
-    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription; // Optional
+    vertexInputInfo.vertexBindingDescriptionCount = vertexInputBindings.size();
+    vertexInputInfo.pVertexBindingDescriptions = vertexInputBindings.data(); // Optional
     vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
     vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data(); // Optional
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
     // VIEWPORT SETUP
@@ -290,7 +312,7 @@ void Pipeline::textRenderPipeline(VkRenderPass renderPass, ArDescriptor arDescri
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizer.lineWidth = 1.0f;
     rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
     rasterizer.depthBiasEnable = VK_FALSE;
 
     // MULTISAMPLING || ANTIALISING
@@ -304,7 +326,8 @@ void Pipeline::textRenderPipeline(VkRenderPass renderPass, ArDescriptor arDescri
     depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     depthStencil.depthTestEnable = VK_TRUE;
     depthStencil.depthWriteEnable = VK_TRUE;
-    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+    depthStencil.back.compareOp = VK_COMPARE_OP_ALWAYS;
     depthStencil.depthBoundsTestEnable = VK_FALSE;
     depthStencil.stencilTestEnable = VK_FALSE;
 
@@ -351,7 +374,7 @@ void Pipeline::textRenderPipeline(VkRenderPass renderPass, ArDescriptor arDescri
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineInfo.stageCount = 2;
     pipelineInfo.pStages = shaderStages;
-    pipelineInfo.pDynamicState = &dynamicState;
+
     pipelineInfo.pVertexInputState = &vertexInputInfo;
     pipelineInfo.pInputAssemblyState = &inputAssembly;
     pipelineInfo.pViewportState = &viewportState;
@@ -363,7 +386,7 @@ void Pipeline::textRenderPipeline(VkRenderPass renderPass, ArDescriptor arDescri
     pipelineInfo.renderPass = renderPass;
     pipelineInfo.subpass = 0;
 
-    if (vkCreateGraphicsPipelines(pipeline->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->pipeline) !=
+    if (vkCreateGraphicsPipelines(pipeline->device, cache, 1, &pipelineInfo, nullptr, &pipeline->pipeline) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
     }

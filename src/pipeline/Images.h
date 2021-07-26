@@ -31,8 +31,9 @@ public:
 
     VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) const;
 
-    void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout,
-                               VkCommandPool commandPool, VkQueue transferQueue);
+    void
+    transitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkCommandPool commandPool,
+                          VkQueue transferQueue);
 
     void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, VkCommandPool commandPool, VkQueue transferQueue);
 

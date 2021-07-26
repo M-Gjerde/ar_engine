@@ -20,6 +20,7 @@
 #include "../Models/MeshModel.h"
 #include "../Models/SceneObject.h"
 #include "../FaceAugment/FaceDetector.h"
+#include "../../external/stb/latin1/consolas/stb_font_consolas_24_latin1.inl"
 #include <stdexcept>
 #include <vector>
 #include <iostream>
@@ -68,6 +69,23 @@ private:
     ThreadSpawner threadSpawner;
     ArSharedMemory *memP{};
 
+    // TextRendering
+    VkImageView imageView;
+    VkSampler sampler;
+    ArDescriptorInfo descriptorInfo{};
+    ArDescriptor descriptor;
+    VkImage image;
+    VkDeviceMemory imageMemory;
+    VkMemoryRequirements memoryRequirements{};
+    bool visible = true;
+    glm::vec4 *mapped = nullptr;
+    uint32_t numLetters;
+    stb_fontchar stbFontData[STB_FONT_consolas_24_latin1_NUM_CHARS];
+    ArBuffer dataBuffer;
+    std::vector<VkCommandBuffer> cmdBuffersText;
+    ArPipeline textPipeline{};
+    VkPipelineCache pipelineCache;
+
     // Buffer
     Buffer *buffer{}; // TODO To be removed
 
@@ -112,6 +130,13 @@ private:
     void initComputePipeline();
 
     void textRenderTest();
+
+    enum TextAlign { alignLeft, alignCenter, alignRight };
+    void beginTextUpdate();
+    void addText(const std::string& text, float x, float y, TextAlign align);
+    void endTextUpdate();
+
+    void updateCommandBuffers();
 };
 
 

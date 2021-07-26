@@ -13,6 +13,11 @@ struct Vertex {
     glm::vec3 normal;
 };
 
+struct Text {
+    glm::vec2 pos;
+    glm::vec2 texCoord;
+};
+
 struct uboModel {
     glm::mat4 projection;
     glm::mat4 view;

@@ -12,7 +12,6 @@
 #include "../include/stbi_image_write.h"
 #include "opencv2/opencv.hpp"
 #include "../include/helper_functions.h"
-#include "../../external/stb/latin1/consolas/stb_font_consolas_24_latin1.inl"
 
 VulkanRenderer::VulkanRenderer() = default;
 
@@ -39,6 +38,7 @@ int VulkanRenderer::init(GLFWwindow *newWindow) {
         initComputePipeline();
 
         printf("Initiated compute pipeline\n\n");
+        textRenderTest();
 
     } catch (std::runtime_error &err) {
         std::cerr << err.what() << std::endl;
@@ -118,9 +118,17 @@ void VulkanRenderer::draw() {
     submitInfo.pWaitSemaphores = waitSemaphores;
     submitInfo.pWaitDstStageMask = waitStages;
 
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffers[imageIndex];
+    // TEXTOVERLAY ADDITION cmd buffers
+    std::vector<VkCommandBuffer> cmdBuffers = {
+    };
+    cmdBuffers.push_back(commandBuffers[imageIndex]);
 
+    if (visible){
+        cmdBuffers.push_back(cmdBuffersText[imageIndex]);
+    }
+
+    submitInfo.commandBufferCount = static_cast<uint32_t>(cmdBuffers.size());
+    submitInfo.pCommandBuffers = cmdBuffers.data();
 
     VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
     submitInfo.signalSemaphoreCount = 1;
@@ -191,6 +199,19 @@ void VulkanRenderer::createCommandBuffers() {
     allocInfo.commandBufferCount = (uint32_t) commandBuffers.size();
 
     if (vkAllocateCommandBuffers(arEngine.mainDevice.device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate command buffers!");
+    }
+
+    // TEXTRENDER ALSO ALLOCATE BUFFERS
+
+    VkCommandBufferAllocateInfo allocInfo2{};
+    cmdBuffersText.resize(swapChainFramebuffers.size());
+    allocInfo2.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo2.commandPool = arEngine.commandPool;
+    allocInfo2.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo2.commandBufferCount = (uint32_t) cmdBuffersText.size();
+
+    if (vkAllocateCommandBuffers(arEngine.mainDevice.device, &allocInfo, cmdBuffersText.data()) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate command buffers!");
     }
 
@@ -437,33 +458,19 @@ void VulkanRenderer::updateDisparityData() {
 
 void VulkanRenderer::textRenderTest() {
 
-    stb_fontchar stbFontData[STB_FONT_consolas_24_latin1_NUM_CHARS];
-    uint32_t numLetters;
-
-    enum TextAlign {
-        alignLeft, alignCenter, alignRight
-    };
-    bool visible = true;
-
     const uint32_t fontWidth = STB_FONT_consolas_24_latin1_BITMAP_WIDTH;
     const uint32_t fontHeight = STB_FONT_consolas_24_latin1_BITMAP_WIDTH;
 
     static unsigned char font24pixels[fontWidth][fontHeight];
     stb_font_consolas_24_latin1(stbFontData, font24pixels, fontHeight);
 
-    // Vertex TEXTOVERLAY_MAX_CHAR_COUNT
+    dataBuffer.bufferSize = 2048 * sizeof(glm::vec4);
+    dataBuffer.bufferUsage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    dataBuffer.bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    dataBuffer.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    buffer->createBuffer(&dataBuffer);
 
-    ArBuffer arBuffer{};
-    arBuffer.bufferSize = 2048 * sizeof(glm::vec4);
-    arBuffer.bufferUsage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    arBuffer.bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-    arBuffer.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    buffer->createBuffer(&arBuffer);
-
-    VkImage image;
-    VkDeviceMemory imageMemory;
-    VkMemoryRequirements memoryRequirements{};
     images->createImage(fontWidth, fontHeight, VK_FORMAT_R8_UNORM, VK_IMAGE_TILING_OPTIMAL,
                         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                         VK_IMAGE_LAYOUT_UNDEFINED,
@@ -474,16 +481,85 @@ void VulkanRenderer::textRenderTest() {
     ArBuffer stagingBuffer{};
     stagingBuffer.bufferSize = memoryRequirements.size;
     stagingBuffer.bufferUsage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    stagingBuffer.bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
     stagingBuffer.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     buffer->createBuffer(&stagingBuffer);
     uint8_t *data;
-    vkMapMemory(arEngine.mainDevice.device, stagingBuffer.bufferMemory, 0, stagingBuffer.bufferSize, 0, (void **)&data);
+    vkMapMemory(arEngine.mainDevice.device, stagingBuffer.bufferMemory, 0, stagingBuffer.bufferSize, 0,
+                (void **) &data);
     memcpy(data, &font24pixels[0][0], fontWidth * fontHeight);
     vkUnmapMemory(arEngine.mainDevice.device, stagingBuffer.bufferMemory);
 
+    // Transition image to transfer destination
+    images->transitionImageLayout(image, VK_IMAGE_LAYOUT_UNDEFINED,
+                                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, arEngine.commandPool, arEngine.graphicsQueue);
+
     // Copy buffer to image
-    images->copyBufferToImage(stagingBuffer.buffer, image, fontWidth, fontHeight, arEngine.commandPool, arEngine.graphicsQueue);
+    images->copyBufferToImage(stagingBuffer.buffer, image, fontWidth, fontHeight, arEngine.commandPool,
+                              arEngine.graphicsQueue);
+
+
+    // Transition image to shader read
+    images->transitionImageLayout(image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, arEngine.commandPool,
+                                  arEngine.graphicsQueue);
+
+    // Create image view
+    imageView = images->createImageView(image, VK_FORMAT_R8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+
+
+    // Create sampler
+    VkSamplerCreateInfo samplerInfo{};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = VK_FILTER_LINEAR;
+    samplerInfo.minFilter = VK_FILTER_LINEAR;
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+
+    samplerInfo.anisotropyEnable = VK_FALSE;
+    samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    samplerInfo.compareEnable = VK_FALSE;
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    samplerInfo.mipLodBias = 0.0f;
+    samplerInfo.minLod = 0.0f;
+    samplerInfo.maxLod = 0.0f;
+    if (vkCreateSampler(arEngine.mainDevice.device, &samplerInfo, nullptr, &sampler) !=
+        VK_SUCCESS) {
+        throw std::runtime_error("failed to create texture sampler!");
+    }
+    // Create descriptor
+    // Font uses a separate descriptor pool
+    descriptorInfo.descriptorPoolCount = 1;
+    descriptorInfo.descriptorCount = 1;
+    descriptorInfo.descriptorSetLayoutCount = 1;
+    descriptorInfo.descriptorSetCount = 1;
+    std::vector<uint32_t> descriptorCounts;
+    descriptorCounts.push_back(1);
+    descriptorInfo.pDescriptorSplitCount = descriptorCounts.data();
+    std::vector<uint32_t> bindings;
+    bindings.push_back(0);
+    descriptorInfo.pBindings = bindings.data();
+    // types
+    std::vector<VkDescriptorType> types(1);
+    types[0] = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptorInfo.pDescriptorType = types.data();
+    // stages
+    std::array<VkShaderStageFlags, 1> stageFlags = {VK_SHADER_STAGE_FRAGMENT_BIT};
+    descriptorInfo.stageFlags = stageFlags.data();
+
+    descriptorInfo.sampler = sampler;
+    descriptorInfo.view = imageView;
+
+    descriptors->createDescriptors(descriptorInfo, &descriptor);
+
+    // Pipeline cache
+    VkPipelineCacheCreateInfo pipelineCacheCreateInfo = {};
+    pipelineCacheCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+    vkCreatePipelineCache(arEngine.mainDevice.device, &pipelineCacheCreateInfo, nullptr, &pipelineCache);
 
 
     /// --- RENDER PASS ---
@@ -491,11 +567,11 @@ void VulkanRenderer::textRenderTest() {
     VkAttachmentDescription colorAttachment{};
     colorAttachment.format = arEngine.swapchainFormat;
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
     // Setup to how the colorAttachment is referenced by shader
@@ -508,7 +584,7 @@ void VulkanRenderer::textRenderTest() {
     depthAttachment.format = images->findDepthFormat();
     depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
     depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -519,13 +595,6 @@ void VulkanRenderer::textRenderTest() {
     depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     std::array<VkAttachmentDescription, 2> attachmentDescriptions = {colorAttachment, depthAttachment};
-
-    VkSubpassDescription subpass{};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &colorAttachmentRef;
-    subpass.pDepthStencilAttachment = &depthAttachmentRef;
-
 
     VkSubpassDependency subpassDependencies[2] = {};
 
@@ -571,11 +640,143 @@ void VulkanRenderer::textRenderTest() {
 
     vkCreateRenderPass(arEngine.mainDevice.device, &renderPassInfo, nullptr, &textRenderPass);
 
-    VkDeviceMemory memory;
+
+
+    // Create PIPELINE
+    ArShadersPath shadersPath{};
+    shadersPath.vertexShader = "../shaders/textoverlay/textVert";
+    shadersPath.fragmentShader = "../shaders/textoverlay/textFrag";
+
+    textPipeline.device = arEngine.mainDevice.device;
+    textPipeline.swapchainImageFormat = arEngine.swapchainFormat;
+    textPipeline.swapchainExtent = arEngine.swapchainExtent;
+    pipeline.textRenderPipeline(textRenderPass, descriptor, shadersPath, &textPipeline, pipelineCache);
+
+
+    mapped = nullptr;
+    vkMapMemory(arEngine.mainDevice.device, dataBuffer.bufferMemory, 0, VK_WHOLE_SIZE, 0, (void **) &mapped);
+
+
+    addText("Vulkan", 640.0f, 360.0f, alignCenter);
+
+    //vkUnmapMemory(arEngine.mainDevice.device, dataBuffer.bufferMemory);
+    updateCommandBuffers();
 
 
 }
 
+
+// Add text to the current buffer
+// todo : drop shadow? color attribute?
+void VulkanRenderer::addText(const std::string& text, float x, float y, TextAlign align) {
+    numLetters = 0;
+
+    const uint32_t firstChar = STB_FONT_consolas_24_latin1_FIRST_CHAR;
+    assert(mapped != nullptr);
+
+    const float charW = 1.5f / (float) viewport.WIDTH;
+    const float charH = 1.5f / (float) viewport.HEIGHT;
+
+    float fbW = (float) viewport.WIDTH;
+    float fbH = (float) viewport.HEIGHT;
+    x = (x / fbW * 2.0f) - 1.0f;
+    y = (y / fbH * 2.0f) - 1.0f;
+
+    // Calculate text width
+    float textWidth = 0;
+    for (auto letter : text) {
+        stb_fontchar *charData = &stbFontData[(uint32_t) letter - firstChar];
+        textWidth += charData->advance * charW;
+    }
+
+    switch (align) {
+        case alignRight:
+            x -= textWidth;
+            break;
+        case alignCenter:
+            x -= textWidth / 2.0f;
+            break;
+    }
+
+    // Generate a uv mapped quad per char in the new text
+    for (auto letter : text) {
+        stb_fontchar *charData = &stbFontData[(uint32_t)letter - firstChar];
+
+        mapped->x = (x + (float) charData->x0 * charW);
+        mapped->y = (y + (float) charData->y0 * charH);
+        mapped->z = charData->s0;
+        mapped->w = charData->t0;
+        std::cout << mapped->x << " " << mapped->y << std::endl;
+        mapped++;
+
+        mapped->x = (x + (float) charData->x1 * charW);
+        mapped->y = (y + (float) charData->y0 * charH);
+        mapped->z = charData->s1;
+        mapped->w = charData->t0;
+        std::cout << mapped->x << " " << mapped->y  << std::endl;
+        mapped++;
+
+        mapped->x = (x + (float) charData->x0 * charW);
+        mapped->y = (y + (float) charData->y1 * charH);
+        mapped->z = charData->s0;
+        mapped->w = charData->t1;
+        std::cout << mapped->x << " " << mapped->y << std::endl;
+        mapped++;
+
+        mapped->x = (x + (float) charData->x1 * charW);
+        mapped->y = (y + (float) charData->y1 * charH);
+        mapped->z = charData->s1;
+        mapped->w = charData->t1;
+        std::cout << mapped->x << " " << mapped->y << "\n" << std::endl;
+        mapped++;
+
+        x += charData->advance * charW;
+
+        numLetters++;
+    }
+
+
+}
+
+void VulkanRenderer::updateCommandBuffers() {
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+    VkClearValue clearValues[2];
+    clearValues[1].color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+
+    VkRenderPassBeginInfo renderPassBeginInfo{};
+    renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassBeginInfo.renderPass = textRenderPass;
+    renderPassBeginInfo.renderArea.extent.width = viewport.WIDTH;
+    renderPassBeginInfo.renderArea.extent.height = viewport.HEIGHT;
+    renderPassBeginInfo.clearValueCount = 2;
+    renderPassBeginInfo.pClearValues = clearValues;
+
+    for (int32_t i = 0; i < cmdBuffersText.size(); ++i) {
+        renderPassBeginInfo.framebuffer = swapChainFramebuffers[i];
+
+        vkBeginCommandBuffer(cmdBuffersText[i], &beginInfo);
+
+        vkCmdBeginRenderPass(cmdBuffersText[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+        vkCmdBindPipeline(cmdBuffersText[i], VK_PIPELINE_BIND_POINT_GRAPHICS, textPipeline.pipeline);
+        vkCmdBindDescriptorSets(cmdBuffersText[i], VK_PIPELINE_BIND_POINT_GRAPHICS, textPipeline.pipelineLayout, 0, 1, &descriptor.descriptorSets[0], 0,
+                                NULL);
+
+        VkDeviceSize offsets = 0;
+        vkCmdBindVertexBuffers(cmdBuffersText[i], 0, 1, &dataBuffer.buffer, &offsets);
+        vkCmdBindVertexBuffers(cmdBuffersText[i], 1, 1, &dataBuffer.buffer, &offsets);
+        for (uint32_t j = 0; j < numLetters; j++) {
+            vkCmdDraw(cmdBuffersText[i], 4, 1, j * 4, 0);        }
+
+
+        vkCmdEndRenderPass(cmdBuffersText[i]);
+        vkEndCommandBuffer(cmdBuffersText[i]);
+    }
+    visible = true;
+}
 
 void VulkanRenderer::testFunction() {
     float xyScale = 2.1;

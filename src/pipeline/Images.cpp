@@ -121,8 +121,9 @@ void Images::createBuffer(ArBuffer *pArBuffer) {
     Buffer::createBuffer(pArBuffer);
 }
 
-void Images::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout,
-                                   VkCommandPool commandPool, VkQueue transferQueue) {
+void Images::transitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout,
+                                   VkCommandPool commandPool,
+                                   VkQueue transferQueue) {
 
     VkCommandBuffer commandBuffer = beginCommandBuffer(commandPool);
 
