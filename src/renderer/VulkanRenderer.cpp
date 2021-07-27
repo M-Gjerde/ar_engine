@@ -657,7 +657,7 @@ void VulkanRenderer::textRenderTest() {
     vkMapMemory(arEngine.mainDevice.device, dataBuffer.bufferMemory, 0, VK_WHOLE_SIZE, 0, (void **) &mapped);
 
 
-    addText("Vulkan", 640.0f, 360.0f, alignCenter);
+    addText("Magnus - Vulkan Text render test", 640.0f, 360.0f, alignCenter);
 
     //vkUnmapMemory(arEngine.mainDevice.device, dataBuffer.bufferMemory);
     updateCommandBuffers();
