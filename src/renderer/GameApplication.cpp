@@ -20,6 +20,7 @@ void AppExtension::update() {
 }
 
 int cameraIndex = 0;
+
 void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         std::cout << "exiting..." << std::endl;
@@ -82,8 +83,8 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
 
     // rotate model according to yaw
     model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    if (cameraIndex == 1){
-        model = glm::rotate(model,  glm::radians((float)cameras[0]->yaw), glm::vec3(0.0f, -1.0f, 0.0f));
+    if (cameraIndex == 1) {
+        model = glm::rotate(model, glm::radians((float) cameras[0]->yaw), glm::vec3(0.0f, -1.0f, 0.0f));
     }
 
     // Make the model look nice
@@ -97,31 +98,38 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
     vulkanRenderer.updateCamera(cameras[cameraIndex]->getView(), cameras[cameraIndex]->getProjection());
 }
 
+bool hiddenCursor = false;
+bool lookAround = false;
+
+
 void AppExtension::cursorPosCallback(GLFWwindow *window, double _xPos, double _yPos) {
-    cameras[0]->lookAround(_xPos, _yPos);
+    if (lookAround) {
+        cameras[0]->lookAround(_xPos, _yPos);
 
-    // If we are in 3rd person mode then disable up and down movement
-    if (cameraIndex == 1) {
-        cameras[0]->cameraFront.y = 0.0f;
-        cameras[0]->cameraFront = glm::normalize(cameras[0]->cameraFront);;
-    }
+        // If we are in 3rd person mode then disable up and down movement
+        if (cameraIndex == 1) {
+            cameras[0]->cameraFront.y = 0.0f;
+            cameras[0]->cameraFront = glm::normalize(cameras[0]->cameraFront);;
+        }
 
-    // Only update 1st person camera for cursor callback
-    if (cameraIndex == 0) {
-        vulkanRenderer.updateCamera(cameras[0]->getView(), cameras[0]->getProjection());
+        // Only update 1st person camera for cursor callback
+        if (cameraIndex == 0) {
+            vulkanRenderer.updateCamera(cameras[0]->getView(), cameras[0]->getProjection());
+        }
     }
 }
 
-bool hiddenCursor = false;
 
 void AppExtension::mouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
 
         if (hiddenCursor) {
             hiddenCursor = false;
+            lookAround = false;
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); //Normal mouse mode input
         } else {
             hiddenCursor = true;
+            lookAround = true;
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // FPS mode mouse input
 
         }
