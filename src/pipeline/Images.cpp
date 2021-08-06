@@ -24,8 +24,9 @@ void Images::createDepthImageView(VkImageView *depthImageView) {
                 VK_IMAGE_LAYOUT_UNDEFINED,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, arDepthResource.depthImage, arDepthResource.depthImageMemory,
                 &memoryRequirements);
-    arDepthResource.depthImageView = createImageView(arDepthResource.depthImage, depthFormat,
-                                                     VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    createImageView(arDepthResource.depthImage, depthFormat,
+                    VK_IMAGE_ASPECT_DEPTH_BIT, &arDepthResource.depthImageView);
 
     *depthImageView = arDepthResource.depthImageView;
 }
@@ -52,7 +53,8 @@ VkFormat Images::findDepthFormat() {
 }
 
 
-VkImageView Images::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) const {
+void
+Images::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageView *imageView) const {
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image = image;
@@ -64,12 +66,10 @@ VkImageView Images::createImageView(VkImage image, VkFormat format, VkImageAspec
     viewInfo.subresourceRange.baseArrayLayer = 0;
     viewInfo.subresourceRange.layerCount = 1;
 
-    VkImageView imageView;
-    if (vkCreateImageView(mainDevice.device, &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
+    if (vkCreateImageView(mainDevice.device, &viewInfo, nullptr, imageView) != VK_SUCCESS) {
         throw std::runtime_error("failed to create texture image view!");
     }
 
-    return imageView;
 }
 
 void
@@ -191,6 +191,31 @@ Images::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32
     vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
     endAndSubmitCommandBuffer(commandBuffer, transferQueue, commandPool);
+}
+
+void Images::createSampler(VkSamplerAddressMode addressMode, VkDevice device, VkSampler* sampler) {
+    // Create sampler
+    VkSamplerCreateInfo samplerInfo{};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = VK_FILTER_LINEAR;
+    samplerInfo.minFilter = VK_FILTER_LINEAR;
+    samplerInfo.addressModeU = addressMode;
+    samplerInfo.addressModeV = addressMode;
+    samplerInfo.addressModeW = addressMode;
+
+    samplerInfo.anisotropyEnable = VK_FALSE;
+    samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    samplerInfo.compareEnable = VK_FALSE;
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    samplerInfo.mipLodBias = 0.0f;
+    samplerInfo.minLod = 0.0f;
+    samplerInfo.maxLod = 0.0f;
+    if (vkCreateSampler(device, &samplerInfo, nullptr, sampler) !=
+        VK_SUCCESS) {
+        throw std::runtime_error("failed to create texture sampler!");
+    }
 }
 
 

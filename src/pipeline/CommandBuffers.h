@@ -27,6 +27,7 @@ public:
     void addCommandBuffer(VkCommandBuffer addBuffer);
     void removeCommandBuffer(uint32_t index);
 
+    void cleanUp();
 private:
     ArEngine arEngine;
     std::vector<VkCommandBuffer> commandBuffers;

@@ -115,7 +115,7 @@ private:
     // - Drawing
     std::vector<VkFramebuffer> swapChainFramebuffers;
     //std::vector<VkCommandBuffer> commandBuffers;
-    CommandBuffers* commandBuffers;
+    CommandBuffers* commandBuffers{};
 
     // - Synchronization
     std::vector<VkSemaphore> imageAvailableSemaphores;
@@ -126,7 +126,6 @@ private:
 
     void createFrameBuffersAndRenderPass();
     void createCommandBuffers();
-    void recordCommand();
     void createSyncObjects();
     void updateBuffer(uint32_t imageIndex);
     void initComputePipeline();

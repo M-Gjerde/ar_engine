@@ -7,12 +7,18 @@
 
 #include <vulkan/vulkan_core.h>
 #include "../../external/imgui/imgui.h"
+#include "../pipeline/Images.h"
+#include "../pipeline/Descriptors.h"
 
 
 class GUI {
+public:
 
-    explicit GUI(VkDevice device);
+    explicit GUI(ArEngine mArEngine);
     ~GUI();
+
+    void initResources(VkRenderPass renderPass);
+    void cleanUp();
 
 private:
     // Options and values to display/toggle from the UI
@@ -26,13 +32,29 @@ private:
         float frameTimeMin = 9999.0f, frameTimeMax = 0.0f;
         float lightTimer = 0.0f;
     } uiSettings;
+    // UI params are set via push constants
+    struct PushConstBlock {
+        glm::vec2 scale;
+        glm::vec2 translate;
+    } pushConstBlock;
 
+    VkDevice device;
+    ArEngine arEngine;
+    Images* images;
+    Buffer* buffer;
+    Descriptors *descriptors;
+    Pipeline* pipeline;
 
-    VkDevice mainDevice;
+    VkImage image;
+    VkImageView imageView;
+    VkDeviceMemory imageMemory;
+    VkMemoryRequirements memReqs;
+    VkSampler sampler;
+
+    ArDescriptor descriptor;
+    ArPipeline arPipeline;
 
     void init(int width, int height);
-
-    void initResources();
 
     void newFrame(bool updateFrameGraph);
 };

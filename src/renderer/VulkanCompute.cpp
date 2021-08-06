@@ -484,8 +484,8 @@ void VulkanCompute::loadComputeData(glm::vec4 roi, ArSharedMemory *memP) {
 
     pBuffer->copyBuffer(arModel, stagingBuffer, arCompute.descriptor.bufferObject[0]);
 
-    vkFreeMemory(arEngine.mainDevice.device, stagingBuffer.bufferMemory, nullptr);
-    vkDestroyBuffer(arEngine.mainDevice.device, stagingBuffer.buffer, nullptr);
+    vkFreeMemory(arEngine.device.device, stagingBuffer.bufferMemory, nullptr);
+    vkDestroyBuffer(arEngine.device.device, stagingBuffer.buffer, nullptr);
 
 */
 }

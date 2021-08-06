@@ -146,3 +146,8 @@ void CommandBuffers::addCommandBuffer(VkCommandBuffer addBuffer) {
 void CommandBuffers::removeCommandBuffer(uint32_t index){
     commandBuffers.erase(commandBuffers.begin() + index);
 }
+
+void CommandBuffers::cleanUp() {
+    vkDestroyCommandPool(arEngine.mainDevice.device, commandPool, nullptr);
+
+}

@@ -29,7 +29,8 @@ public:
                      VkImageLayout initialLayout, VkMemoryPropertyFlags properties, VkImage &image,
                      VkDeviceMemory &imageMemory, VkMemoryRequirements *memRequirements);
 
-    VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) const;
+    void
+    createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, VkImageView *imageView) const;
 
     void
     transitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkCommandPool commandPool,
@@ -37,6 +38,7 @@ public:
 
     void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, VkCommandPool commandPool, VkQueue transferQueue);
 
+    void createSampler(VkSamplerAddressMode addressMode, VkDevice device, VkSampler *sampler);
 private:
     ArDepthResource arDepthResource{};
 

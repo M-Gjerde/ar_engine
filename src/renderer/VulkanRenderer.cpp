@@ -55,6 +55,7 @@ void VulkanRenderer::cleanup() {
     vkDeviceWaitIdle(arEngine.mainDevice.device); // wait for GPU to finish rendering before we clean up resources
 
     vulkanCompute->cleanup();
+    commandBuffers->cleanUp();
 
     images->cleanUp(); // Clean up depth images
 
@@ -124,7 +125,7 @@ void VulkanRenderer::draw() {
     submitInfo.pWaitDstStageMask = waitStages;
 
     // Text render
-    if (visible){
+    if (visible) {
         commandBuffers->addCommandBuffer(cmdBuffersText[imageIndex]);
     }
 
@@ -198,12 +199,6 @@ void VulkanRenderer::createCommandBuffers() {
 
 }
 
-void VulkanRenderer::recordCommand() {
-    commandBuffers->recordCommand(renderPass, swapChainFramebuffers);
-    commandBuffers->bindResources(objects, arPipelines, arDescriptors);
-    commandBuffers->endRecord();
-
-}
 
 void VulkanRenderer::createSyncObjects() {
     imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
@@ -283,7 +278,7 @@ void VulkanRenderer::updateDisparityVideoTexture() {
 }
 
 void VulkanRenderer::setupSceneFromFile(std::vector<std::map<std::string, std::string>> modelSettings) {
-// Load in each model
+    // Load in each model
     for (int i = 0; i < modelSettings.size(); ++i) {
         SceneObject object(modelSettings[i], arEngine);
         object.createPipeline(renderPass);
@@ -299,9 +294,11 @@ void VulkanRenderer::setupSceneFromFile(std::vector<std::map<std::string, std::s
             fragmentColor.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
             fragmentColor.objectColor = glm::vec4(0.5f, 0.5f, 0.31f, 0.0f);
         }
-
     }
-    recordCommand();
+
+    commandBuffers->recordCommand(renderPass, swapChainFramebuffers);
+    commandBuffers->bindResources(objects, arPipelines, arDescriptors);
+    commandBuffers->endRecord();
 }
 
 
@@ -438,7 +435,7 @@ void VulkanRenderer::textRenderTest() {
                                   arEngine.graphicsQueue);
 
     // Create image view
-    imageView = images->createImageView(image, VK_FORMAT_R8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+    images->createImageView(image, VK_FORMAT_R8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT, &imageView);
 
 
     // Create sampler
@@ -591,7 +588,7 @@ void VulkanRenderer::textRenderTest() {
 
     addText("Magnus - Vulkan Text render test", 640.0f, 360.0f, alignCenter);
 
-    //vkUnmapMemory(arEngine.mainDevice.device, dataBuffer.bufferMemory);
+    //vkUnmapMemory(arEngine.device.device, dataBuffer.bufferMemory);
     updateCommandBuffers();
 
 
@@ -600,7 +597,7 @@ void VulkanRenderer::textRenderTest() {
 
 // Add text to the current buffer
 // todo : drop shadow? color attribute?
-void VulkanRenderer::addText(const std::string& text, float x, float y, TextAlign align) {
+void VulkanRenderer::addText(const std::string &text, float x, float y, TextAlign align) {
     numLetters = 0;
 
     const uint32_t firstChar = STB_FONT_consolas_24_latin1_FIRST_CHAR;
@@ -632,7 +629,7 @@ void VulkanRenderer::addText(const std::string& text, float x, float y, TextAlig
 
     // Generate a uv mapped quad per char in the new text
     for (auto letter : text) {
-        stb_fontchar *charData = &stbFontData[(uint32_t)letter - firstChar];
+        stb_fontchar *charData = &stbFontData[(uint32_t) letter - firstChar];
 
         mapped->x = (x + (float) charData->x0 * charW);
         mapped->y = (y + (float) charData->y0 * charH);
@@ -645,7 +642,7 @@ void VulkanRenderer::addText(const std::string& text, float x, float y, TextAlig
         mapped->y = (y + (float) charData->y0 * charH);
         mapped->z = charData->s1;
         mapped->w = charData->t0;
-        std::cout << mapped->x << " " << mapped->y  << std::endl;
+        std::cout << mapped->x << " " << mapped->y << std::endl;
         mapped++;
 
         mapped->x = (x + (float) charData->x0 * charW);
@@ -694,14 +691,16 @@ void VulkanRenderer::updateCommandBuffers() {
         vkCmdBeginRenderPass(cmdBuffersText[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         vkCmdBindPipeline(cmdBuffersText[i], VK_PIPELINE_BIND_POINT_GRAPHICS, textPipeline.pipeline);
-        vkCmdBindDescriptorSets(cmdBuffersText[i], VK_PIPELINE_BIND_POINT_GRAPHICS, textPipeline.pipelineLayout, 0, 1, &descriptor.descriptorSets[0], 0,
+        vkCmdBindDescriptorSets(cmdBuffersText[i], VK_PIPELINE_BIND_POINT_GRAPHICS, textPipeline.pipelineLayout, 0, 1,
+                                &descriptor.descriptorSets[0], 0,
                                 NULL);
 
         VkDeviceSize offsets = 0;
         vkCmdBindVertexBuffers(cmdBuffersText[i], 0, 1, &dataBuffer.buffer, &offsets);
         vkCmdBindVertexBuffers(cmdBuffersText[i], 1, 1, &dataBuffer.buffer, &offsets);
         for (uint32_t j = 0; j < numLetters; j++) {
-            vkCmdDraw(cmdBuffersText[i], 4, 1, j * 4, 0);        }
+            vkCmdDraw(cmdBuffersText[i], 4, 1, j * 4, 0);
+        }
 
 
         vkCmdEndRenderPass(cmdBuffersText[i]);
@@ -736,8 +735,10 @@ void VulkanRenderer::testFunction() {
         }
     }
 
-    recordCommand(); // TODO do in separate thread in order to speed up application
-
+    // TODO do in separate thread in order to speed up application
+    commandBuffers->recordCommand(renderPass, swapChainFramebuffers);
+    commandBuffers->bindResources(objects, arPipelines, arDescriptors);
+    commandBuffers->endRecord();
 }
 
 std::vector<SceneObject> VulkanRenderer::getSceneObjects() const {
@@ -757,8 +758,11 @@ void VulkanRenderer::stopDisparityStream() {
 }
 
 void VulkanRenderer::createGUI() {
+    // Init GUI
+    GUI gui(arEngine);
+    gui.initResources(renderPass);
 
-
+    gui.cleanUp();
 }
 
 
