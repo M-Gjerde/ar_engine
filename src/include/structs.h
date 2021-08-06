@@ -14,6 +14,12 @@
 #include <string>
 #include <array>
 
+// UI params are set via push constants
+struct PushConstBlock {
+    glm::vec2 scale;
+    glm::vec2 translate;
+};
+
 struct ArROI {
     int x;
     int y;
@@ -80,14 +86,15 @@ struct ArTextureImage {
 };
 
 struct ArBuffer {
-    VkDeviceSize bufferSize;
-    VkBufferUsageFlags bufferUsage;
-    VkMemoryPropertyFlags bufferProperties;
-    VkBuffer buffer;
-    VkDeviceMemory bufferMemory;
-    VkSharingMode sharingMode;
-    uint32_t queueFamilyIndexCount;
-    const uint32_t *pQueueFamilyIndices;
+    VkDeviceSize bufferSize{};
+    VkBufferUsageFlags bufferUsage{};
+    VkMemoryPropertyFlags bufferProperties{};
+    VkBuffer buffer{};
+    VkDeviceMemory bufferMemory{};
+    void* mapped = nullptr;
+    VkSharingMode sharingMode{};
+    uint32_t queueFamilyIndexCount{};
+    const uint32_t *pQueueFamilyIndices{};
 };
 
 

@@ -607,15 +607,6 @@ Pipeline::multisampleStateCreateInfo(VkSampleCountFlagBits rasterizationSamples,
     pipelineMultisampleStateCreateInfo.flags = flags;
     return pipelineMultisampleStateCreateInfo;}
 
-VkPipelineDynamicStateCreateInfo
-Pipeline::dynamicStateCreateInfo(const VkDynamicState *pDynamicStates, uint32_t dynamicStateCount,
-                                 VkPipelineDynamicStateCreateFlags flags) {
-    VkPipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo {};
-    pipelineDynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    pipelineDynamicStateCreateInfo.pDynamicStates = pDynamicStates;
-    pipelineDynamicStateCreateInfo.dynamicStateCount = dynamicStateCount;
-    pipelineDynamicStateCreateInfo.flags = flags;
-    return pipelineDynamicStateCreateInfo;}
 
 VkGraphicsPipelineCreateInfo
 Pipeline::createInfo(VkPipelineLayout layout, VkRenderPass renderPass, VkPipelineCreateFlags flags) {
@@ -626,5 +617,15 @@ Pipeline::createInfo(VkPipelineLayout layout, VkRenderPass renderPass, VkPipelin
     pipelineCreateInfo.flags = flags;
     return pipelineCreateInfo;
 }
+
+VkPipelineDynamicStateCreateInfo
+Pipeline::dynamicStateCreateInfo(const std::vector<VkDynamicState> &pDynamicStates,
+                                         VkPipelineDynamicStateCreateFlags flags) {
+    VkPipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo{};
+    pipelineDynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    pipelineDynamicStateCreateInfo.pDynamicStates = pDynamicStates.data();
+    pipelineDynamicStateCreateInfo.dynamicStateCount = static_cast<uint32_t>(pDynamicStates.size());
+    pipelineDynamicStateCreateInfo.flags = flags;
+    return pipelineDynamicStateCreateInfo;}
 
 

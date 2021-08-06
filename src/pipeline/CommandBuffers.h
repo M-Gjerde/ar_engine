@@ -17,10 +17,22 @@ public:
 
     void createCommandPool(VkCommandPoolCreateFlagBits flags);
 
-    void recordCommand(VkRenderPass renderPass, std::vector<VkFramebuffer> framebuffers);
-    void endRecord();
+    void startRecordCommand(VkRenderPass renderPass, std::vector<VkFramebuffer> framebuffers);
+
     void bindResources(std::vector<SceneObject> objects, std::vector<ArPipeline> pipelines,
                        std::vector<ArDescriptor> descriptors);
+
+    void bindDescriptorSets(VkPipelineLayout pipelineLayout, VkDescriptorSet descriptorSet);
+
+    void bindPipeline(VkPipeline pipeline);
+    void vertexBuffer(VkBuffer buffer, VkDeviceSize *offsets);
+
+    void indexBuffer(VkBuffer buffer);
+    void pushConstants(VkPipelineLayout pipelineLayout, uint32_t size, PushConstBlock pushConstBlock);
+    void drawIndexed(uint32_t elements, uint32_t indexOffset, uint32_t vertexOffset);
+    void setScissor(uint32_t x, uint32_t y, uint32_t z, uint32_t w);
+
+    void endRecord();
 
     [[nodiscard]] const std::vector<VkCommandBuffer> &getCommandBuffers() const;
 

@@ -22,6 +22,7 @@
 #include "../FaceAugment/FaceDetector.h"
 #include "../../external/stb/latin1/consolas/stb_font_consolas_24_latin1.inl"
 #include "../pipeline/CommandBuffers.h"
+#include "GUI.h"
 #include <stdexcept>
 #include <vector>
 #include <iostream>
@@ -86,7 +87,8 @@ private:
     std::vector<VkCommandBuffer> cmdBuffersText;
     ArPipeline textPipeline{};
     VkPipelineCache pipelineCache{};
-
+    GUI *gui;
+    std::vector<VkCommandBuffer> commandBuffers;
     // Buffer
     Buffer *buffer{}; // TODO To be removed
 
@@ -115,7 +117,7 @@ private:
     // - Drawing
     std::vector<VkFramebuffer> swapChainFramebuffers;
     //std::vector<VkCommandBuffer> commandBuffers;
-    CommandBuffers* commandBuffers{};
+    //CommandBuffers* commandBuffers{};
 
     // - Synchronization
     std::vector<VkSemaphore> imageAvailableSemaphores;
@@ -140,6 +142,8 @@ private:
     void updateCommandBuffers();
 
     void createGUI();
+
+    void recordCommands();
 };
 
 

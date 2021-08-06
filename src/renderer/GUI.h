@@ -6,6 +6,7 @@
 #define AR_ENGINE_GUI_H
 
 #include <vulkan/vulkan_core.h>
+#include <ar_engine/src/pipeline/CommandBuffers.h>
 #include "../../external/imgui/imgui.h"
 #include "../pipeline/Images.h"
 #include "../pipeline/Descriptors.h"
@@ -13,12 +14,20 @@
 
 class GUI {
 public:
+    CommandBuffers *commandBuffers;
 
     explicit GUI(ArEngine mArEngine);
     ~GUI();
 
     void initResources(VkRenderPass renderPass);
+    void updateBuffers();
     void cleanUp();
+
+    void init(uint32_t width, uint32_t height);
+    void newFrame(bool updateFrameGraph);
+
+    void drawNewFrame(VkRenderPass renderPass, std::vector<VkFramebuffer> framebuffers);
+    void drawNewFrame(VkCommandBuffer commandBuffer);
 
 private:
     // Options and values to display/toggle from the UI
@@ -32,11 +41,8 @@ private:
         float frameTimeMin = 9999.0f, frameTimeMax = 0.0f;
         float lightTimer = 0.0f;
     } uiSettings;
-    // UI params are set via push constants
-    struct PushConstBlock {
-        glm::vec2 scale;
-        glm::vec2 translate;
-    } pushConstBlock;
+
+    PushConstBlock pushConstBlock;
 
     VkDevice device;
     ArEngine arEngine;
@@ -51,12 +57,16 @@ private:
     VkMemoryRequirements memReqs;
     VkSampler sampler;
 
+    Buffer *vertexBuffer;
+    Buffer *indexBuffer;
+    uint32_t vertexCount = 0;
+    uint32_t indexCount = 0;
+
+
     ArDescriptor descriptor;
     ArPipeline arPipeline;
 
-    void init(int width, int height);
 
-    void newFrame(bool updateFrameGraph);
 };
 
 

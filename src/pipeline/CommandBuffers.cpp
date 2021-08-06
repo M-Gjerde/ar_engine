@@ -69,7 +69,7 @@ void CommandBuffers::createCommandPool(VkCommandPoolCreateFlagBits flags) {
     }
 }
 
-void CommandBuffers::recordCommand(VkRenderPass renderPass, std::vector<VkFramebuffer> framebuffers) {
+void CommandBuffers::startRecordCommand(VkRenderPass renderPass, std::vector<VkFramebuffer> framebuffers) {
 
     for (size_t i = 0; i < commandBuffers.size(); i++) {
         VkCommandBufferBeginInfo beginInfo{};
@@ -95,6 +95,55 @@ void CommandBuffers::recordCommand(VkRenderPass renderPass, std::vector<VkFrameb
 
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
+    }
+}
+
+void CommandBuffers::bindDescriptorSets(VkPipelineLayout pipelineLayout, VkDescriptorSet descriptorSet){
+    for (auto & commandBuffer : commandBuffers) {
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+    }
+}
+
+void CommandBuffers::bindPipeline(VkPipeline pipeline){
+    for (auto & commandBuffer : commandBuffers) {
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    }
+}
+
+void CommandBuffers::pushConstants(VkPipelineLayout pipelineLayout, uint32_t size, PushConstBlock pushConstBlock){
+    for (auto & commandBuffer : commandBuffers) {
+        vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstBlock), &pushConstBlock);
+    }
+}
+
+void CommandBuffers::vertexBuffer(VkBuffer buffer, VkDeviceSize* offsets){
+    for (auto & commandBuffer : commandBuffers) {
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &buffer, offsets);
+    }
+}
+
+void CommandBuffers::indexBuffer(VkBuffer buffer) {
+    for (auto & commandBuffer : commandBuffers) {
+        vkCmdBindIndexBuffer(commandBuffer, buffer, 0, VK_INDEX_TYPE_UINT16);
+
+    }
+}
+
+void CommandBuffers::drawIndexed(uint32_t elements, uint32_t indexOffset, uint32_t vertexOffset) {
+    for (auto & commandBuffer : commandBuffers) {
+        vkCmdDrawIndexed(commandBuffer,elements, 1, indexOffset, vertexOffset, 0);
+
+    }
+}
+
+void CommandBuffers::setScissor(uint32_t x,uint32_t y, uint32_t z, uint32_t w) {
+    for (auto & commandBuffer : commandBuffers) {
+        VkRect2D scissorRect;
+        scissorRect.offset.x = std::max((int32_t)(x), 0);
+        scissorRect.offset.y = std::max((int32_t)(y), 0);
+        scissorRect.extent.width = (uint32_t)(z - x);
+        scissorRect.extent.height = (uint32_t)(w - y);
+        vkCmdSetScissor(commandBuffer, 0, 1, &scissorRect);
     }
 }
 

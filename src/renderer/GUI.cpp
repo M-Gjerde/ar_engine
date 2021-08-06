@@ -3,6 +3,7 @@
 //
 
 #include <algorithm>
+#include <utility>
 #include "GUI.h"
 
 GUI::GUI(ArEngine mArEngine) {
@@ -13,9 +14,34 @@ GUI::GUI(ArEngine mArEngine) {
     pipeline = new Pipeline();
     ImGui::CreateContext();
 
+    // Prepare buffers
+    vertexBuffer = new Buffer(arEngine.mainDevice);
+    indexBuffer = new Buffer(arEngine.mainDevice);
+
+    // CmdBuffers for GUI
+    /*
+    commandBuffers = new CommandBuffers(arEngine);
+    commandBuffers->createCommandPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    commandBuffers->allocateCommandBuffers(3, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+*/
+
 }
 
-void GUI::init(int width, int height) {
+GUI::~GUI() {
+    ImGui::DestroyContext();
+
+    vertexBuffer->destroy();
+    indexBuffer->destroy();
+
+    delete vertexBuffer;
+    delete indexBuffer;
+    delete images;
+    delete descriptors;
+    delete pipeline;
+    delete commandBuffers;
+}
+
+void GUI::init(uint32_t width, uint32_t height) {
     // Color scheme
     ImGuiStyle &style = ImGui::GetStyle();
     style.Colors[ImGuiCol_TitleBg] = ImVec4(1.0f, 0.0f, 0.0f, 0.6f);
@@ -25,7 +51,7 @@ void GUI::init(int width, int height) {
     style.Colors[ImGuiCol_CheckMark] = ImVec4(0.0f, 1.0f, 0.0f, 1.0f);
     // Dimensions
     ImGuiIO &io = ImGui::GetIO();
-    io.DisplaySize = ImVec2(width, height);
+    io.DisplaySize = ImVec2((float) width, (float) height);
     io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
 }
 
@@ -175,7 +201,8 @@ void GUI::initResources(VkRenderPass renderPass) {
     vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexInputAttributeDescription.size());
     vertexInputInfo.pVertexAttributeDescriptions = vertexInputAttributeDescription.data(); // Optional
 
-    VkPipelineInputAssemblyStateCreateInfo inputAssembly = Pipeline::inputAssemblyStateCreateInfo(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
+    VkPipelineInputAssemblyStateCreateInfo inputAssembly = Pipeline::inputAssemblyStateCreateInfo(
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
 
     // VIEWPORT SETUP
     VkPipelineViewportStateCreateInfo viewportState = Pipeline::viewportStateCreateInfo(1, 1, 0);
@@ -186,29 +213,29 @@ void GUI::initResources(VkRenderPass renderPass) {
     viewport.height = (float) arEngine.swapchainExtent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-
-    VkRect2D scissor{};
-    scissor.offset = {0, 0};
-    scissor.extent = arEngine.swapchainExtent;
     viewportState.pViewports = &viewport;
-    viewportState.pScissors = &scissor;
 
 
     // RASTERIZER
-    VkPipelineRasterizationStateCreateInfo rasterizer = Pipeline::rasterizationStateCreateInfo(VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, 0);
+    VkPipelineRasterizationStateCreateInfo rasterizer = Pipeline::rasterizationStateCreateInfo(VK_POLYGON_MODE_FILL,
+                                                                                               VK_CULL_MODE_BACK_BIT,
+                                                                                               VK_FRONT_FACE_COUNTER_CLOCKWISE,
+                                                                                               0);
 
     // MULTISAMPLING || ANTIALISING
     VkPipelineMultisampleStateCreateInfo multisampling = Pipeline::multisampleStateCreateInfo(VK_SAMPLE_COUNT_1_BIT, 0);
 
     // DEPTH STENCIL
-    VkPipelineDepthStencilStateCreateInfo depthStencil = Pipeline::depthStencilStateCreateInfo(VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS_OR_EQUAL);
+    VkPipelineDepthStencilStateCreateInfo depthStencil = Pipeline::depthStencilStateCreateInfo(VK_TRUE, VK_TRUE,
+                                                                                               VK_COMPARE_OP_LESS_OR_EQUAL);
 
 
     // COLOR BLENDING
     // Enable blending, using alpha from red channel of the font texture (see text.frag)
     VkPipelineColorBlendAttachmentState blendAttachmentState{};
     blendAttachmentState.blendEnable = VK_TRUE;
-    blendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    blendAttachmentState.colorWriteMask =
+            VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     blendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
     blendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
     blendAttachmentState.colorBlendOp = VK_BLEND_OP_ADD;
@@ -234,14 +261,20 @@ void GUI::initResources(VkRenderPass renderPass) {
 
 
     if (vkCreatePipelineLayout(arEngine.mainDevice.device, &pipelineLayoutInfo, nullptr, &arPipeline.pipelineLayout) !=
-    VK_SUCCESS) {
+        VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
     }
+
+    // DYNAMIC STATES
+    std::vector<VkDynamicState> dynamicStateEnables = {
+            VK_DYNAMIC_STATE_SCISSOR
+    };
+    VkPipelineDynamicStateCreateInfo dynamicState = Pipeline::dynamicStateCreateInfo(dynamicStateEnables);
 
     VkGraphicsPipelineCreateInfo pipelineInfo = Pipeline::createInfo(arPipeline.pipelineLayout, renderPass, 0);
     pipelineInfo.stageCount = 2;
     pipelineInfo.pStages = shaderStages;
-
+    pipelineInfo.pDynamicState = &dynamicState;
     pipelineInfo.pVertexInputState = &vertexInputInfo;
     pipelineInfo.pInputAssemblyState = &inputAssembly;
     pipelineInfo.pViewportState = &viewportState;
@@ -250,8 +283,9 @@ void GUI::initResources(VkRenderPass renderPass) {
     pipelineInfo.pDepthStencilState = &depthStencil;
     pipelineInfo.pColorBlendState = &colorBlending;
 
-    if (vkCreateGraphicsPipelines(arEngine.mainDevice.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &arPipeline.pipeline) !=
-    VK_SUCCESS) {
+    if (vkCreateGraphicsPipelines(arEngine.mainDevice.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
+                                  &arPipeline.pipeline) !=
+        VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
     }
 
@@ -310,10 +344,6 @@ void GUI::newFrame(bool updateFrameGraph) {
 }
 
 
-GUI::~GUI() {
-    ImGui::DestroyContext();
-}
-
 void GUI::cleanUp() {
     vkDestroyImage(device, image, nullptr);
     vkDestroyImageView(device, imageView, nullptr);
@@ -323,5 +353,149 @@ void GUI::cleanUp() {
     descriptors->cleanUp(descriptor);
     vkDestroySampler(device, sampler, nullptr);
 
+}
+
+void GUI::updateBuffers() {
+
+    ImDrawData *imDrawData = ImGui::GetDrawData();
+
+    // Note: Alignment is done inside buffer creation
+    VkDeviceSize vertexBufferSize = imDrawData->TotalVtxCount * sizeof(ImDrawVert);
+    VkDeviceSize indexBufferSize = imDrawData->TotalIdxCount * sizeof(ImDrawIdx);
+
+    if ((vertexBufferSize == 0) || (indexBufferSize == 0)) {
+        return;
+    }
+
+    // Update buffers only if vertex or index count has been changed compared to current buffer size
+
+    // Vertex buffer
+    if ((vertexBuffer->buffer == VK_NULL_HANDLE) || (vertexCount != imDrawData->TotalVtxCount)) {
+        // Destroy buffers
+        vertexBuffer->unmap();
+        vertexBuffer->destroy();
+        vertexBuffer->bufferSize = vertexBufferSize;
+        vertexBuffer->bufferUsage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        vertexBuffer->bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+        vertexBuffer->createBuffer();
+        vertexCount = imDrawData->TotalVtxCount;
+        vertexBuffer->map();
+    }
+
+    // Index buffer
+    if ((indexBuffer->buffer == VK_NULL_HANDLE) || (indexCount < imDrawData->TotalIdxCount)) {
+        indexBuffer->unmap();
+        indexBuffer->destroy();
+        indexBuffer->bufferSize = indexBufferSize;
+        indexBuffer->bufferUsage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+        indexBuffer->bufferProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+        indexBuffer->createBuffer();
+        indexCount = imDrawData->TotalIdxCount;
+        indexBuffer->map();
+    }
+
+    // Upload data
+    ImDrawVert *vtxDst = (ImDrawVert *) vertexBuffer->mapped;
+    ImDrawIdx *idxDst = (ImDrawIdx *) indexBuffer->mapped;
+
+    for (int n = 0; n < imDrawData->CmdListsCount; n++) {
+        const ImDrawList *cmd_list = imDrawData->CmdLists[n];
+        memcpy(vtxDst, cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
+        memcpy(idxDst, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
+        vtxDst += cmd_list->VtxBuffer.Size;
+        idxDst += cmd_list->IdxBuffer.Size;
+    }
+
+    // Flush to make writes visible to GPU
+    vertexBuffer->flush();
+    indexBuffer->flush();
+}
+
+void GUI::drawNewFrame(VkCommandBuffer commandBuffer) {
+    ImGuiIO& io = ImGui::GetIO();
+
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, arPipeline.pipelineLayout, 0, 1, &descriptor.descriptorSets[0], 0, nullptr);
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, arPipeline.pipeline);
+
+
+    // UI scale and translate via push constants
+    pushConstBlock.scale = glm::vec2(2.0f / io.DisplaySize.x, 2.0f / io.DisplaySize.y);
+    pushConstBlock.translate = glm::vec2(-1.0f);
+    vkCmdPushConstants(commandBuffer, arPipeline.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstBlock), &pushConstBlock);
+
+    // Render commands
+    ImDrawData* imDrawData = ImGui::GetDrawData();
+    int32_t vertexOffset = 0;
+    int32_t indexOffset = 0;
+
+    if (imDrawData->CmdListsCount > 0) {
+
+        VkDeviceSize offsets[1] = { 0 };
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer->buffer, offsets);
+        vkCmdBindIndexBuffer(commandBuffer, indexBuffer->buffer, 0, VK_INDEX_TYPE_UINT16);
+
+        for (int32_t i = 0; i < imDrawData->CmdListsCount; i++)
+        {
+            const ImDrawList* cmd_list = imDrawData->CmdLists[i];
+            for (int32_t j = 0; j < cmd_list->CmdBuffer.Size; j++)
+            {
+                const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[j];
+                VkRect2D scissorRect;
+                scissorRect.offset.x = std::max((int32_t)(pcmd->ClipRect.x), 0);
+                scissorRect.offset.y = std::max((int32_t)(pcmd->ClipRect.y), 0);
+                scissorRect.extent.width = (uint32_t)(pcmd->ClipRect.z - pcmd->ClipRect.x);
+                scissorRect.extent.height = (uint32_t)(pcmd->ClipRect.w - pcmd->ClipRect.y);
+                vkCmdSetScissor(commandBuffer, 0, 1, &scissorRect);
+                vkCmdDrawIndexed(commandBuffer, pcmd->ElemCount, 1, indexOffset, vertexOffset, 0);
+                indexOffset += pcmd->ElemCount;
+            }
+            vertexOffset += cmd_list->VtxBuffer.Size;
+        }
+    }
+}
+
+void GUI::drawNewFrame(VkRenderPass renderPass, std::vector<VkFramebuffer> framebuffers) {
 
 }
+
+/*
+ImGuiIO &io = ImGui::GetIO();
+
+commandBuffers->startRecordCommand(renderPass, std::move(framebuffers));
+commandBuffers->bindDescriptorSets(arPipeline.pipelineLayout, descriptor.descriptorSets[0]);
+commandBuffers->bindPipeline(arPipeline.pipeline);
+
+// UI scale and translate via push constants
+pushConstBlock.scale = glm::vec2(2.0f / io.DisplaySize.x, 2.0f / io.DisplaySize.y);
+pushConstBlock.translate = glm::vec2(-1.0f);
+commandBuffers->pushConstants(arPipeline.pipelineLayout, sizeof(pushConstBlock), pushConstBlock);
+
+// Render commands
+ImDrawData* imDrawData = ImGui::GetDrawData();
+uint32_t vertexOffset = 0;
+uint32_t indexOffset = 0;
+
+if (imDrawData->CmdListsCount > 0) {
+
+    VkDeviceSize offsets[1] = { 0 };
+    commandBuffers->vertexBuffer(vertexBuffer->buffer, offsets);
+    commandBuffers->indexBuffer(indexBuffer->buffer);
+
+    for (int32_t i = 0; i < imDrawData->CmdListsCount; i++)
+    {
+        const ImDrawList* cmd_list = imDrawData->CmdLists[i];
+        for (int32_t j = 0; j < cmd_list->CmdBuffer.Size; j++)
+        {
+            const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[j];
+            commandBuffers->setScissor((uint32_t) pcmd->ClipRect.x, (uint32_t)pcmd->ClipRect.y, (uint32_t)pcmd->ClipRect.z,(uint32_t) pcmd->ClipRect.w);
+            commandBuffers->drawIndexed(pcmd->ElemCount, indexOffset, vertexOffset);
+            indexOffset +=(uint32_t) pcmd->ElemCount;
+        }
+        vertexOffset += cmd_list->VtxBuffer.Size;
+    }
+}
+
+commandBuffers->endRecord();
+*/
+
+

@@ -103,6 +103,9 @@ bool lookAround = false;
 
 
 void AppExtension::cursorPosCallback(GLFWwindow *window, double _xPos, double _yPos) {
+    ImGuiIO& io = ImGui::GetIO();
+    io.MousePos = ImVec2((float)_xPos, (float)_yPos);
+
     if (lookAround) {
         cameras[0]->lookAround(_xPos, _yPos);
 

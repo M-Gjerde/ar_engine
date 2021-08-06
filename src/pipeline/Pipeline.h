@@ -67,16 +67,14 @@ public:
             VkSampleCountFlagBits rasterizationSamples,
             VkPipelineMultisampleStateCreateFlags flags = 0);
 
-    static VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo(
-            const VkDynamicState * pDynamicStates,
-            uint32_t dynamicStateCount,
-            VkPipelineDynamicStateCreateFlags flags = 0);
-
     static VkGraphicsPipelineCreateInfo createInfo(
             VkPipelineLayout layout,
             VkRenderPass renderPass,
             VkPipelineCreateFlags flags = 0);
 
+    static VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo(
+            const std::vector<VkDynamicState>& pDynamicStates,
+            VkPipelineDynamicStateCreateFlags flags = 0);
 
     static VkShaderModule createShaderModule(VkDevice device, const std::vector<char> &code);
 
