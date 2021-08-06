@@ -17,12 +17,14 @@
 #include <libv4l2.h>
 #include <mqueue.h>
 #include <sys/mman.h>
-#include "../include/structs.h"
-#include "RealsenseStreamer.h"
 #include <sys/ioctl.h>
 #include <array>
 #include <iostream>
+
 #include <opencv2/opencv.hpp>
+#include "../include/structs.h"
+#include "RealsenseStreamer.h"
+
 
 class ThreadSpawner {
 

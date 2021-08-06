@@ -31,7 +31,7 @@ void Images::createDepthImageView(VkImageView *depthImageView) {
 }
 
 VkFormat Images::findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling,
-                                     VkFormatFeatureFlags features) {
+                                     VkFormatFeatureFlags features) const {
     for (VkFormat format : candidates) {
         VkFormatProperties props;
         vkGetPhysicalDeviceFormatProperties(mainDevice.physicalDevice, format, &props);

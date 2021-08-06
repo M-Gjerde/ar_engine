@@ -36,7 +36,7 @@ public:
 
     Platform(GLFWwindow *window, ArEngine *arEngine);
     void createCommandPool(VkCommandPool *commandPool, uint32_t queueFamilyIndex);
-    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) const;
+    static QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);
     ~Platform();
 
     void cleanUp();

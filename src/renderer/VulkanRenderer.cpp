@@ -12,6 +12,7 @@
 #include "../include/stbi_image_write.h"
 #include "opencv2/opencv.hpp"
 #include "../include/helper_functions.h"
+#include "GUI.h"
 
 VulkanRenderer::VulkanRenderer() = default;
 
@@ -20,25 +21,28 @@ VulkanRenderer::~VulkanRenderer() = default;
 
 int VulkanRenderer::init(GLFWwindow *newWindow) {
     try {
+        // CLass handles with helper functions. Can be passed arbitrarily
         platform = new Platform(newWindow, &arEngine);
-        buffer = new Buffer(arEngine.mainDevice); // TODO Remove this. Put it to use in abstract classes
-        descriptors = new Descriptors(arEngine); // TODO Remove this. Put it to use in abstract classes
+        buffer = new Buffer(arEngine.mainDevice);
+        descriptors = new Descriptors(arEngine);
         images = new Images(arEngine.mainDevice, arEngine.swapchainExtent);
-
         textures = new Textures(images);
         vulkanCompute = new VulkanCompute(arEngine);
 
         createFrameBuffersAndRenderPass();
 
-
+        // Create GUI
+        createGUI();
         createCommandBuffers();
+
         createSyncObjects();
         printf("Initiated vulkan\n");
 
         initComputePipeline();
 
+
         printf("Initiated compute pipeline\n\n");
-        textRenderTest();
+        //textRenderTest();
 
     } catch (std::runtime_error &err) {
         std::cerr << err.what() << std::endl;
@@ -106,6 +110,7 @@ void VulkanRenderer::draw() {
 
     // TODO check if this should be done different
     updateBuffer(imageIndex);
+
     if (updateDisparity)
         updateDisparityData();
 
@@ -118,17 +123,13 @@ void VulkanRenderer::draw() {
     submitInfo.pWaitSemaphores = waitSemaphores;
     submitInfo.pWaitDstStageMask = waitStages;
 
-    // TEXTOVERLAY ADDITION cmd buffers
-    std::vector<VkCommandBuffer> cmdBuffers = {
-    };
-    cmdBuffers.push_back(commandBuffers[imageIndex]);
-
+    // Text render
     if (visible){
-        cmdBuffers.push_back(cmdBuffersText[imageIndex]);
+        commandBuffers->addCommandBuffer(cmdBuffersText[imageIndex]);
     }
 
-    submitInfo.commandBufferCount = static_cast<uint32_t>(cmdBuffers.size());
-    submitInfo.pCommandBuffers = cmdBuffers.data();
+    submitInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers->getCommandBuffers().size());
+    submitInfo.pCommandBuffers = commandBuffers->getCommandBuffers().data();
 
     VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
     submitInfo.signalSemaphoreCount = 1;
@@ -190,85 +191,17 @@ void VulkanRenderer::createFrameBuffersAndRenderPass() {
 }
 
 void VulkanRenderer::createCommandBuffers() {
-    commandBuffers.resize(swapChainFramebuffers.size());
 
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = arEngine.commandPool;
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = (uint32_t) commandBuffers.size();
-
-    if (vkAllocateCommandBuffers(arEngine.mainDevice.device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate command buffers!");
-    }
-
-    // TEXTRENDER ALSO ALLOCATE BUFFERS
-
-    VkCommandBufferAllocateInfo allocInfo2{};
-    cmdBuffersText.resize(swapChainFramebuffers.size());
-    allocInfo2.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo2.commandPool = arEngine.commandPool;
-    allocInfo2.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo2.commandBufferCount = (uint32_t) cmdBuffersText.size();
-
-    if (vkAllocateCommandBuffers(arEngine.mainDevice.device, &allocInfo, cmdBuffersText.data()) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate command buffers!");
-    }
+    commandBuffers = new CommandBuffers(arEngine);
+    commandBuffers->createCommandPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    commandBuffers->allocateCommandBuffers(swapChainFramebuffers.size(), VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
 }
 
 void VulkanRenderer::recordCommand() {
-
-
-    for (size_t i = 0; i < commandBuffers.size(); i++) {
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-
-        if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo) != VK_SUCCESS) {
-            throw std::runtime_error("failed to begin recording command buffer!");
-        }
-
-        VkRenderPassBeginInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = renderPass;
-        renderPassInfo.framebuffer = swapChainFramebuffers[i];
-        renderPassInfo.renderArea.offset = {0, 0};
-        renderPassInfo.renderArea.extent = arEngine.swapchainExtent;
-        std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = {0.10f, 0.35f, 0.15f, 1.0f}; // gray
-        //clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};      // Black
-
-        clearValues[1].depthStencil = {1.0f, 0};
-
-        renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-        renderPassInfo.pClearValues = clearValues.data();
-
-        vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-        for (int j = 0; j < objects.size(); ++j) {
-            vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, arPipelines[j].pipeline);
-
-            VkBuffer vertexBuffers[] = {objects[j].getVertexBuffer()};
-            VkDeviceSize offsets[] = {0};
-            vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
-            vkCmdBindIndexBuffer(commandBuffers[i], objects[j].getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
-
-            vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                    arPipelines[j].pipelineLayout, 0, arDescriptors[j].descriptorSets.size(),
-                                    arDescriptors[j].descriptorSets.data(), 0,
-                                    nullptr);
-
-            vkCmdDrawIndexed(commandBuffers[i], objects[j].getIndexCount(), 1, 0, 0, 0);
-
-        }
-
-        vkCmdEndRenderPass(commandBuffers[i]);
-
-        if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
-            throw std::runtime_error("failed to FaceAugment command buffer!");
-        }
-    }
+    commandBuffers->recordCommand(renderPass, swapChainFramebuffers);
+    commandBuffers->bindResources(objects, arPipelines, arDescriptors);
+    commandBuffers->endRecord();
 
 }
 
@@ -299,7 +232,6 @@ void VulkanRenderer::createSyncObjects() {
 
 void VulkanRenderer::updateBuffer(uint32_t imageIndex) {
     for (int i = 0; i < objects.size(); ++i) {
-
         uboModelVar.model = objects[i].getModel();
         // Copy vertex data
         void *data;
@@ -822,6 +754,11 @@ void VulkanRenderer::stopDisparityStream() {
     updateDisparity = false;
     cv::destroyAllWindows();
     threadSpawner.stopChildProcess();
+}
+
+void VulkanRenderer::createGUI() {
+
+
 }
 
 

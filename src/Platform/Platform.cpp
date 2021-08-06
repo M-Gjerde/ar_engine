@@ -14,7 +14,7 @@ Platform::Platform(GLFWwindow *window, ArEngine *_arEngine) {
     createSwapchain();
     createSwapchainImageViews();
     // Create commandPool for graphics queue
-    createCommandPool(&arEngine.commandPool, findQueueFamilies(arEngine.mainDevice.physicalDevice).graphicsFamily.value());
+    createCommandPool(&arEngine.commandPool, findQueueFamilies(arEngine.mainDevice.physicalDevice, arEngine.surface).graphicsFamily.value());
     *_arEngine = arEngine;
 }
 
@@ -143,7 +143,7 @@ void Platform::pickPhysicalDevice() {
     arEngine.mainDevice.physicalDevice = selectPhysicalDevice();
 }
 
-Platform::QueueFamilyIndices Platform::findQueueFamilies(VkPhysicalDevice device) const {
+Platform::QueueFamilyIndices Platform::findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface) {
     QueueFamilyIndices indices{};
 
     uint32_t queueFamilyCount = 0;
@@ -156,7 +156,7 @@ Platform::QueueFamilyIndices Platform::findQueueFamilies(VkPhysicalDevice device
     int i = 0;
     for (const auto &queueFamily : queueFamilies) {
         VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, arEngine.surface, &presentSupport);
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
 
         if (presentSupport) {
             indices.presentFamily = i;
@@ -182,7 +182,7 @@ void Platform::createLogicalDevice() {
     if (!hasDeviceExtensionsSupport()) throw std::runtime_error("Device extension not available");
 
     // Specify which Queues we want to be able to handle
-    QueueFamilyIndices indices = findQueueFamilies(arEngine.mainDevice.physicalDevice);
+    QueueFamilyIndices indices = findQueueFamilies(arEngine.mainDevice.physicalDevice, arEngine.surface);
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
@@ -375,7 +375,7 @@ void Platform::createSwapchainImageViews() {
 }
 
 void Platform::createCommandPool(VkCommandPool *commandPool, uint32_t queueFamilyIndex) {
-    QueueFamilyIndices queueFamilyIndices = findQueueFamilies(arEngine.mainDevice.physicalDevice);
+    QueueFamilyIndices queueFamilyIndices = findQueueFamilies(arEngine.mainDevice.physicalDevice, arEngine.surface);
 
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;

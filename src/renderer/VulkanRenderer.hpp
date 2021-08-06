@@ -21,6 +21,7 @@
 #include "../Models/SceneObject.h"
 #include "../FaceAugment/FaceDetector.h"
 #include "../../external/stb/latin1/consolas/stb_font_consolas_24_latin1.inl"
+#include "../pipeline/CommandBuffers.h"
 #include <stdexcept>
 #include <vector>
 #include <iostream>
@@ -70,21 +71,21 @@ private:
     ArSharedMemory *memP{};
 
     // TextRendering
-    VkImageView imageView;
-    VkSampler sampler;
+    VkImageView imageView{};
+    VkSampler sampler{};
     ArDescriptorInfo descriptorInfo{};
     ArDescriptor descriptor;
-    VkImage image;
-    VkDeviceMemory imageMemory;
+    VkImage image{};
+    VkDeviceMemory imageMemory{};
     VkMemoryRequirements memoryRequirements{};
-    bool visible = true;
+    bool visible = false;
     glm::vec4 *mapped = nullptr;
-    uint32_t numLetters;
-    stb_fontchar stbFontData[STB_FONT_consolas_24_latin1_NUM_CHARS];
-    ArBuffer dataBuffer;
+    uint32_t numLetters{};
+    stb_fontchar stbFontData[STB_FONT_consolas_24_latin1_NUM_CHARS]{};
+    ArBuffer dataBuffer{};
     std::vector<VkCommandBuffer> cmdBuffersText;
     ArPipeline textPipeline{};
-    VkPipelineCache pipelineCache;
+    VkPipelineCache pipelineCache{};
 
     // Buffer
     Buffer *buffer{}; // TODO To be removed
@@ -113,7 +114,8 @@ private:
 
     // - Drawing
     std::vector<VkFramebuffer> swapChainFramebuffers;
-    std::vector<VkCommandBuffer> commandBuffers;
+    //std::vector<VkCommandBuffer> commandBuffers;
+    CommandBuffers* commandBuffers;
 
     // - Synchronization
     std::vector<VkSemaphore> imageAvailableSemaphores;
@@ -137,6 +139,8 @@ private:
     void endTextUpdate();
 
     void updateCommandBuffers();
+
+    void createGUI();
 };
 
 
