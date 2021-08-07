@@ -7,7 +7,8 @@
 
 #include <vulkan/vulkan_core.h>
 #include <ar_engine/src/pipeline/CommandBuffers.h>
-#include "../../external/imgui/imgui.h"
+#include "imgui.h"
+
 #include "../pipeline/Images.h"
 #include "../pipeline/Descriptors.h"
 
@@ -30,18 +31,6 @@ public:
     void drawNewFrame(VkCommandBuffer commandBuffer);
 
 private:
-    // Options and values to display/toggle from the UI
-    struct UISettings {
-        bool displayModels = true;
-        bool displayLogos = true;
-        bool displayBackground = true;
-        bool animateLight = false;
-        float lightSpeed = 0.25f;
-        std::array<float, 50> frameTimes{};
-        float frameTimeMin = 9999.0f, frameTimeMax = 0.0f;
-        float lightTimer = 0.0f;
-    } uiSettings;
-
     PushConstBlock pushConstBlock;
 
     VkDevice device;

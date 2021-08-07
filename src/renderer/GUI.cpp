@@ -38,7 +38,7 @@ GUI::~GUI() {
     delete images;
     delete descriptors;
     delete pipeline;
-    delete commandBuffers;
+    //delete commandBuffers;
 }
 
 void GUI::init(uint32_t width, uint32_t height) {
@@ -53,6 +53,7 @@ void GUI::init(uint32_t width, uint32_t height) {
     ImGuiIO &io = ImGui::GetIO();
     io.DisplaySize = ImVec2((float) width, (float) height);
     io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
+
 }
 
 void GUI::initResources(VkRenderPass renderPass) {
@@ -218,7 +219,7 @@ void GUI::initResources(VkRenderPass renderPass) {
 
     // RASTERIZER
     VkPipelineRasterizationStateCreateInfo rasterizer = Pipeline::rasterizationStateCreateInfo(VK_POLYGON_MODE_FILL,
-                                                                                               VK_CULL_MODE_BACK_BIT,
+                                                                                               VK_CULL_MODE_NONE,
                                                                                                VK_FRONT_FACE_COUNTER_CLOCKWISE,
                                                                                                0);
 
@@ -226,7 +227,7 @@ void GUI::initResources(VkRenderPass renderPass) {
     VkPipelineMultisampleStateCreateInfo multisampling = Pipeline::multisampleStateCreateInfo(VK_SAMPLE_COUNT_1_BIT, 0);
 
     // DEPTH STENCIL
-    VkPipelineDepthStencilStateCreateInfo depthStencil = Pipeline::depthStencilStateCreateInfo(VK_TRUE, VK_TRUE,
+    VkPipelineDepthStencilStateCreateInfo depthStencil = Pipeline::depthStencilStateCreateInfo(VK_FALSE, VK_FALSE,
                                                                                                VK_COMPARE_OP_LESS_OR_EQUAL);
 
 
@@ -309,7 +310,7 @@ void GUI::newFrame(bool updateFrameGraph) {
     // Update frame time display
     if (updateFrameGraph) {
         std::rotate(uiSettings.frameTimes.begin(), uiSettings.frameTimes.begin() + 1, uiSettings.frameTimes.end());
-        float frameTime = 1000.0f / (2 * 1000.0f);
+        float frameTime = 1000.0f / (uiSettings.deltaTime * 1000.0f);
         uiSettings.frameTimes.back() = frameTime;
         if (frameTime < uiSettings.frameTimeMin) {
             uiSettings.frameTimeMin = frameTime;
@@ -327,17 +328,16 @@ void GUI::newFrame(bool updateFrameGraph) {
     ImGui::InputFloat3("position", pos, "2");
     ImGui::InputFloat3("rotation", pos, "2");
 
-    ImGui::SetNextWindowSize(ImVec2(200, 200), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(200, 300), ImGuiCond_FirstUseEver);
     ImGui::Begin("Example settings");
     ImGui::Checkbox("Render models", &uiSettings.displayModels);
     ImGui::Checkbox("Display logos", &uiSettings.displayLogos);
     ImGui::Checkbox("Display background", &uiSettings.displayBackground);
     ImGui::Checkbox("Animate light", &uiSettings.animateLight);
     ImGui::SliderFloat("Light speed", &uiSettings.lightSpeed, 0.1f, 1.0f);
+    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    ImGui::Button("Button Label");
     ImGui::End();
-
-    ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiCond_FirstUseEver);
-    ImGui::ShowDemoWindow();
 
     // Render to generate draw buffers
     ImGui::Render();
@@ -383,7 +383,7 @@ void GUI::updateBuffers() {
     }
 
     // Index buffer
-    if ((indexBuffer->buffer == VK_NULL_HANDLE) || (indexCount < imDrawData->TotalIdxCount)) {
+    if ((indexBuffer->buffer == VK_NULL_HANDLE) ||  (indexCount < imDrawData->TotalIdxCount)) {
         indexBuffer->unmap();
         indexBuffer->destroy();
         indexBuffer->bufferSize = indexBufferSize;

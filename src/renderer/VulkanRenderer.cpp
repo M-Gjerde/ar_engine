@@ -58,6 +58,7 @@ void VulkanRenderer::cleanup() {
     vulkanCompute->cleanup();
     //commandBuffers->cleanUp();
     gui->cleanUp();
+    delete gui;
     images->cleanUp(); // Clean up depth images
 
     for (auto &object : objects) {
@@ -95,7 +96,10 @@ void VulkanRenderer::draw() {
     // 2. Submit command buffer to queue for execution, making sure it waits for the image to be signalled as available before drawing
     // and signals when it has finished rendering
     // 3. Present image to screen when it has signaled finished rendering
-
+    vkDeviceWaitIdle(arEngine.mainDevice.device);
+    if (visible){
+        recordCommands();
+  }
 
     vkWaitForFences(arEngine.mainDevice.device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
@@ -113,6 +117,7 @@ void VulkanRenderer::draw() {
 
     // TODO check if this should be done different
     updateBuffer(imageIndex);
+
 
     if (updateDisparity)
         updateDisparityData();
@@ -255,6 +260,9 @@ void VulkanRenderer::updateBuffer(uint32_t imageIndex) {
             vkUnmapMemory(arEngine.mainDevice.device, arDescriptors[i].bufferMemory[1]);
         }
     }
+
+    // ImGUI Updates
+    uiSettings.lightTimer += uiSettings.deltaTime * uiSettings.lightSpeed;
 }
 
 
@@ -315,7 +323,30 @@ void VulkanRenderer::setupSceneFromFile(std::vector<std::map<std::string, std::s
 }
 
 void VulkanRenderer::recordCommands() {
+    // Have to skip some frames apparently.
+    for (int i = 0; i < 3; ++i) {
+        gui->newFrame(true);
+    }
+    gui->updateBuffers();
+
+    VkRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = renderPass;
+    renderPassInfo.renderArea.offset = {0, 0};
+    renderPassInfo.renderArea.extent = arEngine.swapchainExtent;
+    std::array<VkClearValue, 2> clearValues{};
+    clearValues[0].color = {0.10f, 0.35f, 0.15f, 1.0f}; // green
+    clearValues[1].depthStencil = {1.0f, 0};
+
+    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    renderPassInfo.pClearValues = clearValues.data();
+
+
+
+
     for (size_t i = 0; i < commandBuffers.size(); i++) {
+        renderPassInfo.framebuffer = swapChainFramebuffers[i];
+
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
@@ -323,19 +354,6 @@ void VulkanRenderer::recordCommands() {
         if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo) != VK_SUCCESS) {
             throw std::runtime_error("failed to begin recording command buffer!");
         }
-
-        VkRenderPassBeginInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = renderPass;
-        renderPassInfo.framebuffer = swapChainFramebuffers[i];
-        renderPassInfo.renderArea.offset = {0, 0};
-        renderPassInfo.renderArea.extent = arEngine.swapchainExtent;
-        std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = {0.10f, 0.35f, 0.15f, 1.0f}; // green
-        clearValues[1].depthStencil = {1.0f, 0};
-
-        renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-        renderPassInfo.pClearValues = clearValues.data();
 
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -356,8 +374,10 @@ void VulkanRenderer::recordCommands() {
 
         }
 
-        if (visible)
-            gui->drawNewFrame(commandBuffers[i]);
+
+
+        gui->drawNewFrame(commandBuffers[i]);
+        visible = true;
 
         vkCmdEndRenderPass(commandBuffers[i]);
 
@@ -826,15 +846,12 @@ void VulkanRenderer::stopDisparityStream() {
 }
 
 void VulkanRenderer::createGUI() {
-    visible = true;
-    if (!visible)
-        gui->newFrame(true);
-    else
-        gui->newFrame(false);
-    gui->updateBuffers();
-    recordCommands();
-    //gui->drawNewFrame(renderPass, swapChainFramebuffers);
+    if(uiSettings.displayLogos ){
+        uiSettings.displayLogos = false;
 
+    }   else {
+        uiSettings.displayLogos = true;
+    }
     //gui.cleanUp();
 }
 

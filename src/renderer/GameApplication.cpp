@@ -9,13 +9,13 @@ void AppExtension::update() {
     double now = glfwGetTime();
     deltaTime = now - lastTime;
     lastTime = now;
-
+    FPS = std::round(1 / deltaTime);
+    uiSettings.deltaTime = (float) deltaTime;
     // Keep update function at 24 frames per second
     if (deltaTime < 0.03) {
         auto timeToSleep = (unsigned int) ((0.03 - deltaTime) * 1000);
         usleep(timeToSleep);
     }
-
 
 }
 
@@ -103,8 +103,9 @@ bool lookAround = false;
 
 
 void AppExtension::cursorPosCallback(GLFWwindow *window, double _xPos, double _yPos) {
-    ImGuiIO& io = ImGui::GetIO();
-    io.MousePos = ImVec2((float)_xPos, (float)_yPos);
+    ImGuiIO &io = ImGui::GetIO();
+    io.MousePos = ImVec2((float) _xPos, (float) _yPos);
+
 
     if (lookAround) {
         cameras[0]->lookAround(_xPos, _yPos);
@@ -124,25 +125,50 @@ void AppExtension::cursorPosCallback(GLFWwindow *window, double _xPos, double _y
 
 
 void AppExtension::mouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {
+
+    ImGuiIO &io = ImGui::GetIO();
+
+
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+        io.MouseDown[0] = true;
+
+        const bool hover = ImGui::IsAnyItemHovered();
 
         if (hiddenCursor) {
             hiddenCursor = false;
             lookAround = false;
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); //Normal mouse mode input
-        } else {
+        } else if (!hover){
             hiddenCursor = true;
             lookAround = true;
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // FPS mode mouse input
-
         }
+    }
+
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
+        io.MouseDown[0] = false;
+    }
+
+    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+        io.MouseDown[1] = true;
+    }
+
+    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE) {
+        io.MouseDown[1] = false;
+    }
+
+
+
+/*
 
         printf("____________________________________________\n "
                "Camera data: yaw = %f\n", cameras[cameraIndex]->yaw);
 
         printf("cameraFront (x,y,z): %f, %f, %f\n", cameras[cameraIndex]->cameraFront.x,
-               cameras[cameraIndex]->cameraFront.y, cameras[cameraIndex]->cameraFront.z);
-    }
+cameras[cameraIndex]->cameraFront.y, cameras[cameraIndex]->cameraFront.z);
+
+*/
 
 }
+
 

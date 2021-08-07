@@ -16,18 +16,38 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <imgui_impl_glfw.h>
 #include "VulkanRenderer.hpp"
 #include "../Platform/Camera.h"
 #include "../Platform/LoadSettings.h"
 #include "../FaceAugment/ThreadSpawner.h"
 
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_vulkan.h"
+
 class GameApplication {
 
 public:
+    // Options and values to display/toggle from the UI
+    struct UISettings {
+        bool displayModels = true;
+        bool displayLogos = true;
+        bool displayBackground = true;
+        bool animateLight = false;
+        float lightSpeed = 0.25f;
+        float deltaTime = 0.0f;
+        std::array<float, 50> frameTimes{};
+        float frameTimeMin = 9999.0f, frameTimeMax = 0.0f;
+        float lightTimer = 0.0f;
+    } uiSettings;
+
+
     GLFWwindow *window;
     VulkanRenderer vulkanRenderer;
     std::vector<Camera*> cameras;
     LoadSettings *loadSettings;
+
 
     explicit GameApplication(const std::string &title) {
 
@@ -46,6 +66,7 @@ public:
         // Init vulkan renderer engine
         if (vulkanRenderer.init(window) == EXIT_FAILURE)
             throw std::runtime_error("Failed to init");
+
 
         // Initialize camera
         cameras.resize(2);
@@ -103,6 +124,7 @@ public:
 private:
     double deltaTime = 0.0f;
     double lastTime = 0.0f;
+    double FPS = 0.0f;
 
 };
 

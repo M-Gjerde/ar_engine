@@ -212,6 +212,7 @@ void Images::createSampler(VkSamplerAddressMode addressMode, VkDevice device, Vk
     samplerInfo.mipLodBias = 0.0f;
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = 0.0f;
+    samplerInfo.maxAnisotropy = 1.0f;
     if (vkCreateSampler(device, &samplerInfo, nullptr, sampler) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create texture sampler!");
