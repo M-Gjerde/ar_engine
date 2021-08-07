@@ -4,5 +4,5 @@
 /objects/models
 /textures/stereo/*
 build
-external/*
-/external/json/
+external/assimp-5.0.1
+external/stb
