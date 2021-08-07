@@ -29,24 +29,11 @@
 class GameApplication {
 
 public:
-    // Options and values to display/toggle from the UI
-    struct UISettings {
-        bool displayModels = true;
-        bool displayLogos = true;
-        bool displayBackground = true;
-        bool animateLight = false;
-        float lightSpeed = 0.25f;
-        float deltaTime = 0.0f;
-        std::array<float, 50> frameTimes{};
-        float frameTimeMin = 9999.0f, frameTimeMax = 0.0f;
-        float lightTimer = 0.0f;
-    } uiSettings;
-
-
     GLFWwindow *window;
     VulkanRenderer vulkanRenderer;
     std::vector<Camera*> cameras;
     LoadSettings *loadSettings;
+    UISettings uiSettings;
 
 
     explicit GameApplication(const std::string &title) {
@@ -89,8 +76,9 @@ public:
     void gameLoop() {
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
-            vulkanRenderer.draw();
             update();
+            vulkanRenderer.updateUI(uiSettings);
+            vulkanRenderer.draw();
         }
         //loadSettings->saveScene(vulkanRenderer);
         vulkanRenderer.cleanup();

@@ -304,24 +304,13 @@ void GUI::newFrame(bool updateFrameGraph) {
 
     ImVec4 clear_color = ImColor(114, 144, 154);
     static float f = 0.0f;
-    ImGui::TextUnformatted("Title");
+    ImGui::TextUnformatted("Vulkan Engine");
     ImGui::TextUnformatted("DeviceName");
 
-    // Update frame time display
-    if (updateFrameGraph) {
-        std::rotate(uiSettings.frameTimes.begin(), uiSettings.frameTimes.begin() + 1, uiSettings.frameTimes.end());
-        float frameTime = 1000.0f / (uiSettings.deltaTime * 1000.0f);
-        uiSettings.frameTimes.back() = frameTime;
-        if (frameTime < uiSettings.frameTimeMin) {
-            uiSettings.frameTimeMin = frameTime;
-        }
-        if (frameTime > uiSettings.frameTimeMax) {
-            uiSettings.frameTimeMax = frameTime;
-        }
-    }
-
-    ImGui::PlotLines("Frame Times", &uiSettings.frameTimes[0], 50, 0, "", uiSettings.frameTimeMin,
-                     uiSettings.frameTimeMax, ImVec2(0, 80));
+    ImGui::PlotLines("Framerate", &uiSettings.frameTimes[0], 1000, 0, "FPS", 0,
+                    1000, ImVec2(0, 80));
+    ImGui::Text("Avg framerate %.3f", uiSettings.average);
+    ImGui::Text("FPS cap:  %.3f", uiSettings.frameLimiter);
 
     ImGui::Text("Camera");
     float pos[] = {3, 3, 3};

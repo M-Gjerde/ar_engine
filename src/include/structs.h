@@ -21,6 +21,20 @@ struct PushConstBlock {
 };
 
 
+// Options and values to display/toggle from the UI
+struct UISettings {
+    bool displayModels = true;
+    bool displayLogos = true;
+    bool displayBackground = true;
+    bool animateLight = false;
+    float lightSpeed = 0.25f;
+    float average = 0.0f;
+    float frameLimiter = 0.0f;
+    float FPS = 0.0f;
+    std::array<float, 1000> frameTimes{};
+    float frameTimeMin = 9999.0f, frameTimeMax = 0.0f;
+    float lightTimer = 0.0f;
+};
 
 struct ArROI {
     int x;

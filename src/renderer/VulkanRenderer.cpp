@@ -97,9 +97,9 @@ void VulkanRenderer::draw() {
     // and signals when it has finished rendering
     // 3. Present image to screen when it has signaled finished rendering
     vkDeviceWaitIdle(arEngine.mainDevice.device);
-    if (visible){
+    if (visible) {
         recordCommands();
-  }
+    }
 
     vkWaitForFences(arEngine.mainDevice.device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
@@ -161,7 +161,7 @@ void VulkanRenderer::draw() {
     vkQueuePresentKHR(arEngine.presentQueue, &presentInfo);
 
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-
+    frameNumber++;
 }
 
 void VulkanRenderer::createFrameBuffersAndRenderPass() {
@@ -261,8 +261,7 @@ void VulkanRenderer::updateBuffer(uint32_t imageIndex) {
         }
     }
 
-    // ImGUI Updates
-    uiSettings.lightTimer += uiSettings.deltaTime * uiSettings.lightSpeed;
+
 }
 
 
@@ -324,8 +323,8 @@ void VulkanRenderer::setupSceneFromFile(std::vector<std::map<std::string, std::s
 
 void VulkanRenderer::recordCommands() {
     // Have to skip some frames apparently.
-    for (int i = 0; i < 3; ++i) {
-        gui->newFrame(true);
+    for (int i = 0; i < 2; ++i) {
+        gui->newFrame(frameNumber == 0);
     }
     gui->updateBuffers();
 
@@ -340,8 +339,6 @@ void VulkanRenderer::recordCommands() {
 
     renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
     renderPassInfo.pClearValues = clearValues.data();
-
-
 
 
     for (size_t i = 0; i < commandBuffers.size(); i++) {
@@ -373,7 +370,6 @@ void VulkanRenderer::recordCommands() {
             vkCmdDrawIndexed(commandBuffers[i], objects[j].getIndexCount(), 1, 0, 0, 0);
 
         }
-
 
 
         gui->drawNewFrame(commandBuffers[i]);
@@ -472,7 +468,7 @@ void VulkanRenderer::updateDisparityData() {
 }
 
 void VulkanRenderer::textRenderTest() {
-
+    /*
     const uint32_t fontWidth = STB_FONT_consolas_24_latin1_BITMAP_WIDTH;
     const uint32_t fontHeight = STB_FONT_consolas_24_latin1_BITMAP_WIDTH;
 
@@ -676,12 +672,13 @@ void VulkanRenderer::textRenderTest() {
 
     //vkUnmapMemory(arEngine.device.device, dataBuffer.bufferMemory);
     updateCommandBuffers();
+     */
 }
-
 
 // Add text to the current buffer
 // todo : drop shadow? color attribute?
 void VulkanRenderer::addText(const std::string &text, float x, float y, TextAlign align) {
+    /*
     numLetters = 0;
 
     const uint32_t firstChar = STB_FONT_consolas_24_latin1_FIRST_CHAR;
@@ -747,12 +744,12 @@ void VulkanRenderer::addText(const std::string &text, float x, float y, TextAlig
 
         numLetters++;
     }
-
+*/
 
 }
 
 void VulkanRenderer::updateCommandBuffers() {
-
+/*
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
@@ -790,6 +787,7 @@ void VulkanRenderer::updateCommandBuffers() {
         vkCmdEndRenderPass(cmdBuffersText[i]);
         vkEndCommandBuffer(cmdBuffersText[i]);
     }
+    */
     visible = true;
 }
 
@@ -826,7 +824,7 @@ void VulkanRenderer::testFunction() {
     commandBuffers->endRecord();
     */
     // Create GUI
-    createGUI();
+    updateUI(UISettings());
 }
 
 std::vector<SceneObject> VulkanRenderer::getSceneObjects() const {
@@ -845,13 +843,21 @@ void VulkanRenderer::stopDisparityStream() {
     threadSpawner.stopChildProcess();
 }
 
-void VulkanRenderer::createGUI() {
-    if(uiSettings.displayLogos ){
-        uiSettings.displayLogos = false;
+float sum = 0.0f;
+void VulkanRenderer::updateUI(UISettings uiSettings_) {
+    gui->uiSettings.frameTimes[frameNumber % 1000] = uiSettings_.FPS;
+    gui->uiSettings.frameLimiter = uiSettings_.frameLimiter;
 
-    }   else {
-        uiSettings.displayLogos = true;
+    sum += uiSettings_.FPS;
+    if ((frameNumber % 200) == 0){
+        gui->uiSettings.average = sum / 200;
+        sum = 0;
     }
+
+
+    //std::rotate(gui->uiSettings.frameTimes.begin(), gui->uiSettings.frameTimes.begin() + (1),gui->uiSettings.frameTimes.end());
+
+
     //gui.cleanUp();
 }
 

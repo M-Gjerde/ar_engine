@@ -16,6 +16,7 @@
 class GUI {
 public:
     CommandBuffers *commandBuffers;
+    UISettings uiSettings;
 
     explicit GUI(ArEngine mArEngine);
     ~GUI();
@@ -32,6 +33,7 @@ public:
 
 private:
     PushConstBlock pushConstBlock;
+
 
     VkDevice device;
     ArEngine arEngine;

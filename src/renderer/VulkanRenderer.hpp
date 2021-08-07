@@ -50,6 +50,8 @@ public:
     void stopDisparityStream();
     void testFunction(); // TODO implement function
 
+    void updateUI(UISettings uiSettings);
+
 private:
     // Vulkan components
     Platform *platform{};
@@ -62,6 +64,12 @@ private:
     ArDepthResource arDepthResource{};
     VkRenderPass renderPass{};
     VkRenderPass textRenderPass{};
+    std::vector<VkCommandBuffer> commandBuffers;
+
+    // UI components
+    bool visible = false;
+    GUI *gui;
+    uint32_t frameNumber = 0;
 
     // Compute pipeline
     VulkanCompute *vulkanCompute{};
@@ -71,24 +79,24 @@ private:
     ThreadSpawner threadSpawner;
     ArSharedMemory *memP{};
 
-    // TextRendering
-    VkImageView imageView{};
-    VkSampler sampler{};
-    ArDescriptorInfo descriptorInfo{};
-    ArDescriptor descriptor;
-    VkImage image{};
-    VkDeviceMemory imageMemory{};
-    VkMemoryRequirements memoryRequirements{};
-    bool visible = false;
-    glm::vec4 *mapped = nullptr;
-    uint32_t numLetters{};
-    stb_fontchar stbFontData[STB_FONT_consolas_24_latin1_NUM_CHARS]{};
-    ArBuffer dataBuffer{};
-    std::vector<VkCommandBuffer> cmdBuffersText;
-    ArPipeline textPipeline{};
-    VkPipelineCache pipelineCache{};
-    GUI *gui;
-    std::vector<VkCommandBuffer> commandBuffers;
+    /*
+        // TextRendering
+
+        VkImageView imageView{};
+        VkSampler sampler{};
+        ArDescriptorInfo descriptorInfo{};
+        ArDescriptor descriptor;
+        VkImage image{};
+        VkDeviceMemory imageMemory{};
+        VkMemoryRequirements memoryRequirements{};
+        glm::vec4 *mapped = nullptr;
+        uint32_t numLetters{};
+        stb_fontchar stbFontData[STB_FONT_consolas_24_latin1_NUM_CHARS]{};
+        ArBuffer dataBuffer{};
+        std::vector<VkCommandBuffer> cmdBuffersText;
+        ArPipeline textPipeline{};
+        VkPipelineCache pipelineCache{};
+         */
     // Buffer
     Buffer *buffer{}; // TODO To be removed
 
@@ -140,8 +148,6 @@ private:
     void endTextUpdate();
 
     void updateCommandBuffers();
-
-    void createGUI();
 
     void recordCommands();
 };

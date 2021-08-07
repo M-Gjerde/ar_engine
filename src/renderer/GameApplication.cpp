@@ -5,18 +5,19 @@
 #include <thread>
 #include "GameApplication.h"
 
+float frameLimiter = 0.03f;
 void AppExtension::update() {
-    double now = glfwGetTime();
-    deltaTime = now - lastTime;
-    lastTime = now;
-    FPS = std::round(1 / deltaTime);
-    uiSettings.deltaTime = (float) deltaTime;
+    deltaTime = glfwGetTime() - lastTime;
+
+    uiSettings.FPS = 1.0f / (float) (glfwGetTime() - lastTime);
+    uiSettings.frameLimiter = 1 / frameLimiter;
     // Keep update function at 24 frames per second
-    if (deltaTime < 0.03) {
-        auto timeToSleep = (unsigned int) ((0.03 - deltaTime) * 1000);
+    if (deltaTime < frameLimiter) {
+        auto timeToSleep = (unsigned int) ((frameLimiter - deltaTime) * 1000000);
         usleep(timeToSleep);
     }
 
+    lastTime = glfwGetTime();
 }
 
 int cameraIndex = 0;
@@ -40,6 +41,17 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
         vulkanRenderer.stopDisparityStream();
 
     }
+
+    if (key == GLFW_KEY_UP) {
+        if ((1 / frameLimiter) <= 1000)
+        frameLimiter -= 0.001f;
+
+    }
+
+    if (key == GLFW_KEY_DOWN) {
+        frameLimiter += 0.001f;
+    }
+
 
 
     if (key == GLFW_KEY_X && action == GLFW_PRESS) {
