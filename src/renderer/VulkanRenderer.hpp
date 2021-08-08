@@ -20,7 +20,6 @@
 #include "../Models/MeshModel.h"
 #include "../Models/SceneObject.h"
 #include "../FaceAugment/FaceDetector.h"
-#include "../../external/stb/latin1/consolas/stb_font_consolas_24_latin1.inl"
 #include "../pipeline/CommandBuffers.h"
 #include "GUI.h"
 #include <stdexcept>
@@ -32,8 +31,6 @@ class VulkanRenderer {
 
 public:
     std::vector<SceneObject> objects;
-
-
 
     VulkanRenderer();
     int init(GLFWwindow *newWindow);

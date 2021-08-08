@@ -10,7 +10,7 @@
 
 #define TINYOBJLOADER_IMPLEMENTATION
 
-#include "../../external/tinyobj/tiny_obj_loader.h"
+#include "tiny_obj_loader.h"
 
 
 void MeshModel::loadModel(MainDevice mainDevice, ArModel arModel, const ArModelInfo& arModelInfo) {

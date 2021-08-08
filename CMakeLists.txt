@@ -16,6 +16,10 @@ find_package(OpenCV 4.0.0 REQUIRED)
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 add_subdirectory(external/json)
 
+## TinyOBJ LOader
+set(TinyObj external/tinyobjloader)
+include_directories(${TinyObj}  ..)
+
 #DLIB
 add_subdirectory($ENV{HOME}/libraries/dlib dlib_build)
 # If you have cmake 3.14 or newer you can even use FetchContent instead of
@@ -64,7 +68,7 @@ set(IMGUI_DIR external/imgui)
 include_directories(${IMGUI_DIR} ${IMGUI_DIR}/backends ..)
 
 message(STATUS "Adding GUI library files")
-FILE(GLOB GUI_SRC src/renderer/GUI.cpp src/renderer/GUI.h {IMGUI_DIR}/backends/imgui_impl_glfw.cpp ${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp ${IMGUI_DIR}/imgui.cpp ${IMGUI_DIR}/imgui_draw.cpp ${IMGUI_DIR}/imgui_demo.cpp ${IMGUI_DIR}/imgui_tables.cpp ${IMGUI_DIR}/imgui_widgets.cpp)
+FILE(GLOB GUI_SRC src/renderer/GUI.cpp src/renderer/GUI.h ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp ${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp ${IMGUI_DIR}/imgui.cpp ${IMGUI_DIR}/imgui_draw.cpp ${IMGUI_DIR}/imgui_demo.cpp ${IMGUI_DIR}/imgui_tables.cpp ${IMGUI_DIR}/imgui_widgets.cpp)
 add_library(GUI ${GUI_SRC})
 target_link_libraries(GUI)
 
@@ -91,7 +95,6 @@ target_link_libraries(VulkanRenderer
         )
 
 add_executable(engine main.cpp
-        external/tinyobj/tiny_obj_loader.h
         src/renderer/GameApplication.cpp
         src/renderer/GameApplication.h)
 

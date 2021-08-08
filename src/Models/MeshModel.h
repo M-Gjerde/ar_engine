@@ -9,7 +9,7 @@
 #include <string>
 #include "../include/structs.h"
 #include "Mesh.h"
-#include "../../external/tinyobj/tiny_obj_loader.h"
+#include "tiny_obj_loader.h"
 #include "../pipeline/Descriptors.h"
 
 class MeshModel {
