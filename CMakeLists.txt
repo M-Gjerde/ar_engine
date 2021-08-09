@@ -50,7 +50,7 @@ target_link_libraries(videoStream
 # Ties vulkanRenderer with helper classes
 message(STATUS "Adding platform files")
 FILE(GLOB PLATFORM_SRC src/Platform/*.cpp src/Platform/*.h)
-add_library(Platform ${PLATFORM_SRC})
+add_library(Platform ${PLATFORM_SRC} src/Platform/threadPool.h src/Platform/benchmark.h)
 target_link_libraries(Platform nlohmann_json::nlohmann_json)
 
 message(STATUS "Adding pipeline files")

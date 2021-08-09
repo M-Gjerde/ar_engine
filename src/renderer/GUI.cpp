@@ -301,7 +301,7 @@ void GUI::newFrame(bool updateFrameGraph) {
     ImGui::NewFrame();
 
     // Init imGui windows and elements
-
+    ImGui::SetWindowSize("Debug Information", ImVec2(200, 400));
     ImVec4 clear_color = ImColor(114, 144, 154);
     static float f = 0.0f;
     ImGui::TextUnformatted("Vulkan Engine");
@@ -317,7 +317,7 @@ void GUI::newFrame(bool updateFrameGraph) {
     ImGui::InputFloat3("position", pos, "2");
     ImGui::InputFloat3("rotation", pos, "2");
 
-    ImGui::SetNextWindowSize(ImVec2(200, 300), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(200, 200), ImGuiCond_FirstUseEver);
     ImGui::Begin("Example settings");
     ImGui::Checkbox("Render models", &uiSettings.displayModels);
     ImGui::Checkbox("Display logos", &uiSettings.displayLogos);

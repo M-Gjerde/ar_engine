@@ -60,7 +60,7 @@ CommandBuffers::CommandBuffers(ArEngine arEngine_) {
 void CommandBuffers::createCommandPool(VkCommandPoolCreateFlagBits flags) {
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.queueFamilyIndex = Platform::findQueueFamilies(arEngine.mainDevice.physicalDevice,
+    poolInfo.queueFamilyIndex = ar::Platform::findQueueFamilies(arEngine.mainDevice.physicalDevice,
                                                             arEngine.surface).graphicsFamily.value();
     poolInfo.flags = flags; // Optional
 

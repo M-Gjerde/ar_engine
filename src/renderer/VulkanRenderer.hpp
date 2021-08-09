@@ -6,26 +6,18 @@
 #define UDEMY_VULCAN_VULKANRENDERER_HPP
 
 
-#include "../pipeline/Buffer.h"
-#include "../Platform/Platform.h"
-#include "../include/structs.h"
-#include "../pipeline/Pipeline.h"
-#include "../pipeline/Descriptors.h"
-#include "../include/settings.h"
-#include "../Models/Mesh.h"
-#include "../pipeline/Images.h"
-#include "../pipeline/Textures.h"
-#include "VulkanCompute.h"
-#include "../FaceAugment/ThreadSpawner.h"
-#include "../Models/MeshModel.h"
-#include "../Models/SceneObject.h"
-#include "../FaceAugment/FaceDetector.h"
-#include "../pipeline/CommandBuffers.h"
+
 #include "GUI.h"
+#include "VulkanCompute.h"
 #include <stdexcept>
 #include <vector>
 #include <iostream>
 #include <map>
+#include <random>
+#include <ar_engine/src/Platform/threadPool.h>
+#include <ar_engine/src/Platform/Platform.h>
+#include <ar_engine/src/FaceAugment/FaceDetector.h>
+#include <ar_engine/src/pipeline/Textures.h>
 
 class VulkanRenderer {
 
@@ -50,8 +42,30 @@ public:
     void updateUI(UISettings uiSettings);
 
 private:
+    // Number of animated objects to be renderer
+    // by using threads and secondary command buffers
+    uint32_t numObjectsPerThread;
+
+    // Multi threaded stuff
+    // Max. number of concurrent threads
+    uint32_t numThreads;
+
+    struct ThreadData {
+        VkCommandPool commandPool;
+        // One command buffer per render object
+        std::vector<VkCommandBuffer> commandBuffer;
+        // One push constant block per render object
+        std::vector<ThreadPushConstantBlock> pushConstBlock;
+        // Per object information (position, rotation, etc.)
+        std::vector<SceneObject> objectData;
+    };
+    std::vector<ThreadData> threadData;
+    ar::ThreadPool threadPool;
+
+    std::default_random_engine rndEngine;
+
     // Vulkan components
-    Platform *platform{};
+    ar::Platform *platform{};
     ArEngine arEngine;
 
     // Pipelines and drawing stuff

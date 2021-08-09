@@ -5,7 +5,7 @@
 #include <thread>
 #include "GameApplication.h"
 
-float frameLimiter = 0.03f;
+float frameLimiter = 0.015f;
 void AppExtension::update() {
     deltaTime = glfwGetTime() - lastTime;
 

@@ -14,6 +14,12 @@
 #include <string>
 #include <array>
 
+struct ThreadPushConstantBlock {
+    glm::mat4 mvp;
+    glm::vec3 color;
+};
+
+
 // UI params are set via push constants
 struct PushConstBlock {
     glm::vec2 scale;

@@ -8,13 +8,22 @@
 #include <array>
 #include <glm/gtc/matrix_transform.hpp>
 #include <chrono>
+#include <ar_engine/src/include/settings.h>
 #include "VulkanRenderer.hpp"
 #include "../include/stbi_image_write.h"
 #include "opencv2/opencv.hpp"
 #include "../include/helper_functions.h"
 #include "GUI.h"
 
-VulkanRenderer::VulkanRenderer() = default;
+VulkanRenderer::VulkanRenderer() {
+    // Get number of max. concurrent threads
+    numThreads = std::thread::hardware_concurrency();
+    assert(numThreads > 0);
+    threadPool.setThreadCount(numThreads);
+    numObjectsPerThread = 512 / numThreads;
+    rndEngine.seed((uint32_t) 666);
+
+}
 
 VulkanRenderer::~VulkanRenderer() = default;
 
@@ -22,7 +31,7 @@ VulkanRenderer::~VulkanRenderer() = default;
 int VulkanRenderer::init(GLFWwindow *newWindow) {
     try {
         // CLass handles with helper functions. Can be passed arbitrarily
-        platform = new Platform(newWindow, &arEngine);
+        platform = new ar::Platform(newWindow, &arEngine);
         buffer = new Buffer(arEngine.mainDevice);
         descriptors = new Descriptors(arEngine);
         images = new Images(arEngine.mainDevice, arEngine.swapchainExtent);
@@ -792,7 +801,7 @@ void VulkanRenderer::updateCommandBuffers() {
 }
 
 void VulkanRenderer::testFunction() {
-/*
+
     float xyScale = 2.1;
     float zScale = 5;
     float scale = 5;
@@ -824,7 +833,6 @@ void VulkanRenderer::testFunction() {
     commandBuffers->endRecord();
     */
     // Create GUI
-    updateUI(UISettings());
 }
 
 std::vector<SceneObject> VulkanRenderer::getSceneObjects() const {

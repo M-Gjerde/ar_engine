@@ -19,7 +19,7 @@ public:
 
     ~VulkanCompute() = default;
 
-    void setupComputePipeline(Buffer *pBuffer, Descriptors *pDescriptors, Platform *pPlatform, Pipeline pipeline);
+    void setupComputePipeline(Buffer *pBuffer, Descriptors *pDescriptors, ar::Platform *pPlatform, Pipeline pipeline);
 
     void loadComputeData(glm::vec4 roi, ArSharedMemory *memP);
 

@@ -45,7 +45,7 @@ void VulkanCompute::cleanup() {
 
 }
 
-void VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDescriptors, Platform *pPlatform,
+void VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDescriptors, ar::Platform *pPlatform,
                                          Pipeline pipeline) {
 
     //int width = 1280, height = 720;
@@ -135,7 +135,7 @@ void VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDescript
 
     VkCommandBuffer commandBuffer;
     pPlatform->createCommandPool(&commandPool,
-                                 Platform::findQueueFamilies(
+                                 ar::Platform::findQueueFamilies(
                                          arEngine.mainDevice.physicalDevice, arEngine.surface).computeFamily.value());
 
 
