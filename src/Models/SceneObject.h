@@ -16,12 +16,13 @@
 class SceneObject {
 
 public:
-
+    bool visible = true;
 
     SceneObject(std::map<std::string, std::string> modelSettings, ArEngine mArEngine);
     SceneObject();
+    explicit SceneObject(ArEngine mArEngine);
 
-    SceneObject(ArEngine mArEngine);
+    void createDefaultSceneObject(ArEngine mArEngine);
 
     void createPipeline(VkRenderPass renderPass);
     void createMesh(std::map<std::string, std::string> modelSettings);

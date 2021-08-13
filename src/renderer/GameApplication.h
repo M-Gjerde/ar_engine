@@ -50,15 +50,14 @@ public:
         // Load settings
         loadSettings = new LoadSettings("config");
 
-        // Init vulkan renderer engine
-        if (vulkanRenderer.init(window) == EXIT_FAILURE)
-            throw std::runtime_error("Failed to init");
-
-
         // Initialize camera
         cameras.resize(2);
         cameras[0] = new Camera;
         vulkanRenderer.updateCamera(cameras[0]->getView(), cameras[0]->getProjection());
+
+        // Init vulkan renderer engine
+        if (vulkanRenderer.init(window) == EXIT_FAILURE)
+            throw std::runtime_error("Failed to init");
 
         // Load scene objects according to settings file
         auto settingsMap = loadSettings->getSceneObjects();

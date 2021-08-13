@@ -73,6 +73,8 @@ add_library(GUI ${GUI_SRC})
 target_link_libraries(GUI)
 
 add_library(VulkanRenderer
+        src/Models/SceneObject.cpp
+        src/Models/SceneObject.h
         src/renderer/VulkanCompute.cpp
         src/renderer/VulkanCompute.h
         src/renderer/VulkanRenderer.cpp

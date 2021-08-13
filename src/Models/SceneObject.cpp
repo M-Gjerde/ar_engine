@@ -41,34 +41,12 @@ SceneObject::SceneObject(std::map<std::string, std::string> modelSettings, ArEng
 
 // Create template sceneobject
 SceneObject::SceneObject(ArEngine mArEngine) {
-    LoadSettings loadSettings("templates");
-
-    auto modelSettings = loadSettings.getSceneObjects()[0];
-
-    arEngine = std::move(mArEngine);
-    // Helper classes handles
-    descriptors = new Descriptors(arEngine);
-    buffer = new Buffer(arEngine.mainDevice);
-
-    // Create pipeline for object
-    shadersPath.vertexShader = "../shaders/" + modelSettings.at("vertex_shader");
-    shadersPath.fragmentShader = "../shaders/" + modelSettings.at("fragment_shader");
-
-    // Create mesh from model type
-    createMesh(modelSettings);
-    // Get descriptorInfo from file
-    getDescriptorInfo(modelSettings);
-    // Get object position
-    getSceneObjectPose(modelSettings);
-    // misc properties (lightSource etc..)
-    getMiscProperties(modelSettings);
-
-    // Free pointer memory
-    delete descriptors;
-    delete buffer;
-
-
+    createDefaultSceneObject(mArEngine);
 }
+
+// Create empty SceneObject
+SceneObject::SceneObject() = default;
+
 
 void SceneObject::getSceneObjectPose(std::map<std::string, std::string> modelSettings){
     // pose
@@ -258,6 +236,35 @@ bool SceneObject::refresh() const {
 
 bool SceneObject::isLight() const {
     return lightSource;
+}
+
+void SceneObject::createDefaultSceneObject(ArEngine mArEngine) {
+    LoadSettings loadSettings("templates");
+
+    auto modelSettings = loadSettings.getSceneObjects()[0];
+
+    arEngine = std::move(mArEngine);
+    // Helper classes handles
+    descriptors = new Descriptors(arEngine);
+    buffer = new Buffer(arEngine.mainDevice);
+
+    // Create pipeline for object
+    shadersPath.vertexShader = "../shaders/" + modelSettings.at("vertex_shader");
+    shadersPath.fragmentShader = "../shaders/" + modelSettings.at("fragment_shader");
+
+    // Create mesh from model type
+    createMesh(modelSettings);
+    // Get descriptorInfo from file
+    getDescriptorInfo(modelSettings);
+    // Get object position
+    getSceneObjectPose(modelSettings);
+    // misc properties (lightSource etc..)
+    getMiscProperties(modelSettings);
+
+    // Free pointer memory
+    delete descriptors;
+    delete buffer;
+
 }
 
 

@@ -61,6 +61,9 @@ private:
     };
     std::vector<ThreadData> threadData;
     ar::ThreadPool threadPool;
+    VkCommandBuffer primaryBuffer{};
+
+    CommandBuffers::SecondaryCommandBuffers secondaryCmdBuffers{};
 
     std::default_random_engine rndEngine;
 
@@ -79,7 +82,7 @@ private:
 
     // UI components
     bool visible = false;
-    GUI *gui;
+    GUI *gui{};
     uint32_t frameNumber = 0;
 
     // Compute pipeline
@@ -90,24 +93,7 @@ private:
     ThreadSpawner threadSpawner;
     ArSharedMemory *memP{};
 
-    /*
-        // TextRendering
 
-        VkImageView imageView{};
-        VkSampler sampler{};
-        ArDescriptorInfo descriptorInfo{};
-        ArDescriptor descriptor;
-        VkImage image{};
-        VkDeviceMemory imageMemory{};
-        VkMemoryRequirements memoryRequirements{};
-        glm::vec4 *mapped = nullptr;
-        uint32_t numLetters{};
-        stb_fontchar stbFontData[STB_FONT_consolas_24_latin1_NUM_CHARS]{};
-        ArBuffer dataBuffer{};
-        std::vector<VkCommandBuffer> cmdBuffersText;
-        ArPipeline textPipeline{};
-        VkPipelineCache pipelineCache{};
-         */
     // Buffer
     Buffer *buffer{}; // TODO To be removed
 
@@ -151,16 +137,19 @@ private:
     void updateBuffer(uint32_t imageIndex);
     void initComputePipeline();
 
-    void textRenderTest();
-
-    enum TextAlign { alignLeft, alignCenter, alignRight };
-    void beginTextUpdate();
-    void addText(const std::string& text, float x, float y, TextAlign align);
-    void endTextUpdate();
-
-    void updateCommandBuffers();
 
     void recordCommands();
+
+    void prepareMultiThreadedRenderer();
+
+    float rnd(float range);
+
+    void
+    threadRenderCode(uint32_t threadIndex, uint32_t cmdBufferIndex, VkCommandBufferInheritanceInfo inheritanceInfo);
+
+    void updateSecondaryCommandBuffers(VkCommandBufferInheritanceInfo inheritanceInfo);
+
+    void updateCommandBuffers(VkFramebuffer frameBuffer);
 };
 
 
