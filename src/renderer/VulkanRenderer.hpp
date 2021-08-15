@@ -18,6 +18,7 @@
 #include <ar_engine/src/Platform/Platform.h>
 #include <ar_engine/src/FaceAugment/FaceDetector.h>
 #include <ar_engine/src/pipeline/Textures.h>
+#include <ar_engine/src/Models/MeshGenerator.h>
 
 class VulkanRenderer {
 
@@ -79,6 +80,7 @@ private:
     VkRenderPass renderPass{};
     VkRenderPass textRenderPass{};
     std::vector<VkCommandBuffer> commandBuffers;
+    MeshGenerator* meshGenerator;
 
     // UI components
     bool visible = false;

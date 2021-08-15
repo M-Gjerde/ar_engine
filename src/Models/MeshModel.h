@@ -16,7 +16,8 @@ class MeshModel {
 
 public:
 
-    void loadModel(MainDevice mainDevice, ArModel arModel, const ArModelInfo& arModelInfo);
+    void createMeshFromModel(MainDevice mainDevice, ArModel arModel);
+    void createMeshFromFile(MainDevice mainDevice, ArModel arModel, const ArModelInfo& arModelInfo);
 
     static void setModelFileName(std::string modelName);
     VkBuffer getIndexBuffer() const;
@@ -27,9 +28,9 @@ public:
     uint32_t indexCount = -1;
 
 private:
-    uboModel model1;
+    uboModel model1{};
     ArModel arModel1;
-    Mesh* mesh;
+    Mesh* mesh{};
 
     static void getDataFromModel(ArModel *arModel, const ArModelInfo& arModelInfo);
 

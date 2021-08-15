@@ -18,11 +18,16 @@ class SceneObject {
 public:
     bool visible = true;
 
+    /* Constructor for creating SceneObjects only with predefined shaders */
+    SceneObject(ArEngine mArEngine, const ArShadersPath &shaders, ArModel arModel, ArDescriptorInfo descriptorInfo);
+    /* Constructor for creating SceneObjects with a template file */
     SceneObject(std::map<std::string, std::string> modelSettings, ArEngine mArEngine);
+    /* Empty SceneObject constructor */
     SceneObject();
-    explicit SceneObject(ArEngine mArEngine);
 
+    ~SceneObject();
     void createDefaultSceneObject(ArEngine mArEngine);
+    void createObjectFromModel();
 
     void createPipeline(VkRenderPass renderPass);
     void createMesh(std::map<std::string, std::string> modelSettings);
@@ -60,8 +65,8 @@ private:
 
 
     // Helper classes handles
-    Descriptors *descriptors{};
-    Buffer *buffer{};
+    Descriptors *descriptors = nullptr;
+    Buffer *buffer = nullptr;
     Pipeline pipeline;
     ArEngine arEngine;
     ArDescriptor arDescriptor;

@@ -58,8 +58,9 @@ struct ArShadersPath {
 
 // ArModel passes queue and cmd pool from arEngine and used to store buffers and memory
 struct ArModel {
-    VkQueue transferQueue;
-    VkCommandPool transferCommandPool;
+
+    VkQueue transferQueue;              // TODO out from here. Use handles in arEngine
+    VkCommandPool transferCommandPool;  // TODO out from here. Use handles in arEngine
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
     uint32_t vertexCount{};

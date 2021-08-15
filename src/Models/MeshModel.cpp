@@ -13,7 +13,7 @@
 #include "tiny_obj_loader.h"
 
 
-void MeshModel::loadModel(MainDevice mainDevice, ArModel arModel, const ArModelInfo& arModelInfo) {
+void MeshModel::createMeshFromFile(MainDevice mainDevice, ArModel arModel, const ArModelInfo& arModelInfo) {
 
     // Get data from object model file
     getDataFromModel(&arModel, arModelInfo);
@@ -23,6 +23,26 @@ void MeshModel::loadModel(MainDevice mainDevice, ArModel arModel, const ArModelI
     modelBuffers[0].bufferProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     modelBuffers[0].sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     modelBuffers[1].bufferSize = sizeof(arModel.indices[0]) * arModel.vertices.size();
+    modelBuffers[1].bufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    modelBuffers[1].bufferProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    modelBuffers[1].sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    // Create mesh from model I'm just using the constructor. This could be acomplished by a helper class
+    mesh = new Mesh(mainDevice, &arModel, modelBuffers);
+
+    arModel1 = arModel;
+    indexCount = arModel.indexCount;
+}
+
+void MeshModel::createMeshFromModel(MainDevice mainDevice, ArModel arModel) {
+
+    // Get data from object model file
+    std::vector<ArBuffer> modelBuffers(2);
+    modelBuffers[0].bufferSize = sizeof(arModel.vertices[0]) * arModel.vertices.size();
+    modelBuffers[0].bufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    modelBuffers[0].bufferProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    modelBuffers[0].sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    modelBuffers[1].bufferSize = sizeof(arModel.indices[0]) * arModel.indices.size();
     modelBuffers[1].bufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
     modelBuffers[1].bufferProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     modelBuffers[1].sharingMode = VK_SHARING_MODE_EXCLUSIVE;

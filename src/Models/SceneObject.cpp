@@ -32,23 +32,94 @@ SceneObject::SceneObject(std::map<std::string, std::string> modelSettings, ArEng
     // misc properties (lightSource etc..)
     getMiscProperties(modelSettings);
 
-    // Free pointer memory
     delete descriptors;
     delete buffer;
-
 
 }
 
 // Create template sceneobject
-SceneObject::SceneObject(ArEngine mArEngine) {
-    createDefaultSceneObject(mArEngine);
+SceneObject::SceneObject(ArEngine mArEngine, const ArShadersPath &shaders, ArModel arModel,
+                         ArDescriptorInfo descriptorInfo) {
+    arEngine = std::move(mArEngine);
+    // Helper classes handles
+    descriptors = new Descriptors(arEngine);
+    buffer = new Buffer(arEngine.mainDevice);
+
+
+    shadersPath.vertexShader = "../shaders/" + shaders.vertexShader;
+    shadersPath.fragmentShader = "../shaders/" + shaders.fragmentShader;
+
+
+    // Create Mesh
+    meshModel.createMeshFromModel(arEngine.mainDevice, std::move(arModel));
+
+    // --- DESCRIPTOR BUFFERS
+    // Create descriptors
+    std::vector<ArBuffer> buffers(descriptorInfo.descriptorSetCount);
+    // Create and fill buffers
+    for (int j = 0; j < descriptorInfo.descriptorSetCount; ++j) {
+        buffers[j].bufferSize = descriptorInfo.dataSizes[j];
+        buffers[j].bufferUsage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        buffers[j].sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        buffers[j].bufferProperties =
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        buffer->createBuffer(&buffers[j]);
+        arDescriptor.buffer.push_back(buffers[j].buffer);
+        arDescriptor.bufferMemory.push_back(buffers[j].bufferMemory);
+
+        // Copy over datasizes
+        arDescriptor.dataSizes.resize(descriptorInfo.descriptorSetCount);
+        arDescriptor.dataSizes[j] = descriptorInfo.dataSizes[j];
+    }
+
+    // Link descriptors
+    descriptors->createDescriptors(descriptorInfo, &arDescriptor);
+
+    // Create standard mat for model
+    model = glm::mat4(1.0f);
+
 }
+
 
 // Create empty SceneObject
 SceneObject::SceneObject() = default;
 
+void SceneObject::createDefaultSceneObject(ArEngine mArEngine) {
+    LoadSettings loadSettings("templates");
 
-void SceneObject::getSceneObjectPose(std::map<std::string, std::string> modelSettings){
+    auto modelSettings = loadSettings.getSceneObjects()[0];
+
+    arEngine = std::move(mArEngine);
+    // Helper classes handles
+    descriptors = new Descriptors(arEngine);
+    buffer = new Buffer(arEngine.mainDevice);
+
+    // Create pipeline for object
+    shadersPath.vertexShader = "../shaders/" + modelSettings.at("vertex_shader");
+    shadersPath.fragmentShader = "../shaders/" + modelSettings.at("fragment_shader");
+
+    // Create mesh from model type
+    createMesh(modelSettings);
+    // Get descriptorInfo from file
+    getDescriptorInfo(modelSettings);
+    // Get object position
+    getSceneObjectPose(modelSettings);
+    // misc properties (lightSource etc..)
+    getMiscProperties(modelSettings);
+
+}
+
+void SceneObject::createObjectFromModel() {
+
+
+}
+
+SceneObject::~SceneObject() {
+
+}
+
+
+void SceneObject::getSceneObjectPose(std::map<std::string, std::string> modelSettings) {
     // pose
     float posX = std::stof(modelSettings.at("posX"));
     float posY = std::stof(modelSettings.at("posY"));
@@ -71,6 +142,7 @@ void SceneObject::getSceneObjectPose(std::map<std::string, std::string> modelSet
     model = glm::scale(model, glm::vec3(scaleX, scaleY, scaleZ));
 
 }
+
 void SceneObject::getDescriptorInfo(std::map<std::string, std::string> modelSettings) {
     // --- READ DESCRIPTOR INFO
     descriptorInfo.descriptorSetCount = std::stoi(modelSettings.at("descriptorSetCount"));
@@ -125,10 +197,9 @@ void SceneObject::getDescriptorInfoSequence(const std::string &type, std::vector
     while (getline(bindingSequence, intermediate, ' ')) {
         if (intermediate == "uboModel") {
             data->push_back(sizeof(uboModel));
-        } else if (intermediate == "FragmentColor"){
+        } else if (intermediate == "FragmentColor") {
             data->push_back(sizeof(FragmentColor));
-        }
-        else {
+        } else {
             data->push_back(std::stoi(intermediate));
 
         }
@@ -136,7 +207,8 @@ void SceneObject::getDescriptorInfoSequence(const std::string &type, std::vector
 }
 
 
-void SceneObject::getDescriptorInfoTypeAndStage(std::vector<VkDescriptorType> *descriptorTypes, std::vector<VkShaderStageFlags>* stageFlags,
+void SceneObject::getDescriptorInfoTypeAndStage(std::vector<VkDescriptorType> *descriptorTypes,
+                                                std::vector<VkShaderStageFlags> *stageFlags,
                                                 std::map<std::string, std::string> modelSettings) {
 
     std::stringstream bindingSequence(modelSettings.at("pDescriptorType"));
@@ -152,7 +224,7 @@ void SceneObject::getDescriptorInfoTypeAndStage(std::vector<VkDescriptorType> *d
     while (getline(bindingSequence, intermediate, ' ')) {
         if (intermediate == "vertex") {
             stageFlags->push_back(VK_SHADER_STAGE_VERTEX_BIT);
-        } else if(intermediate == "fragment"){
+        } else if (intermediate == "fragment") {
             stageFlags->push_back(VK_SHADER_STAGE_FRAGMENT_BIT);
         }
     }
@@ -162,7 +234,7 @@ void SceneObject::getDescriptorInfoTypeAndStage(std::vector<VkDescriptorType> *d
 void SceneObject::getMiscProperties(std::map<std::string, std::string> map) {
     std::string lightProperty = map.at("lightProperty");
     if (lightProperty == "lightSource")
-       lightSource = true;
+        lightSource = true;
 
 }
 
@@ -178,7 +250,7 @@ void SceneObject::createMesh(std::map<std::string, std::string> modelSettings) {
     arModelInfo.modelName = "standard/" + modelSettings.at("type") + ".obj";
     arModelInfo.generateNormals = (modelSettings.at("normals") == "true");
 
-    meshModel.loadModel(arEngine.mainDevice, arModel, arModelInfo);
+    meshModel.createMeshFromFile(arEngine.mainDevice, arModel, arModelInfo);
 
 
 }
@@ -226,7 +298,7 @@ uint32_t SceneObject::getIndexCount() const {
     return meshModel.indexCount;
 }
 
-void SceneObject::cleanUp(VkDevice device){
+void SceneObject::cleanUp(VkDevice device) {
     meshModel.cleanUp(device);
 }
 
@@ -238,34 +310,7 @@ bool SceneObject::isLight() const {
     return lightSource;
 }
 
-void SceneObject::createDefaultSceneObject(ArEngine mArEngine) {
-    LoadSettings loadSettings("templates");
 
-    auto modelSettings = loadSettings.getSceneObjects()[0];
-
-    arEngine = std::move(mArEngine);
-    // Helper classes handles
-    descriptors = new Descriptors(arEngine);
-    buffer = new Buffer(arEngine.mainDevice);
-
-    // Create pipeline for object
-    shadersPath.vertexShader = "../shaders/" + modelSettings.at("vertex_shader");
-    shadersPath.fragmentShader = "../shaders/" + modelSettings.at("fragment_shader");
-
-    // Create mesh from model type
-    createMesh(modelSettings);
-    // Get descriptorInfo from file
-    getDescriptorInfo(modelSettings);
-    // Get object position
-    getSceneObjectPose(modelSettings);
-    // misc properties (lightSource etc..)
-    getMiscProperties(modelSettings);
-
-    // Free pointer memory
-    delete descriptors;
-    delete buffer;
-
-}
 
 
 

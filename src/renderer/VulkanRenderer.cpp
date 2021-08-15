@@ -317,6 +317,7 @@ int VulkanRenderer::init(GLFWwindow *newWindow) {
 
         // Commandbuffers x2
         prepareMultiThreadedRenderer();
+
         //textRenderTest();
 
     } catch (std::runtime_error &err) {
@@ -633,69 +634,6 @@ void VulkanRenderer::setupSceneFromFile(std::vector<std::map<std::string, std::s
 
 }
 
-void VulkanRenderer::recordCommands() {
-    // Have to skip some frames apparently.
-    for (int i = 0; i < 2; ++i) {
-        gui->newFrame(frameNumber == 0);
-    }
-    gui->updateBuffers();
-
-    VkRenderPassBeginInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = renderPass;
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = arEngine.swapchainExtent;
-    std::array<VkClearValue, 2> clearValues{};
-    clearValues[0].color = {0.10f, 0.35f, 0.15f, 1.0f}; // green
-    clearValues[1].depthStencil = {1.0f, 0};
-
-    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-    renderPassInfo.pClearValues = clearValues.data();
-
-
-    for (size_t i = 0; i < commandBuffers.size(); i++) {
-        renderPassInfo.framebuffer = swapChainFramebuffers[i];
-
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-
-        if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo) != VK_SUCCESS) {
-            throw std::runtime_error("failed to begin recording command buffer!");
-        }
-
-        vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-        for (int j = 0; j < objects.size(); ++j) {
-            vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, arPipelines[j].pipeline);
-
-            VkBuffer vertexBuffers[] = {objects[j].getVertexBuffer()};
-            VkDeviceSize offsets[] = {0};
-            vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
-            vkCmdBindIndexBuffer(commandBuffers[i], objects[j].getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
-
-            vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                    arPipelines[j].pipelineLayout, 0, arDescriptors[j].descriptorSets.size(),
-                                    arDescriptors[j].descriptorSets.data(), 0,
-                                    nullptr);
-
-            vkCmdDrawIndexed(commandBuffers[i], objects[j].getIndexCount(), 1, 0, 0, 0);
-
-        }
-
-
-        gui->drawNewFrame(commandBuffers[i]);
-        visible = true;
-
-        vkCmdEndRenderPass(commandBuffers[i]);
-
-        if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
-            throw std::runtime_error("failed to FaceAugment command buffer!");
-        }
-    }
-}
-
-
 void VulkanRenderer::initComputePipeline() {
     vulkanCompute->setupComputePipeline(buffer, descriptors, platform, pipeline);
     memP = threadSpawner.getVideoMemoryPointer();
@@ -782,37 +720,15 @@ void VulkanRenderer::updateDisparityData() {
 
 void VulkanRenderer::testFunction() {
 
-    float xyScale = 2.1;
-    float zScale = 5;
-    float scale = 5;
+    meshGenerator = new MeshGenerator(arEngine, renderPass);
+    meshGenerator->prepareResources();
+    SceneObject object = meshGenerator->getSceneObject();
 
-    for (int i = 0; i < 16; ++i) {
-        for (int j = 0; j < 16; ++j) {
-            SceneObject object(arEngine);
-            object.createPipeline(renderPass);
-            // Push objects to global lists
-            arDescriptors.push_back(object.getArDescriptor());
-            arPipelines.push_back(object.getArPipeline());
+    objects.push_back(object);
+    arPipelines.push_back(object.getArPipeline());
+    arDescriptors.push_back(object.getArDescriptor());
 
-            glm::mat4 model = object.getModel();
-            model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
 
-            glm::vec3 noiseCoordinates((float) j * xyScale, (float) i * xyScale, 0.075f * zScale);
-            float noiseValue = -abs(getNoise(noiseCoordinates)) * scale;
-            std::cout << noiseValue << std::endl;
-            model = glm::translate(model, glm::vec3((float) j * 2, noiseValue, (float) i * 2));
-            object.setModel(model);
-
-            objects.push_back(object);
-        }
-    }
-    /*
-    // TODO do in separate thread in order to speed up application
-    commandBuffers->startRecordCommand(renderPass, swapChainFramebuffers);
-    commandBuffers->bindResources(objects, arPipelines, arDescriptors);
-    commandBuffers->endRecord();
-    */
-    // Create GUI
 }
 
 std::vector<SceneObject> VulkanRenderer::getSceneObjects() const {
