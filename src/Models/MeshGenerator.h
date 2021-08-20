@@ -87,6 +87,8 @@ private:
         for (int z = 0; z < zSize + 1; ++z) {
             for (int x = 0; x < xSize + 1; ++x) {
                 Vertex vertex{};
+                std::rand();
+                RAND_MAX;
                 vertex.pos = glm::vec3(x, 0, z);;
                 vertex.normal = glm::vec3(0, 1, 0);
                 arModel.vertices.push_back(vertex);
