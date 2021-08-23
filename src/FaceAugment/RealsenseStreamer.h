@@ -5,7 +5,7 @@
 #ifndef AR_ENGINE_REALSENSESTREAMER_H
 #define AR_ENGINE_REALSENSESTREAMER_H
 #include <librealsense2/rs.hpp> // Include Intel RealSense Cross Platform API
-#include <opencv2/core.hpp>
+#include "opencv2/opencv.hpp"
 
 
 class RealsenseStreamer {

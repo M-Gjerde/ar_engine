@@ -16,10 +16,15 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <imgui_impl_glfw.h>
 #include "VulkanRenderer.hpp"
 #include "../Platform/Camera.h"
-#include "../Platform/LoadSettings.h"
+#include "LoadSettings.h"
 #include "../FaceAugment/ThreadSpawner.h"
+
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_vulkan.h"
 
 class GameApplication {
 
@@ -28,6 +33,8 @@ public:
     VulkanRenderer vulkanRenderer;
     std::vector<Camera*> cameras;
     LoadSettings *loadSettings;
+    UISettings uiSettings;
+
 
     explicit GameApplication(const std::string &title) {
 
@@ -43,14 +50,14 @@ public:
         // Load settings
         loadSettings = new LoadSettings("config");
 
-        // Init vulkan renderer engine
-        if (vulkanRenderer.init(window) == EXIT_FAILURE)
-            throw std::runtime_error("Failed to init");
-
         // Initialize camera
         cameras.resize(2);
         cameras[0] = new Camera;
         vulkanRenderer.updateCamera(cameras[0]->getView(), cameras[0]->getProjection());
+
+        // Init vulkan renderer engine
+        if (vulkanRenderer.init(window) == EXIT_FAILURE)
+            throw std::runtime_error("Failed to init");
 
         // Load scene objects according to settings file
         auto settingsMap = loadSettings->getSceneObjects();
@@ -68,8 +75,9 @@ public:
     void gameLoop() {
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
-            vulkanRenderer.draw();
             update();
+            vulkanRenderer.updateUI(uiSettings);
+            vulkanRenderer.draw();
         }
         //loadSettings->saveScene(vulkanRenderer);
         vulkanRenderer.cleanup();
@@ -103,6 +111,7 @@ public:
 private:
     double deltaTime = 0.0f;
     double lastTime = 0.0f;
+    double FPS = 0.0f;
 
 };
 

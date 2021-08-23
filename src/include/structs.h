@@ -14,6 +14,43 @@
 #include <string>
 #include <array>
 
+struct ArGuiSliderMeshGenerator {
+    std::string name;
+    float val = 0.0f;
+    float minRange;
+    float maxRange;
+    bool active = false;
+    std::string type;
+};
+
+struct ThreadPushConstantBlock {
+    glm::mat4 mvp;
+    glm::vec3 color;
+};
+
+
+// UI params are set via push constants
+struct PushConstBlock {
+    glm::vec2 scale;
+    glm::vec2 translate;
+};
+
+
+// Options and values to display/toggle from the UI
+struct UISettings {
+    bool displayModels = true;
+    bool displayLogos = true;
+    bool displayBackground = true;
+    bool animateLight = false;
+    float lightSpeed = 0.25f;
+    float average = 0.0f;
+    float frameLimiter = 0.0f;
+    float FPS = 0.0f;
+    std::array<float, 1000> frameTimes{};
+    float frameTimeMin = 9999.0f, frameTimeMax = 0.0f;
+    float lightTimer = 0.0f;
+};
+
 struct ArROI {
     int x;
     int y;
@@ -30,8 +67,9 @@ struct ArShadersPath {
 
 // ArModel passes queue and cmd pool from arEngine and used to store buffers and memory
 struct ArModel {
-    VkQueue transferQueue;
-    VkCommandPool transferCommandPool;
+
+    VkQueue transferQueue;              // TODO out from here. Use handles in arEngine
+    VkCommandPool transferCommandPool;  // TODO out from here. Use handles in arEngine
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
     uint32_t vertexCount{};
@@ -61,6 +99,8 @@ struct ArDescriptorInfo {
     uint32_t descriptorSetLayoutCount;  // How many descriptor layouts
     uint32_t descriptorSetCount;
     uint32_t *dataSizes;
+    VkSampler sampler;
+    VkImageView view;
 };
 
 
@@ -78,14 +118,15 @@ struct ArTextureImage {
 };
 
 struct ArBuffer {
-    VkDeviceSize bufferSize;
-    VkBufferUsageFlags bufferUsage;
-    VkMemoryPropertyFlags bufferProperties;
-    VkBuffer buffer;
-    VkDeviceMemory bufferMemory;
-    VkSharingMode sharingMode;
-    uint32_t queueFamilyIndexCount;
-    const uint32_t *pQueueFamilyIndices;
+    VkDeviceSize bufferSize{};
+    VkBufferUsageFlags bufferUsage{};
+    VkMemoryPropertyFlags bufferProperties{};
+    VkBuffer buffer{};
+    VkDeviceMemory bufferMemory{};
+    void* mapped = nullptr;
+    VkSharingMode sharingMode{};
+    uint32_t queueFamilyIndexCount{};
+    const uint32_t *pQueueFamilyIndices{};
 };
 
 

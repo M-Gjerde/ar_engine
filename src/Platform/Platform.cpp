@@ -5,7 +5,7 @@
 #include <set>
 #include "Platform.h"
 
-Platform::Platform(GLFWwindow *window, ArEngine *_arEngine) {
+ar::Platform::Platform(GLFWwindow *window, ArEngine *_arEngine) {
     createInstance();
     setDebugMessenger();
     createSurface(window);
@@ -14,12 +14,12 @@ Platform::Platform(GLFWwindow *window, ArEngine *_arEngine) {
     createSwapchain();
     createSwapchainImageViews();
     // Create commandPool for graphics queue
-    createCommandPool(&arEngine.commandPool, findQueueFamilies(arEngine.mainDevice.physicalDevice).graphicsFamily.value());
+    createCommandPool(&arEngine.commandPool, findQueueFamilies(arEngine.mainDevice.physicalDevice, arEngine.surface).graphicsFamily.value());
     *_arEngine = arEngine;
 }
 
 
-void Platform::createInstance() {
+void ar::Platform::createInstance() {
     if (!Validation::checkValidationLayerSupport()) {
         throw std::runtime_error("validation layers requested, but not available!");
     }
@@ -80,7 +80,7 @@ void Platform::createInstance() {
 
 }
 
-void Platform::createSurface(GLFWwindow *window) {
+void ar::Platform::createSurface(GLFWwindow *window) {
     if (glfwCreateWindowSurface(arEngine.instance, window, nullptr, &arEngine.surface) != VK_SUCCESS) {
         throw std::runtime_error("failed to create window surface!");
 
@@ -89,7 +89,7 @@ void Platform::createSurface(GLFWwindow *window) {
 }
 
 
-void Platform::setDebugMessenger() {
+void ar::Platform::setDebugMessenger() {
     if (!enableValidationLayers) return;
 
     VkDebugUtilsMessengerCreateInfoEXT createInfo;
@@ -101,7 +101,7 @@ void Platform::setDebugMessenger() {
     }
 }
 
-void Platform::cleanUp() {
+void ar::Platform::cleanUp() {
 
     for (auto imageView : arEngine.swapChainImageViews) {
         vkDestroyImageView(arEngine.mainDevice.device, imageView, nullptr);
@@ -119,7 +119,7 @@ void Platform::cleanUp() {
     vkDestroyInstance(arEngine.instance, nullptr);
 }
 
-VkPhysicalDevice_T *Platform::selectPhysicalDevice() const {
+VkPhysicalDevice_T *ar::Platform::selectPhysicalDevice() const {
     uint32_t deviceCount;
 
     VkResult result = vkEnumeratePhysicalDevices(arEngine.instance, &deviceCount, nullptr);
@@ -139,11 +139,11 @@ VkPhysicalDevice_T *Platform::selectPhysicalDevice() const {
     return devices[0];
 }
 
-void Platform::pickPhysicalDevice() {
+void ar::Platform::pickPhysicalDevice() {
     arEngine.mainDevice.physicalDevice = selectPhysicalDevice();
 }
 
-Platform::QueueFamilyIndices Platform::findQueueFamilies(VkPhysicalDevice device) const {
+ar::Platform::QueueFamilyIndices ar::Platform::findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface) {
     QueueFamilyIndices indices{};
 
     uint32_t queueFamilyCount = 0;
@@ -156,7 +156,7 @@ Platform::QueueFamilyIndices Platform::findQueueFamilies(VkPhysicalDevice device
     int i = 0;
     for (const auto &queueFamily : queueFamilies) {
         VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, arEngine.surface, &presentSupport);
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
 
         if (presentSupport) {
             indices.presentFamily = i;
@@ -177,12 +177,12 @@ Platform::QueueFamilyIndices Platform::findQueueFamilies(VkPhysicalDevice device
     return indices;
 }
 
-void Platform::createLogicalDevice() {
+void ar::Platform::createLogicalDevice() {
     // Check that we got all device extensions available
     if (!hasDeviceExtensionsSupport()) throw std::runtime_error("Device extension not available");
 
     // Specify which Queues we want to be able to handle
-    QueueFamilyIndices indices = findQueueFamilies(arEngine.mainDevice.physicalDevice);
+    QueueFamilyIndices indices = findQueueFamilies(arEngine.mainDevice.physicalDevice, arEngine.surface);
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
@@ -224,7 +224,7 @@ void Platform::createLogicalDevice() {
     vkGetDeviceQueue(arEngine.mainDevice.device, indices.computeFamily.value(), 0, &arEngine.computeQueue);
 }
 
-void Platform::createSwapchain() {
+void ar::Platform::createSwapchain() {
     SwapChainSupportDetails swapChainSupport = querySwapchainSupport(arEngine.mainDevice.physicalDevice);
 
     VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
@@ -272,7 +272,7 @@ void Platform::createSwapchain() {
     arEngine.swapChainImageViews.resize(imageCount);
 }
 
-bool Platform::hasDeviceExtensionsSupport() {
+bool ar::Platform::hasDeviceExtensionsSupport() {
     uint32_t extensionCount;
     vkEnumerateDeviceExtensionProperties(arEngine.mainDevice.physicalDevice, nullptr, &extensionCount, nullptr);
 
@@ -289,7 +289,7 @@ bool Platform::hasDeviceExtensionsSupport() {
     return requiredExtensions.empty();
 }
 
-Platform::SwapChainSupportDetails Platform::querySwapchainSupport(VkPhysicalDevice device) const {
+ar::Platform::SwapChainSupportDetails ar::Platform::querySwapchainSupport(VkPhysicalDevice device) const {
     SwapChainSupportDetails details;
 
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, arEngine.surface, &details.capabilities);
@@ -315,7 +315,7 @@ Platform::SwapChainSupportDetails Platform::querySwapchainSupport(VkPhysicalDevi
     return details;
 }
 
-VkSurfaceFormatKHR Platform::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) {
+VkSurfaceFormatKHR ar::Platform::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) {
     for (const auto &availableFormat : availableFormats) {
         if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
             availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
@@ -326,7 +326,7 @@ VkSurfaceFormatKHR Platform::chooseSwapSurfaceFormat(const std::vector<VkSurface
     return availableFormats[0];
 }
 
-VkPresentModeKHR Platform::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes) {
+VkPresentModeKHR ar::Platform::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes) {
     for (const auto &availablePresentMode : availablePresentModes) {
         if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
             return availablePresentMode;
@@ -336,7 +336,7 @@ VkPresentModeKHR Platform::chooseSwapPresentMode(const std::vector<VkPresentMode
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D Platform::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) {
+VkExtent2D ar::Platform::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) {
     if (capabilities.currentExtent.width != UINT32_MAX) {
         return capabilities.currentExtent;
     } else {
@@ -351,7 +351,7 @@ VkExtent2D Platform::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabiliti
     }
 }
 
-void Platform::createSwapchainImageViews() {
+void ar::Platform::createSwapchainImageViews() {
     for (size_t i = 0; i < arEngine.swapchainImages.size(); i++) {
         VkImageViewCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -374,8 +374,8 @@ void Platform::createSwapchainImageViews() {
     }
 }
 
-void Platform::createCommandPool(VkCommandPool *commandPool, uint32_t queueFamilyIndex) {
-    QueueFamilyIndices queueFamilyIndices = findQueueFamilies(arEngine.mainDevice.physicalDevice);
+void ar::Platform::createCommandPool(VkCommandPool *commandPool, uint32_t queueFamilyIndex) {
+    QueueFamilyIndices queueFamilyIndices = findQueueFamilies(arEngine.mainDevice.physicalDevice, arEngine.surface);
 
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -389,4 +389,4 @@ void Platform::createCommandPool(VkCommandPool *commandPool, uint32_t queueFamil
 }
 
 
-Platform::~Platform() = default;
+ar::Platform::~Platform() = default;

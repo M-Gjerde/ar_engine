@@ -14,7 +14,6 @@
 #include <opencv2/core.hpp>
 
 
-
 VulkanCompute::VulkanCompute(ArEngine mArEngine) {
     arEngine = std::move(mArEngine);
 }
@@ -46,7 +45,7 @@ void VulkanCompute::cleanup() {
 
 }
 
-void VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDescriptors, Platform *pPlatform,
+void VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDescriptors, ar::Platform *pPlatform,
                                          Pipeline pipeline) {
 
     //int width = 1280, height = 720;
@@ -136,8 +135,8 @@ void VulkanCompute::setupComputePipeline(Buffer *pBuffer, Descriptors *pDescript
 
     VkCommandBuffer commandBuffer;
     pPlatform->createCommandPool(&commandPool,
-                                 pPlatform->findQueueFamilies(
-                                         arEngine.mainDevice.physicalDevice).computeFamily.value());
+                                 ar::Platform::findQueueFamilies(
+                                         arEngine.mainDevice.physicalDevice, arEngine.surface).computeFamily.value());
 
 
     /*
@@ -264,7 +263,7 @@ void VulkanCompute::loadImagePreviewData(ArCompute arCompute, Buffer *pBuffer) c
 }
 
 
-cv::Mat VulkanCompute::readComputeResult(){
+cv::Mat VulkanCompute::readComputeResult() {
     // --- RETRIEVE DATA FROM GPU ---
     //int width = 1282, height = 1110;
     //int width = 1280, height = 720;
@@ -337,7 +336,7 @@ cv::Mat VulkanCompute::readComputeResult(){
     return img;
 }
 
-void VulkanCompute::executeComputeCommandBuffer(){
+void VulkanCompute::executeComputeCommandBuffer() {
     // --- EXECUTE COMMAND BUFFER ---
     auto start = std::chrono::high_resolution_clock::now();
     vkResetFences(arEngine.mainDevice.device, 1, &computeFence);
@@ -485,8 +484,8 @@ void VulkanCompute::loadComputeData(glm::vec4 roi, ArSharedMemory *memP) {
 
     pBuffer->copyBuffer(arModel, stagingBuffer, arCompute.descriptor.bufferObject[0]);
 
-    vkFreeMemory(arEngine.mainDevice.device, stagingBuffer.bufferMemory, nullptr);
-    vkDestroyBuffer(arEngine.mainDevice.device, stagingBuffer.buffer, nullptr);
+    vkFreeMemory(arEngine.device.device, stagingBuffer.bufferMemory, nullptr);
+    vkDestroyBuffer(arEngine.device.device, stagingBuffer.buffer, nullptr);
 
 */
 }

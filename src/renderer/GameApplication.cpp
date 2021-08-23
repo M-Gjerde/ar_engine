@@ -5,21 +5,23 @@
 #include <thread>
 #include "GameApplication.h"
 
+float frameLimiter = 0.015f;
 void AppExtension::update() {
-    double now = glfwGetTime();
-    deltaTime = now - lastTime;
-    lastTime = now;
+    deltaTime = glfwGetTime() - lastTime;
 
+    uiSettings.FPS = 1.0f / (float) (glfwGetTime() - lastTime);
+    uiSettings.frameLimiter = 1 / frameLimiter;
     // Keep update function at 24 frames per second
-    if (deltaTime < 0.03) {
-        auto timeToSleep = (unsigned int) ((0.03 - deltaTime) * 1000);
+    if (deltaTime < frameLimiter) {
+        auto timeToSleep = (unsigned int) ((frameLimiter - deltaTime) * 1000000);
         usleep(timeToSleep);
     }
 
-
+    lastTime = glfwGetTime();
 }
 
 int cameraIndex = 0;
+
 void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         std::cout << "exiting..." << std::endl;
@@ -39,6 +41,17 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
         vulkanRenderer.stopDisparityStream();
 
     }
+
+    if (key == GLFW_KEY_UP) {
+        if ((1 / frameLimiter) <= 1000)
+        frameLimiter -= 0.001f;
+
+    }
+
+    if (key == GLFW_KEY_DOWN) {
+        frameLimiter += 0.001f;
+    }
+
 
 
     if (key == GLFW_KEY_X && action == GLFW_PRESS) {
@@ -82,8 +95,8 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
 
     // rotate model according to yaw
     model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    if (cameraIndex == 1){
-        model = glm::rotate(model,  glm::radians((float)cameras[0]->yaw), glm::vec3(0.0f, -1.0f, 0.0f));
+    if (cameraIndex == 1) {
+        model = glm::rotate(model, glm::radians((float) cameras[0]->yaw), glm::vec3(0.0f, -1.0f, 0.0f));
     }
 
     // Make the model look nice
@@ -97,41 +110,77 @@ void AppExtension::keyCallback(GLFWwindow *window, int key, int scancode, int ac
     vulkanRenderer.updateCamera(cameras[cameraIndex]->getView(), cameras[cameraIndex]->getProjection());
 }
 
+bool hiddenCursor = false;
+bool lookAround = false;
+
+
 void AppExtension::cursorPosCallback(GLFWwindow *window, double _xPos, double _yPos) {
-    cameras[0]->lookAround(_xPos, _yPos);
+    ImGuiIO &io = ImGui::GetIO();
+    io.MousePos = ImVec2((float) _xPos, (float) _yPos);
 
-    // If we are in 3rd person mode then disable up and down movement
-    if (cameraIndex == 1) {
-        cameras[0]->cameraFront.y = 0.0f;
-        cameras[0]->cameraFront = glm::normalize(cameras[0]->cameraFront);;
-    }
 
-    // Only update 1st person camera for cursor callback
-    if (cameraIndex == 0) {
-        vulkanRenderer.updateCamera(cameras[0]->getView(), cameras[0]->getProjection());
+    if (lookAround) {
+        cameras[0]->lookAround(_xPos, _yPos);
+
+        // If we are in 3rd person mode then disable up and down movement
+        if (cameraIndex == 1) {
+            cameras[0]->cameraFront.y = 0.0f;
+            cameras[0]->cameraFront = glm::normalize(cameras[0]->cameraFront);;
+        }
+
+        // Only update 1st person camera for cursor callback
+        if (cameraIndex == 0) {
+            vulkanRenderer.updateCamera(cameras[0]->getView(), cameras[0]->getProjection());
+        }
     }
 }
 
-bool hiddenCursor = false;
 
 void AppExtension::mouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {
+
+    ImGuiIO &io = ImGui::GetIO();
+
+
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+        io.MouseDown[0] = true;
+
+        const bool hover = ImGui::IsAnyItemHovered();
 
         if (hiddenCursor) {
             hiddenCursor = false;
+            lookAround = false;
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); //Normal mouse mode input
-        } else {
+        } else if (!hover){
             hiddenCursor = true;
+            lookAround = true;
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // FPS mode mouse input
-
         }
+    }
+
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
+        io.MouseDown[0] = false;
+    }
+
+    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+        io.MouseDown[1] = true;
+    }
+
+    if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE) {
+        io.MouseDown[1] = false;
+    }
+
+
+
+/*
 
         printf("____________________________________________\n "
                "Camera data: yaw = %f\n", cameras[cameraIndex]->yaw);
 
         printf("cameraFront (x,y,z): %f, %f, %f\n", cameras[cameraIndex]->cameraFront.x,
-               cameras[cameraIndex]->cameraFront.y, cameras[cameraIndex]->cameraFront.z);
-    }
+cameras[cameraIndex]->cameraFront.y, cameras[cameraIndex]->cameraFront.z);
+
+*/
 
 }
+
 

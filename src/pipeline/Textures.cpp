@@ -71,12 +71,12 @@ void Textures::createTextureImage(std::string fileName, ArTextureImage *arTextur
 
     // Create image and bind image memory
     images->createImage(texWidth, texHeight, format, VK_IMAGE_TILING_LINEAR,
-                        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, arTextureSampler->textureImage,
-                        arTextureSampler->textureImageMemory, VK_IMAGE_LAYOUT_UNDEFINED);
+                        arTextureSampler->textureImageMemory, nullptr);
 
     // Transition image to transfer destination
-    transitionImageLayout(arTextureSampler->textureImage, format, VK_IMAGE_LAYOUT_UNDEFINED,
+    transitionImageLayout(arTextureSampler->textureImage, VK_IMAGE_LAYOUT_UNDEFINED,
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, arTextureSampler->transferCommandPool,
                           arTextureSampler->transferQueue);
 
@@ -86,7 +86,7 @@ void Textures::createTextureImage(std::string fileName, ArTextureImage *arTextur
                       arTextureSampler->transferQueue);
 
     // Transition image to present format
-    transitionImageLayout(arTextureSampler->textureImage, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+    transitionImageLayout(arTextureSampler->textureImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, arTextureSampler->transferCommandPool,
                           arTextureSampler->transferQueue);
 
@@ -94,8 +94,8 @@ void Textures::createTextureImage(std::string fileName, ArTextureImage *arTextur
 }
 
 void Textures::createTextureImageView(ArTextureImage *arTextureSampler) {
-    arTextureSampler->textureImageView = images->createImageView(arTextureSampler->textureImage, format,
-                                                                 VK_IMAGE_ASPECT_COLOR_BIT);
+    images->createImageView(arTextureSampler->textureImage, format,
+                            VK_IMAGE_ASPECT_COLOR_BIT, &arTextureSampler->textureImageView);
 }
 
 
@@ -126,15 +126,17 @@ void Textures::createTextureImage(ArTextureImage *arTexture, ArBuffer *textureBu
     // Create image and bind image memory
     images->createImage(arTexture->width, arTexture->height, format, VK_IMAGE_TILING_LINEAR,
                         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                        VK_IMAGE_LAYOUT_UNDEFINED,
                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, arTexture->textureImage, arTexture->textureImageMemory,
-                        VK_IMAGE_LAYOUT_UNDEFINED);
+                        nullptr);
 
     // Creating staging buffer
     textureBuffer->bufferSize = imageSize;
     textureBuffer->sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     images->createBuffer(textureBuffer);
 
-    arTexture->textureImageView = images->createImageView(arTexture->textureImage, format, VK_IMAGE_ASPECT_COLOR_BIT);
+    images->createImageView(arTexture->textureImage, format, VK_IMAGE_ASPECT_COLOR_BIT,
+                            &arTexture->textureImageView);
 
     createTextureSampler(arTexture);
 
@@ -165,7 +167,7 @@ void Textures::setDisparityImageTexture(ArTextureImage *arTextureSampler, ArBuff
 
 
     // Transition image to transfer destination
-    transitionImageLayout(arTextureSampler->textureImage, format, VK_IMAGE_LAYOUT_UNDEFINED,
+    transitionImageLayout(arTextureSampler->textureImage, VK_IMAGE_LAYOUT_UNDEFINED,
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, arTextureSampler->transferCommandPool,
                           arTextureSampler->transferQueue);
 
@@ -175,7 +177,7 @@ void Textures::setDisparityImageTexture(ArTextureImage *arTextureSampler, ArBuff
                       arTextureSampler->transferQueue);
 
     // Transition image to present format
-    transitionImageLayout(arTextureSampler->textureImage, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+    transitionImageLayout(arTextureSampler->textureImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, arTextureSampler->transferCommandPool,
                           arTextureSampler->transferQueue);
 
@@ -190,7 +192,7 @@ void Textures::setDisparityVideoTexture(ArTextureImage *videoTexture, ArBuffer *
 
 
     // Transition image to transfer destination
-    transitionImageLayout(videoTexture->textureImage, format, VK_IMAGE_LAYOUT_UNDEFINED,
+    transitionImageLayout(videoTexture->textureImage, VK_IMAGE_LAYOUT_UNDEFINED,
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, videoTexture->transferCommandPool,
                           videoTexture->transferQueue);
 
@@ -200,7 +202,7 @@ void Textures::setDisparityVideoTexture(ArTextureImage *videoTexture, ArBuffer *
                       videoTexture->transferQueue);
 
     // Transition image to present format
-    transitionImageLayout(videoTexture->textureImage, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+    transitionImageLayout(videoTexture->textureImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, videoTexture->transferCommandPool,
                           videoTexture->transferQueue);
 

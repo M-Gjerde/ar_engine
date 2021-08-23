@@ -8,37 +8,60 @@
 #include <array>
 #include <glm/gtc/matrix_transform.hpp>
 #include <chrono>
+#include <ar_engine/src/include/settings.h>
 #include "VulkanRenderer.hpp"
 #include "../include/stbi_image_write.h"
 #include "opencv2/opencv.hpp"
 #include "../include/helper_functions.h"
+#include "GUI.h"
 
+VulkanRenderer::VulkanRenderer() {
+    // Get number of max. concurrent threads
+    numThreads = std::thread::hardware_concurrency();
+    assert(numThreads > 0);
+    threadPool.setThreadCount(numThreads);
+    numObjectsPerThread = 256 / numThreads;
+    rndEngine.seed((uint32_t) 666);
 
-VulkanRenderer::VulkanRenderer() = default;
+}
 
-VulkanRenderer::~VulkanRenderer() = default;
 
 
 int VulkanRenderer::init(GLFWwindow *newWindow) {
     try {
-        platform = new Platform(newWindow, &arEngine);
-        buffer = new Buffer(arEngine.mainDevice); // TODO Remove this. Put it to use in abstract classes
-        descriptors = new Descriptors(arEngine); // TODO Remove this. Put it to use in abstract classes
+        // CLass handles with helper functions. Can be passed arbitrarily
+        platform = new ar::Platform(newWindow, &arEngine);
+        buffer = new Buffer(arEngine.mainDevice);
+        descriptors = new Descriptors(arEngine);
         images = new Images(arEngine.mainDevice, arEngine.swapchainExtent);
-
         textures = new Textures(images);
         vulkanCompute = new VulkanCompute(arEngine);
+        gui = new GUI(arEngine);
 
         createFrameBuffersAndRenderPass();
-
-
         createCommandBuffers();
         createSyncObjects();
         printf("Initiated vulkan\n");
 
-        initComputePipeline();
+        // Init GUI
 
+        gui->init(arEngine.swapchainExtent.width, arEngine.swapchainExtent.height);
+        gui->initResources(renderPass);
+        printf("Initiated imGUI\n");
+        initComputePipeline();
         printf("Initiated compute pipeline\n\n");
+
+        // Commandbuffers x2
+        prepareMultiThreadedRenderer();
+
+        // Initialize MeshRenderer Settings
+        meshGenerator = new MeshGenerator(arEngine, renderPass);
+
+        // Update global list of settings lastly
+        settings.push_back(meshGenerator->settings);
+        // Set the settings
+        gui->setSettings(settings);
+        //textRenderTest();
 
     } catch (std::runtime_error &err) {
         std::cerr << err.what() << std::endl;
@@ -47,11 +70,294 @@ int VulkanRenderer::init(GLFWwindow *newWindow) {
     return 0;
 }
 
+
+float VulkanRenderer::rnd(float range) {
+    std::uniform_real_distribution<float> rndDist(0.0f, range);
+    return rndDist(rndEngine);
+}
+
+void VulkanRenderer::prepareMultiThreadedRenderer() {
+    // Allocate commandBuffers
+
+    VkCommandBufferAllocateInfo cmdAllocateInfo = CommandBuffers::commandBufferAllocateInfo(arEngine.commandPool,
+                                                                                            VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+                                                                                            1);
+
+    VkResult result = vkAllocateCommandBuffers(arEngine.mainDevice.device, &cmdAllocateInfo, &primaryBuffer);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to allocate primary cmd buffer");
+    // Allocate secondary commandbuffers
+
+    VkCommandBufferAllocateInfo secondaryAllocateInfo = CommandBuffers::commandBufferAllocateInfo(arEngine.commandPool,
+                                                                                                  VK_COMMAND_BUFFER_LEVEL_SECONDARY,
+                                                                                                  1);
+
+    result = vkAllocateCommandBuffers(arEngine.mainDevice.device, &secondaryAllocateInfo, &secondaryCmdBuffers.objects);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to allocate secondary cmd buffer");
+    result = vkAllocateCommandBuffers(arEngine.mainDevice.device, &secondaryAllocateInfo, &secondaryCmdBuffers.ui);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to allocate secondary cmd buffer");
+    // Create one command pool for each thread
+    threadData.resize(numThreads);
+
+
+    for (int i = 0; i < numThreads; ++i) {
+        ThreadData *thread = &threadData[i];
+
+        VkCommandPoolCreateInfo cmdPoolInfo = CommandBuffers::commandPoolCreateInfo();
+        cmdPoolInfo.queueFamilyIndex = ar::Platform::findQueueFamilies(arEngine.mainDevice.physicalDevice,
+                                                                       arEngine.surface).graphicsFamily.value();
+        cmdPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        result = vkCreateCommandPool(arEngine.mainDevice.device, &cmdPoolInfo, nullptr, &thread->commandPool);
+        if (result != VK_SUCCESS)
+            throw std::runtime_error("Failed to create command pool");
+
+        // one secondary cmd buffer per object per thread
+        thread->commandBuffer.resize(numObjectsPerThread);
+        // Generate cmdbuffers
+        VkCommandBufferAllocateInfo secondaryCmdBufferAllocateInfo = CommandBuffers::commandBufferAllocateInfo(
+                thread->commandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY, thread->commandBuffer.size());
+
+        result = vkAllocateCommandBuffers(arEngine.mainDevice.device, &secondaryCmdBufferAllocateInfo,
+                                          thread->commandBuffer.data());
+        if (result != VK_SUCCESS)
+            throw std::runtime_error("Failed to allocate secondary cmdbuffers");
+
+        thread->objectData.resize(numObjectsPerThread);
+
+        for (int j = 0; j < numObjectsPerThread; ++j) {
+
+            thread->objectData[j].createDefaultSceneObject(arEngine);
+            thread->objectData[j].createPipeline(renderPass);
+
+            float theta = 2.0f * float(M_PI) * rnd(1.0f);
+            float phi = acos(1.0f - 2.0f * rnd(1.0f));
+            glm::vec3 pos(sin(phi) * cos(theta), 0.0f, cos(phi) * 35.0f);
+
+            glm::vec3 scale(0.1f, 0.1f, 0.1f);
+
+            glm::mat4 model = thread->objectData[j].getModel();
+
+            glm::vec3 position(0.0f, 0.0f, 0.0f);
+
+            position.x = (float) numThreads / 2;
+            position.z = (float) numObjectsPerThread / 4;
+
+            model = glm::translate(model, pos);
+            model = glm::scale(model, scale);
+            thread->objectData[j].setModel(model);
+
+
+        }
+
+    }
+}
+
+void VulkanRenderer::threadRenderCode(uint32_t threadIndex, uint32_t cmdBufferIndex,
+                                      VkCommandBufferInheritanceInfo inheritanceInfo) {
+    ThreadData *thread = &threadData[threadIndex];
+    SceneObject *sceneObject = &thread->objectData[cmdBufferIndex];
+
+
+    VkCommandBufferBeginInfo commandBufferBeginInfo = CommandBuffers::beginInfo();
+    commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    commandBufferBeginInfo.pInheritanceInfo = &inheritanceInfo;
+
+    VkCommandBuffer cmdBuffer = thread->commandBuffer[cmdBufferIndex];
+
+    VkResult result = vkBeginCommandBuffer(cmdBuffer, &commandBufferBeginInfo);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to begin command buffer");
+
+
+    vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, sceneObject->getArPipeline().pipeline);
+
+
+    vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            sceneObject->getArPipeline().pipelineLayout, 0,
+                            sceneObject->getArDescriptor().descriptorSets.size(),
+                            sceneObject->getArDescriptor().descriptorSets.data(), 0,
+                            nullptr);
+
+
+    VkDeviceSize offsets[1] = {0};
+    VkBuffer vertexBuffer = sceneObject->getVertexBuffer();
+    VkBuffer indexBuffer = sceneObject->getIndexBuffer();
+    vkCmdBindVertexBuffers(cmdBuffer, 0, 1, &vertexBuffer, offsets);
+    vkCmdBindIndexBuffer(cmdBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+    vkCmdDrawIndexed(cmdBuffer, sceneObject->getIndexCount(), 1, 0, 0, 0);
+    // Check visibility against view frustum using a simple sphere check based on the radius of the mesh
+    //objectData->visible = frustum.checkSphere(objectData->pos, models.ufo.dimensions.radius * 0.5f);
+
+    result = vkEndCommandBuffer(cmdBuffer);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to end command buffer");
+
+    // Also update descriptor
+
+    uboModelVar.model = sceneObject->getModel();
+
+
+
+
+}
+
+void VulkanRenderer::updateSecondaryCommandBuffers(VkCommandBufferInheritanceInfo inheritanceInfo) {
+
+    // Secondary command buffer for the sky sphere
+    VkCommandBufferBeginInfo commandBufferBeginInfo = CommandBuffers::beginInfo();
+    commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    commandBufferBeginInfo.pInheritanceInfo = &inheritanceInfo;
+    // Objects
+    VkResult result = vkBeginCommandBuffer(secondaryCmdBuffers.objects, &commandBufferBeginInfo);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to start recording objects cmdbuffer");
+
+    for (int j = 0; j < objects.size(); ++j) {
+        vkCmdBindPipeline(secondaryCmdBuffers.objects, VK_PIPELINE_BIND_POINT_GRAPHICS, arPipelines[j].pipeline);
+
+        VkBuffer vertexBuffers[] = {objects[j].getVertexBuffer()};
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(secondaryCmdBuffers.objects, 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(secondaryCmdBuffers.objects, objects[j].getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
+        vkCmdBindDescriptorSets(secondaryCmdBuffers.objects, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                arPipelines[j].pipelineLayout, 0, arDescriptors[j].descriptorSets.size(),
+                                arDescriptors[j].descriptorSets.data(), 0,
+                                nullptr);
+
+        vkCmdDrawIndexed(secondaryCmdBuffers.objects, objects[j].getIndexCount(), 1, 0, 0, 0);
+
+    }
+
+
+    result = vkEndCommandBuffer(secondaryCmdBuffers.objects);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to start recording objects cmdbuffer");
+
+
+    // UI
+    result = vkBeginCommandBuffer(secondaryCmdBuffers.ui, &commandBufferBeginInfo);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to start recording ui cmdbuffer");
+
+    // Have to skip some frames apparently.
+    for (int i = 0; i < 2; ++i) {
+        gui->newFrame(frameNumber == 0);
+    }
+    gui->updateBuffers();
+
+    gui->drawNewFrame(secondaryCmdBuffers.ui);
+
+    result = vkEndCommandBuffer(secondaryCmdBuffers.ui);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to stop recording ui cmdbuffer");
+
+
+}
+
+void VulkanRenderer::updateCommandBuffers(VkFramebuffer frameBuffer) {
+    // Contains the list of secondary command buffers to be submitted
+    std::vector<VkCommandBuffer> cmdBuffers;
+
+    VkCommandBufferBeginInfo cmdBufInfo = CommandBuffers::beginInfo();
+
+    VkClearValue clearValues[2];
+    clearValues[0].color = {0.25f, 0.25f, 0.25f, 1.0f};
+    clearValues[1].depthStencil = {1.0f, 0};
+
+    VkRenderPassBeginInfo renderPassBeginInfo{};
+    renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassBeginInfo.pNext = nullptr;
+    renderPassBeginInfo.renderPass = renderPass;
+    renderPassBeginInfo.renderArea.offset.x = 0;
+    renderPassBeginInfo.renderArea.offset.y = 0;
+    renderPassBeginInfo.renderArea.extent.width = arEngine.swapchainExtent.width;
+    renderPassBeginInfo.renderArea.extent.height = arEngine.swapchainExtent.height;
+    renderPassBeginInfo.clearValueCount = 2;
+    renderPassBeginInfo.pClearValues = clearValues;
+    renderPassBeginInfo.framebuffer = frameBuffer;
+
+    VkResult result = vkBeginCommandBuffer(primaryBuffer, &cmdBufInfo);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to begin primary command buffer");
+
+    // The primary command buffer does not contain any rendering commands
+    // These are stored (and retrieved) from the secondary command buffers
+    vkCmdBeginRenderPass(primaryBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+
+
+    // Inheritance info for the secondary command buffers
+    VkCommandBufferInheritanceInfo inheritanceInfo = CommandBuffers::inheritanceInfo();
+    inheritanceInfo.renderPass = renderPass;
+    // Secondary command buffer also use the currently active framebuffer
+    inheritanceInfo.framebuffer = frameBuffer;
+    inheritanceInfo.subpass = 0;
+    inheritanceInfo.occlusionQueryEnable = VK_FALSE;
+
+
+    // Update secondary scene command buffers
+    updateSecondaryCommandBuffers(inheritanceInfo);
+
+    cmdBuffers.push_back(secondaryCmdBuffers.objects);
+
+
+    // Add a job to the thread's queue for each object to be rendered
+    for (uint32_t t = 0; t < numThreads; t++) {
+        for (uint32_t i = 0; i < numObjectsPerThread; i++) {
+            threadPool.threads[t]->addJob([=] { threadRenderCode(t, i, inheritanceInfo); });
+        }
+    }
+    threadPool.wait();
+
+    // Only submit if object is within the current view frustum
+    for (uint32_t t = 0; t < numThreads; t++) {
+        for (uint32_t i = 0; i < numObjectsPerThread; i++) {
+            if (threadData[t].objectData[i].visible) {
+                cmdBuffers.push_back(threadData[t].commandBuffer[i]);
+            }
+        }
+    }
+
+    cmdBuffers.push_back(secondaryCmdBuffers.ui);
+
+
+    // Execute render commands from the secondary command buffer
+    vkCmdExecuteCommands(primaryBuffer, cmdBuffers.size(), cmdBuffers.data());
+
+    vkCmdEndRenderPass(primaryBuffer);
+
+    result = vkEndCommandBuffer(primaryBuffer);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to end record of commandBuffer");
+
+
+}
+
+VulkanRenderer::~VulkanRenderer() = default;
+
+
 void VulkanRenderer::cleanup() {
     vkDeviceWaitIdle(arEngine.mainDevice.device); // wait for GPU to finish rendering before we clean up resources
 
-    vulkanCompute->cleanup();
+    for (auto &thread : threadData) {
+        vkFreeCommandBuffers(arEngine.mainDevice.device, thread.commandPool, thread.commandBuffer.size(),
+                             thread.commandBuffer.data());
+        vkDestroyCommandPool(arEngine.mainDevice.device, thread.commandPool, nullptr);
 
+        for (auto &i : thread.objectData) {
+            descriptors->cleanUp(i.getArDescriptor());
+            i.cleanUp(arEngine.mainDevice.device);
+            pipeline.cleanUp(i.getArPipeline());
+        }
+    }
+
+
+    vulkanCompute->cleanup();
+    //commandBuffers->cleanUp();
+    gui->cleanUp();
+    delete gui;
     images->cleanUp(); // Clean up depth images
 
     for (auto &object : objects) {
@@ -76,13 +382,12 @@ void VulkanRenderer::cleanup() {
         vkDestroyFramebuffer(arEngine.mainDevice.device, framebuffer, nullptr);
     }
 
-    for (auto & arPipeline : arPipelines) {
+    for (auto &arPipeline : arPipelines) {
         pipeline.cleanUp(arPipeline);
 
     }
     platform->cleanUp();
 }
-
 
 
 void VulkanRenderer::draw() {
@@ -91,12 +396,18 @@ void VulkanRenderer::draw() {
     // and signals when it has finished rendering
     // 3. Present image to screen when it has signaled finished rendering
 
-    vkWaitForFences(arEngine.mainDevice.device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+    vkDeviceWaitIdle(arEngine.mainDevice.device);
 
+
+    vkWaitForFences(arEngine.mainDevice.device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
     uint32_t imageIndex;
     vkAcquireNextImageKHR(arEngine.mainDevice.device, arEngine.swapchain, UINT64_MAX,
                           imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+
+    //recordCommands();
+    updateCommandBuffers(swapChainFramebuffers[imageIndex]);
+
 
     // Check if a previous frame is using this image (i.e. there is its fence to wait on)
     if (imagesInFlight[imageIndex] != VK_NULL_HANDLE) {
@@ -107,8 +418,11 @@ void VulkanRenderer::draw() {
 
     // TODO check if this should be done different
     updateBuffer(imageIndex);
+
+
     if (updateDisparity)
         updateDisparityData();
+
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -120,8 +434,7 @@ void VulkanRenderer::draw() {
     submitInfo.pWaitDstStageMask = waitStages;
 
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffers[imageIndex];
-
+    submitInfo.pCommandBuffers = &primaryBuffer;
 
     VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
     submitInfo.signalSemaphoreCount = 1;
@@ -149,7 +462,7 @@ void VulkanRenderer::draw() {
     vkQueuePresentKHR(arEngine.presentQueue, &presentInfo);
 
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-
+    frameNumber++;
 }
 
 void VulkanRenderer::createFrameBuffersAndRenderPass() {
@@ -183,74 +496,26 @@ void VulkanRenderer::createFrameBuffersAndRenderPass() {
 }
 
 void VulkanRenderer::createCommandBuffers() {
+    /*
+    commandBuffers = new CommandBuffers(arEngine);
+    commandBuffers->createCommandPool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    commandBuffers->allocateCommandBuffers(swapChainFramebuffers.size(), VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+*/
     commandBuffers.resize(swapChainFramebuffers.size());
 
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = arEngine.commandPool;
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = (uint32_t) commandBuffers.size();
+    // TEXTRENDER ALSO ALLOCATE BUFFERS
+    VkCommandBufferAllocateInfo allocateInfo{};
+    allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocateInfo.commandPool = arEngine.commandPool;
+    allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocateInfo.commandBufferCount = (uint32_t) commandBuffers.size();
 
-    if (vkAllocateCommandBuffers(arEngine.mainDevice.device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
+    if (vkAllocateCommandBuffers(arEngine.mainDevice.device, &allocateInfo, commandBuffers.data()) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate command buffers!");
     }
 
 }
 
-void VulkanRenderer::recordCommand() {
-
-
-    for (size_t i = 0; i < commandBuffers.size(); i++) {
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-
-        if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo) != VK_SUCCESS) {
-            throw std::runtime_error("failed to begin recording command buffer!");
-        }
-
-        VkRenderPassBeginInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = renderPass;
-        renderPassInfo.framebuffer = swapChainFramebuffers[i];
-        renderPassInfo.renderArea.offset = {0, 0};
-        renderPassInfo.renderArea.extent = arEngine.swapchainExtent;
-        std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = {0.10f, 0.35f, 0.15f, 1.0f}; // gray
-        //clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};      // Black
-
-        clearValues[1].depthStencil = {1.0f, 0};
-
-        renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-        renderPassInfo.pClearValues = clearValues.data();
-
-        vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-        for (int j = 0; j < objects.size(); ++j) {
-            vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, arPipelines[j].pipeline);
-
-            VkBuffer vertexBuffers[] = {objects[j].getVertexBuffer()};
-            VkDeviceSize offsets[] = {0};
-            vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
-            vkCmdBindIndexBuffer(commandBuffers[i], objects[j].getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
-
-            vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                    arPipelines[j].pipelineLayout, 0, arDescriptors[j].descriptorSets.size(),
-                                    arDescriptors[j].descriptorSets.data(), 0,
-                                    nullptr);
-
-            vkCmdDrawIndexed(commandBuffers[i], objects[j].getIndexCount(), 1, 0, 0, 0);
-
-        }
-
-        vkCmdEndRenderPass(commandBuffers[i]);
-
-        if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
-            throw std::runtime_error("failed to FaceAugment command buffer!");
-        }
-    }
-
-}
 
 void VulkanRenderer::createSyncObjects() {
     imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
@@ -278,8 +543,34 @@ void VulkanRenderer::createSyncObjects() {
 }
 
 void VulkanRenderer::updateBuffer(uint32_t imageIndex) {
-    for (int i = 0; i < objects.size(); ++i) {
 
+    for (int i = 0; i < numThreads; ++i) {
+        ThreadData thread = threadData[i];
+        for (const auto& sceneObject : thread.objectData) {
+            uboModelVar.model = sceneObject.getModel();
+
+            // Copy vertex data
+            void *data;
+            vkMapMemory(arEngine.mainDevice.device, sceneObject.getArDescriptor().bufferMemory[0], 0,
+                        sceneObject.getArDescriptor().dataSizes[0],
+                        0, &data);
+            memcpy(data, &uboModelVar,
+                   sceneObject.getArDescriptor().dataSizes[0]);
+            vkUnmapMemory(arEngine.mainDevice.device, sceneObject.getArDescriptor().bufferMemory[0]);
+
+
+            // If current model has two buffers (e.g. fragment shader input then continue)
+            void *data2;
+            vkMapMemory(arEngine.mainDevice.device, sceneObject.getArDescriptor().bufferMemory[1], 0,
+                        sceneObject.getArDescriptor().dataSizes[1],
+                        0, &data2);
+            memcpy(data2, &fragmentColor, sceneObject.getArDescriptor().dataSizes[1]);
+            vkUnmapMemory(arEngine.mainDevice.device, sceneObject.getArDescriptor().bufferMemory[1]);
+        }
+    }
+
+
+    for (int i = 0; i < objects.size(); ++i) {
         uboModelVar.model = objects[i].getModel();
         // Copy vertex data
         void *data;
@@ -297,6 +588,8 @@ void VulkanRenderer::updateBuffer(uint32_t imageIndex) {
             vkUnmapMemory(arEngine.mainDevice.device, arDescriptors[i].bufferMemory[1]);
         }
     }
+
+
 }
 
 
@@ -324,14 +617,15 @@ void VulkanRenderer::updateDisparityVideoTexture() {
     textures->setDisparityVideoTexture(disparity, &videoTexture, &videoTextureBuffer);
 
     descriptors->createDescriptorsSampler(&arDescriptors[3], videoTexture);
-    recordCommand();
+    startRecordCommand();
      */
 
     // printf("Texture and re-FaceAugment cmd buffers time taken: %.7fs\n", (double) (clock() - Start) / CLOCKS_PER_SEC;);
 }
 
 void VulkanRenderer::setupSceneFromFile(std::vector<std::map<std::string, std::string>> modelSettings) {
-// Load in each model
+    // Load in each model
+
     for (int i = 0; i < modelSettings.size(); ++i) {
         SceneObject object(modelSettings[i], arEngine);
         object.createPipeline(renderPass);
@@ -347,12 +641,9 @@ void VulkanRenderer::setupSceneFromFile(std::vector<std::map<std::string, std::s
             fragmentColor.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
             fragmentColor.objectColor = glm::vec4(0.5f, 0.5f, 0.31f, 0.0f);
         }
-
     }
-    recordCommand();
+
 }
-
-
 
 void VulkanRenderer::initComputePipeline() {
     vulkanCompute->setupComputePipeline(buffer, descriptors, platform, pipeline);
@@ -439,33 +730,14 @@ void VulkanRenderer::updateDisparityData() {
 
 
 void VulkanRenderer::testFunction() {
-    float xyScale = 2.1;
-    float zScale = 5;
-    float scale = 5;
 
-    for (int i = 0; i < 16; ++i) {
-        for (int j = 0; j < 16; ++j) {
-            SceneObject object(arEngine);
-            object.createPipeline(renderPass);
-            // Push objects to global lists
-            arDescriptors.push_back(object.getArDescriptor());
-            arPipelines.push_back(object.getArPipeline());
+    meshGenerator->prepareResources();
+    SceneObject object = meshGenerator->getSceneObject();
 
-            glm::mat4 model = object.getModel();
-            model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
 
-            glm::vec3 noiseCoordinates((float) j * xyScale, (float) i * xyScale, 0.075f * zScale);
-            float noiseValue = -abs(getNoise(noiseCoordinates)) * scale;
-            std::cout << noiseValue << std::endl;
-            model = glm::translate(model, glm::vec3((float)j * 2, noiseValue, (float) i*2));
-            object.setModel(model);
-
-            objects.push_back(object);
-        }
-    }
-
-    recordCommand(); // TODO do in separate thread in order to speed up application
-
+    objects.push_back(object);
+    arPipelines.push_back(object.getArPipeline());
+    arDescriptors.push_back(object.getArDescriptor());
 }
 
 std::vector<SceneObject> VulkanRenderer::getSceneObjects() const {
@@ -482,6 +754,30 @@ void VulkanRenderer::stopDisparityStream() {
     updateDisparity = false;
     cv::destroyAllWindows();
     threadSpawner.stopChildProcess();
+}
+
+float sum = 0.0f;
+
+void VulkanRenderer::updateUI(UISettings uiSettings_) {
+    gui->uiSettings.frameTimes[frameNumber % 1000] = uiSettings_.FPS;
+    gui->uiSettings.frameLimiter = uiSettings_.frameLimiter;
+
+    sum += uiSettings_.FPS;
+    if ((frameNumber % 200) == 0) {
+        gui->uiSettings.average = sum / 200;
+        sum = 0;
+    }
+
+    onUIUpdate();
+    //std::rotate(gui->uiSettings.frameTimes.begin(), gui->uiSettings.frameTimes.begin() + (1),gui->uiSettings.frameTimes.end());
+    //gui.cleanUp();
+}
+
+void VulkanRenderer::onUIUpdate(){
+    settings = gui->getSettings();
+
+    meshGenerator->settings = settings[0];
+
 }
 
 

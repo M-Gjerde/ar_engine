@@ -96,7 +96,6 @@ void Descriptors::createSetPool(ArDescriptorInfo info, ArDescriptor *pDescriptor
     }
 
 
-
     VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = {};
     descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     descriptorPoolCreateInfo.maxSets = info.descriptorCount;                                        // We are not going to allocate more
@@ -131,13 +130,22 @@ void Descriptors::createDescriptorSets(ArDescriptorInfo info, ArDescriptor *pDes
     int loop = 0;
     for (int i = 0; i < info.descriptorSetCount; ++i) {
         std::vector<VkWriteDescriptorSet> setWrites;
+        std::vector<VkDescriptorImageInfo> imageInfos(*info.pDescriptorSplitCount);
         std::vector<VkDescriptorBufferInfo> bufferInfos(*info.pDescriptorSplitCount);
         for (int index = 0; index < *info.pDescriptorSplitCount; ++index) {
-            // Buffer info and data offset info
-            // VIEW PROJECTION DESCRIPTOR
-            bufferInfos[index].buffer = pDescriptor->buffer[loop];                       // Buffer to get data from
-            bufferInfos[index].offset = 0;                                               // Offset into the data
-            bufferInfos[index].range = info.dataSizes[loop];                             // Size of the data that is going to be bound to the descriptor set
+            if (*info.pDescriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+                imageInfos[index].imageView = info.view;
+                imageInfos[index].sampler = info.sampler;
+                imageInfos[index].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            } else {
+                // Buffer info and data offset info
+                // VIEW PROJECTION DESCRIPTOR
+                bufferInfos[index].buffer = pDescriptor->buffer[loop];                       // Buffer to get data from
+                bufferInfos[index].offset = 0;                                               // Offset into the data
+                bufferInfos[index].range = info.dataSizes[loop];                             // Size of the data that is going to be bound to the descriptor set
+
+            }
+
 
             // Data about connection between binding and buffer
             VkWriteDescriptorSet writeDescriptorSet = {};
@@ -147,7 +155,11 @@ void Descriptors::createDescriptorSets(ArDescriptorInfo info, ArDescriptor *pDes
             writeDescriptorSet.dstArrayElement = 0;                                // Index in the array we want to update
             writeDescriptorSet.descriptorType = *info.pDescriptorType;             // Type of descriptor we are updating
             writeDescriptorSet.descriptorCount = 1;                                // Amount to update
-            writeDescriptorSet.pBufferInfo = &bufferInfos[index];                          // Information about buffer data to bind
+            if (*info.pDescriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+                writeDescriptorSet.pImageInfo = &imageInfos[index];                          // Information about buffer data to bind
+            } else {
+                writeDescriptorSet.pBufferInfo = &bufferInfos[index];                        // Information about buffer data to bind
+            }
             setWrites.push_back(writeDescriptorSet);
             info.pBindings++;
             info.pDescriptorType++;

@@ -4,17 +4,21 @@ project(ar_engine)
 set(CMAKE_CXX_STANDARD 17)
 
 # Include Vulkan and OpenCL from AMD drivers
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -I/usr/local/include/opencv4 -I/home/magnus/libraries/dlib/")
 set(CMAKE_BUILD_TYPE Debug)
 
 find_package(glm REQUIRED)
 find_package(Vulkan REQUIRED)
 find_package(glfw3 REQUIRED)
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 4.0.0 REQUIRED)
 
 ## JSON Parser
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 add_subdirectory(external/json)
+
+## TinyOBJ LOader
+set(TinyObj external/tinyobjloader)
+include_directories(${TinyObj}  ..)
 
 #DLIB
 add_subdirectory($ENV{HOME}/libraries/dlib dlib_build)
@@ -30,74 +34,81 @@ add_subdirectory($ENV{HOME}/libraries/dlib dlib_build)
 #FetchContent_MakeAvailable(dlib)
 
 
-add_library(videoStream
-        src/FaceAugment/ThreadSpawner.cpp
-        src/FaceAugment/ThreadSpawner.h
-        src/FaceAugment/RealsenseStreamer.cpp
-        src/FaceAugment/RealsenseStreamer.h
-        src/FaceAugment/FaceDetector.cpp
-        src/FaceAugment/FaceDetector.h)
+
+message(STATUS "Adding camera library source files")
+FILE(GLOB VIDEO_STREAM_SRC src/FaceAugment/*.cpp src/FaceAugment/*.h)
+add_library(videoStream ${VIDEO_STREAM_SRC})
 
 target_link_libraries(videoStream
-        ${OpenCV_LIBS}
         -lv4l2
+        ${OpenCV_LIBS}
         -lrealsense2
         dlib::dlib
         )
 
+message(STATUS "Adding Perlin noise files")
+FILE(GLOB PERLIN_SRC external/Perlin_Noise/*)
+add_library(Perlin ${PERLIN_SRC})
 
 # Ties vulkanRenderer with helper classes
+message(STATUS "Adding platform files")
+FILE(GLOB PLATFORM_SRC src/Platform/*.cpp src/Platform/*.h)
+add_library(Platform ${PLATFORM_SRC} src/Platform/threadPool.h src/Platform/benchmark.h)
+target_link_libraries(Platform nlohmann_json::nlohmann_json)
+
+message(STATUS "Adding pipeline files")
+FILE(GLOB PIPELINE_SRC src/pipeline/*.cpp src/pipeline/*.h)
+add_library(Pipeline ${PIPELINE_SRC})
+
+message(STATUS "Adding model loading files")
+FILE(GLOB MODEL_SRC src/Models/*.cpp src/Models/*.h)
+add_library(Models ${MODEL_SRC})
+target_link_libraries(Models nlohmann_json::nlohmann_json Perlin)
+
+# IMGUI
+# Dear ImGui
+set(IMGUI_DIR external/imgui)
+include_directories(${IMGUI_DIR} ${IMGUI_DIR}/backends ..)
+
+message(STATUS "Adding GUI library files")
+FILE(GLOB GUI_SRC src/renderer/GUI.cpp src/renderer/GUI.h ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp ${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp ${IMGUI_DIR}/imgui.cpp ${IMGUI_DIR}/imgui_draw.cpp ${IMGUI_DIR}/imgui_demo.cpp ${IMGUI_DIR}/imgui_tables.cpp ${IMGUI_DIR}/imgui_widgets.cpp)
+add_library(GUI ${GUI_SRC})
+target_link_libraries(GUI)
+
 add_library(VulkanRenderer
+        src/Models/SceneObject.cpp
+        src/Models/SceneObject.h
+        src/renderer/VulkanCompute.cpp
+        src/renderer/VulkanCompute.h
         src/renderer/VulkanRenderer.cpp
         src/renderer/VulkanRenderer.hpp
         src/include/Validation.h
-        src/pipeline/Buffer.cpp
-        src/pipeline/Buffer.h
-        src/pipeline/Pipeline.cpp
-        src/pipeline/Pipeline.h
-        src/Platform/Platform.cpp
-        src/Platform/Platform.h
-        src/Models/Mesh.cpp
-        src/Models/Mesh.h
-        src/pipeline/Descriptors.cpp
-        src/pipeline/Descriptors.h
         src/include/structs.h
-        src/Platform/Camera.cpp
-        src/Platform/Camera.h
-        src/pipeline/Images.cpp
-        src/pipeline/Images.h
-        src/pipeline/Textures.cpp
-        src/pipeline/Textures.h
         src/include/stb_image.h
         src/include/stbi_image_write.h
-        src/Models/MeshModel.cpp
-        src/Models/MeshModel.h
-        src/Platform/LoadSettings.cpp
-        src/Platform/LoadSettings.h
-        src/renderer/VulkanCompute.cpp
-        src/renderer/VulkanCompute.h
         src/include/helper_functions.h
-        src/Models/SceneObject.cpp
-        src/Models/SceneObject.h
+        src/include/MeshGenerator.h
+        src/renderer/LoadSettings.cpp
+        src/renderer/LoadSettings.h
         )
 
 target_link_libraries(VulkanRenderer
         vulkan
-        nlohmann_json::nlohmann_json
         videoStream
-        ${OpenCV_LIBS}
         -lnoise
+        Platform
+        Pipeline
+        Models
+        GUI
         )
 
 add_executable(engine main.cpp
-        external/tinyobj/tiny_obj_loader.h
         src/renderer/GameApplication.cpp
         src/renderer/GameApplication.h)
 
 target_link_libraries(engine
         glfw ${GLFW_LIBRARIES}
         VulkanRenderer
-        nlohmann_json::nlohmann_json
         )
 
 
