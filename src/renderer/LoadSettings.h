@@ -7,7 +7,7 @@
 
 #include <nlohmann/json.hpp>
 #include <iostream>
-#include "../renderer/VulkanRenderer.hpp"
+#include "VulkanRenderer.hpp"
 
 class LoadSettings {
 

@@ -298,8 +298,8 @@ void GUI::initResources(VkRenderPass renderPass) {
 
 // Starts a new imGui frame and sets up windows and ui elements
 void GUI::newFrame(bool updateFrameGraph) {
-    ImGui::NewFrame();
 
+    ImGui::NewFrame();
     // Init imGui windows and elements
     ImGui::SetWindowSize("Debug Information", ImVec2(200, 400));
     ImVec4 clear_color = ImColor(114, 144, 154);
@@ -316,6 +316,22 @@ void GUI::newFrame(bool updateFrameGraph) {
     float pos[] = {3, 3, 3};
     ImGui::InputFloat3("position", pos, "2");
     ImGui::InputFloat3("rotation", pos, "2");
+
+    // Input Available settings
+    // Reload Shader
+    // Reload Mesh with different settings
+    for (auto & setting : settings) {
+        if (setting.active){
+            if (setting.type == "slider"){
+                ImGui::SliderFloat(setting.name.c_str(), &setting.val, setting.minRange, setting.maxRange);
+
+            }
+        }
+
+    }
+
+
+    // Re-run Mesh generator
 
     ImGui::SetNextWindowSize(ImVec2(200, 200), ImGuiCond_FirstUseEver);
     ImGui::Begin("Example settings");
@@ -445,6 +461,14 @@ void GUI::drawNewFrame(VkCommandBuffer commandBuffer) {
 
 void GUI::drawNewFrame(VkRenderPass renderPass, std::vector<VkFramebuffer> framebuffers) {
 
+}
+
+void GUI::setSettings(std::vector<ArGuiSliderMeshGenerator> _settings) {
+    settings = std::move(_settings);
+}
+
+std::vector<ArGuiSliderMeshGenerator> GUI::getSettings(){
+    return settings;
 }
 
 /*

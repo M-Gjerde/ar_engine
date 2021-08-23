@@ -46,6 +46,9 @@ target_link_libraries(videoStream
         dlib::dlib
         )
 
+message(STATUS "Adding Perlin noise files")
+FILE(GLOB PERLIN_SRC external/Perlin_Noise/*)
+add_library(Perlin ${PERLIN_SRC})
 
 # Ties vulkanRenderer with helper classes
 message(STATUS "Adding platform files")
@@ -60,7 +63,7 @@ add_library(Pipeline ${PIPELINE_SRC})
 message(STATUS "Adding model loading files")
 FILE(GLOB MODEL_SRC src/Models/*.cpp src/Models/*.h)
 add_library(Models ${MODEL_SRC})
-target_link_libraries(Models nlohmann_json::nlohmann_json)
+target_link_libraries(Models nlohmann_json::nlohmann_json Perlin)
 
 # IMGUI
 # Dear ImGui
@@ -84,6 +87,9 @@ add_library(VulkanRenderer
         src/include/stb_image.h
         src/include/stbi_image_write.h
         src/include/helper_functions.h
+        src/include/MeshGenerator.h
+        src/renderer/LoadSettings.cpp
+        src/renderer/LoadSettings.h
         )
 
 target_link_libraries(VulkanRenderer

@@ -18,7 +18,7 @@
 #include <ar_engine/src/Platform/Platform.h>
 #include <ar_engine/src/FaceAugment/FaceDetector.h>
 #include <ar_engine/src/pipeline/Textures.h>
-#include <ar_engine/src/Models/MeshGenerator.h>
+#include <ar_engine/src/include/MeshGenerator.h>
 
 class VulkanRenderer {
 
@@ -80,12 +80,13 @@ private:
     VkRenderPass renderPass{};
     VkRenderPass textRenderPass{};
     std::vector<VkCommandBuffer> commandBuffers;
-    MeshGenerator* meshGenerator;
 
     // UI components
     bool visible = false;
     GUI *gui{};
     uint32_t frameNumber = 0;
+    std::vector<ArGuiSliderMeshGenerator> settings;
+    MeshGenerator *meshGenerator;
 
     // Compute pipeline
     VulkanCompute *vulkanCompute{};
@@ -152,6 +153,8 @@ private:
     void updateSecondaryCommandBuffers(VkCommandBufferInheritanceInfo inheritanceInfo);
 
     void updateCommandBuffers(VkFramebuffer frameBuffer);
+
+    void onUIUpdate();
 };
 
 

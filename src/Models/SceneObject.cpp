@@ -10,7 +10,7 @@
 #include "SceneObject.h"
 #include "../include/structs.h"
 #include "MeshModel.h"
-#include "../Platform/LoadSettings.h"
+#include "ar_engine/src/renderer/LoadSettings.h"
 
 // Create sceneobjects from file
 SceneObject::SceneObject(std::map<std::string, std::string> modelSettings, ArEngine mArEngine) {

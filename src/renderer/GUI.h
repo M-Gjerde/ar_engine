@@ -17,18 +17,27 @@ class GUI {
 public:
     CommandBuffers *commandBuffers;
     UISettings uiSettings;
+    std::vector<ArGuiSliderMeshGenerator> settings;
 
     explicit GUI(ArEngine mArEngine);
+
     ~GUI();
 
+    void setSettings(std::vector<ArGuiSliderMeshGenerator> settings);
+    std::vector<ArGuiSliderMeshGenerator> getSettings();
+
     void initResources(VkRenderPass renderPass);
+
     void updateBuffers();
+
     void cleanUp();
 
     void init(uint32_t width, uint32_t height);
+
     void newFrame(bool updateFrameGraph);
 
     void drawNewFrame(VkRenderPass renderPass, std::vector<VkFramebuffer> framebuffers);
+
     void drawNewFrame(VkCommandBuffer commandBuffer);
 
 private:
@@ -37,10 +46,10 @@ private:
 
     VkDevice device;
     ArEngine arEngine;
-    Images* images;
-    Buffer* buffer;
+    Images *images;
+    Buffer *buffer;
     Descriptors *descriptors;
-    Pipeline* pipeline;
+    Pipeline *pipeline;
 
     VkImage image;
     VkImageView imageView;

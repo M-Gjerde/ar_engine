@@ -14,6 +14,15 @@
 #include <string>
 #include <array>
 
+struct ArGuiSliderMeshGenerator {
+    std::string name;
+    float val = 0.0f;
+    float minRange;
+    float maxRange;
+    bool active = false;
+    std::string type;
+};
+
 struct ThreadPushConstantBlock {
     glm::mat4 mvp;
     glm::vec3 color;

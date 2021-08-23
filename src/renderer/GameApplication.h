@@ -19,7 +19,7 @@
 #include <imgui_impl_glfw.h>
 #include "VulkanRenderer.hpp"
 #include "../Platform/Camera.h"
-#include "../Platform/LoadSettings.h"
+#include "LoadSettings.h"
 #include "../FaceAugment/ThreadSpawner.h"
 
 #include "imgui.h"

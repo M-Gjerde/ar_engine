@@ -25,6 +25,52 @@ VulkanRenderer::VulkanRenderer() {
 
 }
 
+
+
+int VulkanRenderer::init(GLFWwindow *newWindow) {
+    try {
+        // CLass handles with helper functions. Can be passed arbitrarily
+        platform = new ar::Platform(newWindow, &arEngine);
+        buffer = new Buffer(arEngine.mainDevice);
+        descriptors = new Descriptors(arEngine);
+        images = new Images(arEngine.mainDevice, arEngine.swapchainExtent);
+        textures = new Textures(images);
+        vulkanCompute = new VulkanCompute(arEngine);
+        gui = new GUI(arEngine);
+
+        createFrameBuffersAndRenderPass();
+        createCommandBuffers();
+        createSyncObjects();
+        printf("Initiated vulkan\n");
+
+        // Init GUI
+
+        gui->init(arEngine.swapchainExtent.width, arEngine.swapchainExtent.height);
+        gui->initResources(renderPass);
+        printf("Initiated imGUI\n");
+        initComputePipeline();
+        printf("Initiated compute pipeline\n\n");
+
+        // Commandbuffers x2
+        prepareMultiThreadedRenderer();
+
+        // Initialize MeshRenderer Settings
+        meshGenerator = new MeshGenerator(arEngine, renderPass);
+
+        // Update global list of settings lastly
+        settings.push_back(meshGenerator->settings);
+        // Set the settings
+        gui->setSettings(settings);
+        //textRenderTest();
+
+    } catch (std::runtime_error &err) {
+        std::cerr << err.what() << std::endl;
+        return -1;
+    }
+    return 0;
+}
+
+
 float VulkanRenderer::rnd(float range) {
     std::uniform_real_distribution<float> rndDist(0.0f, range);
     return rndDist(rndEngine);
@@ -291,41 +337,6 @@ void VulkanRenderer::updateCommandBuffers(VkFramebuffer frameBuffer) {
 
 VulkanRenderer::~VulkanRenderer() = default;
 
-
-int VulkanRenderer::init(GLFWwindow *newWindow) {
-    try {
-        // CLass handles with helper functions. Can be passed arbitrarily
-        platform = new ar::Platform(newWindow, &arEngine);
-        buffer = new Buffer(arEngine.mainDevice);
-        descriptors = new Descriptors(arEngine);
-        images = new Images(arEngine.mainDevice, arEngine.swapchainExtent);
-        textures = new Textures(images);
-        vulkanCompute = new VulkanCompute(arEngine);
-        gui = new GUI(arEngine);
-
-        createFrameBuffersAndRenderPass();
-        createCommandBuffers();
-        createSyncObjects();
-        printf("Initiated vulkan\n");
-
-        // Init GUI
-        gui->init(arEngine.swapchainExtent.width, arEngine.swapchainExtent.height);
-        gui->initResources(renderPass);
-        printf("Initiated imGUI\n");
-        initComputePipeline();
-        printf("Initiated compute pipeline\n\n");
-
-        // Commandbuffers x2
-        prepareMultiThreadedRenderer();
-
-        //textRenderTest();
-
-    } catch (std::runtime_error &err) {
-        std::cerr << err.what() << std::endl;
-        return -1;
-    }
-    return 0;
-}
 
 void VulkanRenderer::cleanup() {
     vkDeviceWaitIdle(arEngine.mainDevice.device); // wait for GPU to finish rendering before we clean up resources
@@ -720,15 +731,13 @@ void VulkanRenderer::updateDisparityData() {
 
 void VulkanRenderer::testFunction() {
 
-    meshGenerator = new MeshGenerator(arEngine, renderPass);
     meshGenerator->prepareResources();
     SceneObject object = meshGenerator->getSceneObject();
+
 
     objects.push_back(object);
     arPipelines.push_back(object.getArPipeline());
     arDescriptors.push_back(object.getArDescriptor());
-
-
 }
 
 std::vector<SceneObject> VulkanRenderer::getSceneObjects() const {
@@ -759,11 +768,16 @@ void VulkanRenderer::updateUI(UISettings uiSettings_) {
         sum = 0;
     }
 
-
+    onUIUpdate();
     //std::rotate(gui->uiSettings.frameTimes.begin(), gui->uiSettings.frameTimes.begin() + (1),gui->uiSettings.frameTimes.end());
-
-
     //gui.cleanUp();
+}
+
+void VulkanRenderer::onUIUpdate(){
+    settings = gui->getSettings();
+
+    meshGenerator->settings = settings[0];
+
 }
 
 
