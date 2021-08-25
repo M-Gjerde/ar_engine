@@ -2,7 +2,6 @@
 // Created by magnus on 9/21/20.
 //
 
-#include <thread>
 #include "GameApplication.h"
 
 float frameLimiter = 0.015f;
@@ -16,7 +15,6 @@ void AppExtension::update() {
         auto timeToSleep = (unsigned int) ((frameLimiter - deltaTime) * 1000000);
         usleep(timeToSleep);
     }
-
     lastTime = glfwGetTime();
 }
 

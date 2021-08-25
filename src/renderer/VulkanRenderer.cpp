@@ -17,25 +17,24 @@
 
 VulkanRenderer::VulkanRenderer() {
     // Get number of max. concurrent threads
-    numThreads = std::thread::hardware_concurrency();
+    numThreads = std::thread::hardware_concurrency() / 6;
     assert(numThreads > 0);
     threadPool.setThreadCount(numThreads);
-    numObjectsPerThread = 256 / numThreads;
+    numObjectsPerThread = 6 / numThreads;
     rndEngine.seed((uint32_t) 666);
-
 }
-
-
 
 int VulkanRenderer::init(GLFWwindow *newWindow) {
     try {
+        int a = 0;
+        auto k = &a;
         // CLass handles with helper functions. Can be passed arbitrarily
         platform = new ar::Platform(newWindow, &arEngine);
         buffer = new Buffer(arEngine.mainDevice);
         descriptors = new Descriptors(arEngine);
         images = new Images(arEngine.mainDevice, arEngine.swapchainExtent);
-        textures = new Textures(images);
-        vulkanCompute = new VulkanCompute(arEngine);
+        //textures = new Textures(images);
+        //vulkanCompute = new VulkanCompute(arEngine);
         gui = new GUI(arEngine);
 
         createFrameBuffersAndRenderPass();
@@ -48,7 +47,7 @@ int VulkanRenderer::init(GLFWwindow *newWindow) {
         gui->init(arEngine.swapchainExtent.width, arEngine.swapchainExtent.height);
         gui->initResources(renderPass);
         printf("Initiated imGUI\n");
-        initComputePipeline();
+        //initComputePipeline();
         printf("Initiated compute pipeline\n\n");
 
         // Commandbuffers x2
@@ -58,7 +57,7 @@ int VulkanRenderer::init(GLFWwindow *newWindow) {
         meshGenerator = new MeshGenerator(arEngine, renderPass);
 
         // Update global list of settings lastly
-        settings.push_back(meshGenerator->settings);
+        settings = meshGenerator->settings;
         // Set the settings
         gui->setSettings(settings);
         //textRenderTest();
@@ -199,8 +198,6 @@ void VulkanRenderer::threadRenderCode(uint32_t threadIndex, uint32_t cmdBufferIn
     uboModelVar.model = sceneObject->getModel();
 
 
-
-
 }
 
 void VulkanRenderer::updateSecondaryCommandBuffers(VkCommandBufferInheritanceInfo inheritanceInfo) {
@@ -295,6 +292,7 @@ void VulkanRenderer::updateCommandBuffers(VkFramebuffer frameBuffer) {
     inheritanceInfo.framebuffer = frameBuffer;
     inheritanceInfo.subpass = 0;
     inheritanceInfo.occlusionQueryEnable = VK_FALSE;
+    inheritanceInfo.queryFlags = 0;
 
 
     // Update secondary scene command buffers
@@ -546,7 +544,7 @@ void VulkanRenderer::updateBuffer(uint32_t imageIndex) {
 
     for (int i = 0; i < numThreads; ++i) {
         ThreadData thread = threadData[i];
-        for (const auto& sceneObject : thread.objectData) {
+        for (const auto &sceneObject : thread.objectData) {
             uboModelVar.model = sceneObject.getModel();
 
             // Copy vertex data
@@ -731,13 +729,7 @@ void VulkanRenderer::updateDisparityData() {
 
 void VulkanRenderer::testFunction() {
 
-    meshGenerator->prepareResources();
-    SceneObject object = meshGenerator->getSceneObject();
-
-
-    objects.push_back(object);
-    arPipelines.push_back(object.getArPipeline());
-    arDescriptors.push_back(object.getArDescriptor());
+    onUIUpdate();
 }
 
 std::vector<SceneObject> VulkanRenderer::getSceneObjects() const {
@@ -768,15 +760,75 @@ void VulkanRenderer::updateUI(UISettings uiSettings_) {
         sum = 0;
     }
 
-    onUIUpdate();
+
     //std::rotate(gui->uiSettings.frameTimes.begin(), gui->uiSettings.frameTimes.begin() + (1),gui->uiSettings.frameTimes.end());
     //gui.cleanUp();
 }
 
-void VulkanRenderer::onUIUpdate(){
+bool update = true;
+
+void VulkanRenderer::onUIUpdate() {
     settings = gui->getSettings();
 
-    meshGenerator->settings = settings[0];
+
+    for (auto &setting: gui->getSettings()) {
+        if (setting.active && setting.update) {
+
+            int k = 0;
+            auto a = &k;
+
+            ArShadersPath shadersPath{};
+            ArModel arModel{};
+            ArDescriptorInfo descriptorInfo{};
+
+            meshGenerator->update(settings, &arModel);
+
+
+            shadersPath.fragmentShader = "phongLightFrag";
+            shadersPath.vertexShader = "defaultVert";
+
+
+            // DescriptorInfo
+            // Create descriptor
+            // Font uses a separate descriptor pool
+            // poolcount and descriptor set counts
+            descriptorInfo.descriptorPoolCount = 1;
+            descriptorInfo.descriptorCount = 2;
+            descriptorInfo.descriptorSetLayoutCount = 2;
+            descriptorInfo.descriptorSetCount = 2;
+            std::vector<uint32_t> descriptorCounts;
+            descriptorCounts.push_back(1);
+            descriptorCounts.push_back(1);
+            descriptorInfo.pDescriptorSplitCount = descriptorCounts.data();
+            std::vector<uint32_t> bindings;
+            bindings.push_back(0);
+            bindings.push_back(1);
+            descriptorInfo.pBindings = bindings.data();
+            // dataSizes
+            std::vector<uint32_t> dataSizes;
+            dataSizes.push_back(sizeof(uboModel));
+            dataSizes.push_back(sizeof(FragmentColor));
+            descriptorInfo.dataSizes = dataSizes.data();
+            // types
+            std::vector<VkDescriptorType> types(2);
+            types[0] = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            types[1] = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptorInfo.pDescriptorType = types.data();
+            // stages
+            std::array<VkShaderStageFlags, 2> stageFlags = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
+            descriptorInfo.stageFlags = stageFlags.data();
+
+            SceneObject object(arEngine, shadersPath, arModel, descriptorInfo);
+            object.createPipeline(renderPass);
+
+            /*
+            objects.push_back(object);
+            arPipelines.push_back(object.getArPipeline());
+            arDescriptors.push_back(object.getArDescriptor());
+*/
+            setting.update = false;
+        }
+    }
 
 }
 

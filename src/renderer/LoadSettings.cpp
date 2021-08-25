@@ -2,8 +2,7 @@
 // Created by magnus on 11/1/20.
 //
 
-#include <fstream>
-#include <utility>
+
 #include "LoadSettings.h"
 
 
@@ -11,7 +10,6 @@ LoadSettings::LoadSettings(std::string file) {
     fPath = std::move(file);
     init();
 }
-
 
 void LoadSettings::init() {
 
@@ -52,6 +50,7 @@ const std::vector<std::map<std::string, std::string>> &LoadSettings::getSceneObj
     return sceneObjects;
 }
 
+/*
 void LoadSettings::saveScene(const VulkanRenderer& vulkanRenderer) {
     std::vector<SceneObject> objects = vulkanRenderer.getSceneObjects();
 
@@ -71,3 +70,4 @@ void LoadSettings::saveScene(const VulkanRenderer& vulkanRenderer) {
 
 }
 
+*/

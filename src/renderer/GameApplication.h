@@ -21,6 +21,7 @@
 #include "../Platform/Camera.h"
 #include "LoadSettings.h"
 #include "../FaceAugment/ThreadSpawner.h"
+#include <thread>
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"

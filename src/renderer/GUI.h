@@ -8,6 +8,8 @@
 #include <vulkan/vulkan_core.h>
 #include <ar_engine/src/pipeline/CommandBuffers.h>
 #include "imgui.h"
+#include <algorithm>
+#include <utility>
 
 #include "../pipeline/Images.h"
 #include "../pipeline/Descriptors.h"
@@ -17,14 +19,14 @@ class GUI {
 public:
     CommandBuffers *commandBuffers;
     UISettings uiSettings;
-    std::vector<ArGuiSliderMeshGenerator> settings;
+    std::vector<ArMeshInfoUI> settings;
 
     explicit GUI(ArEngine mArEngine);
 
     ~GUI();
 
-    void setSettings(std::vector<ArGuiSliderMeshGenerator> settings);
-    std::vector<ArGuiSliderMeshGenerator> getSettings();
+    void setSettings(std::vector<ArMeshInfoUI> settings);
+    std::vector<ArMeshInfoUI> getSettings();
 
     void initResources(VkRenderPass renderPass);
 

@@ -9,14 +9,17 @@
 #include <ar_engine/external/Perlin_Noise/ppm.h>
 #include <ar_engine/external/Perlin_Noise/PerlinNoise.h>
 
+#include <utility>
+#include "ar_engine/src/Models/SceneObject.h"
+
 class MeshGenerator {
 public:
 
     // Populate a list of settings
-    ArGuiSliderMeshGenerator settings;
-    void onSettingsUpdate(ArGuiSliderMeshGenerator _settings){
-        settings = _settings;
-    }
+    std::vector<ArMeshInfoUI> settings;
+    bool reload = false;
+    unsigned int seed = 237;
+    PerlinNoise* pn;
 
     MeshGenerator(ArEngine _arEngine, VkRenderPass _renderPass) {
         arEngine = std::move(_arEngine);
@@ -24,107 +27,101 @@ public:
         arModel.transferQueue = arEngine.graphicsQueue;
         arModel.transferCommandPool = arEngine.commandPool;
 
+        pn = new PerlinNoise(seed);
+
         // Enable setting in DEBUG mode
-        // For a slider:
+        settings.resize(3);
         // Name, variable, min and max range
-        settings.maxRange = 100.0f;
-        settings.minRange = 0.0f;
-        settings.name = "Y-Noise";
-        settings.active = true;
-        settings.type = "slider";
+        // Slider Y-noise:
+        settings[0].maxRange = 100.0f;
+        settings[0].minRange = 0.0f;
+        settings[0].name = "Y-Noise";
+        settings[0].active = true;
+        settings[0].type = "slider";
+        settings[0].floatVal = 0.0f;
+        // Grid size
+        // Neex two inputs
+        settings[1].type = "inputInt";
+        settings[1].name = "xSize";
+        settings[1].active = true;
+        settings[1].intVal = 5;
+        settings[2].type = "inputInt";
+        settings[2].name = "zSize";
+        settings[2].active = true;
+        settings[2].intVal = 5;
+    }
 
+    ~MeshGenerator(){
+        delete pn;
+        delete terrain;
+    }
+
+
+    SceneObject createSceneObject(){
 
     }
 
 
-    void prepareResources() {
-        shadersPath.fragmentShader = "phongLightFrag";
-        shadersPath.vertexShader = "defaultVert";
-
-        // ModelInfo
+    void update(std::vector<ArMeshInfoUI> _settings, ArModel* _arModel) {
+        // Delete old mesh
+        reload = true;
+        // update setting
+        settings = std::move(_settings);
+        // recreate Mesh
         generateSquare();
-
-
-        // DescriptorInfo
-        // Create descriptor
-        // Font uses a separate descriptor pool
-        ArDescriptorInfo descriptorInfo{};
-        // poolcount and descriptor set counts
-        descriptorInfo.descriptorPoolCount = 1;
-        descriptorInfo.descriptorCount = 2;
-        descriptorInfo.descriptorSetLayoutCount = 2;
-        descriptorInfo.descriptorSetCount = 2;
-        std::vector<uint32_t> descriptorCounts;
-        descriptorCounts.push_back(1);
-        descriptorCounts.push_back(1);
-        descriptorInfo.pDescriptorSplitCount = descriptorCounts.data();
-        std::vector<uint32_t> bindings;
-        bindings.push_back(0);
-        bindings.push_back(1);
-        descriptorInfo.pBindings = bindings.data();
-        // dataSizes
-        std::vector<uint32_t> dataSizes;
-        dataSizes.push_back(sizeof(uboModel));
-        dataSizes.push_back(sizeof(FragmentColor));
-        descriptorInfo.dataSizes = dataSizes.data();
-        // types
-        std::vector<VkDescriptorType> types(2);
-        types[0] = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        types[1] = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorInfo.pDescriptorType = types.data();
-        // stages
-        std::array<VkShaderStageFlags, 2> stageFlags = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
-        descriptorInfo.stageFlags = stageFlags.data();
-
-        terrain = new SceneObject(arEngine, shadersPath, arModel, descriptorInfo);
-        terrain->createPipeline(renderPass);
-    }
-
-    SceneObject getSceneObject() {
-        return *terrain;
+        *_arModel = arModel;
     }
 
 private:
     SceneObject *terrain{};
-    std::vector<Vertex> vertices{};
-    std::vector<uint32_t> indices{};
 
     ArEngine arEngine{};
     VkRenderPass renderPass{};
     ArShadersPath shadersPath{};
     ArModel arModel{};
+    ArDescriptorInfo descriptorInfo{};
 
     void generateSquare() {
         // 16*16 mesh as our ground
-        const int xSize = 3;
-        const int zSize = 3;
-        // Create an ampty PPm image
-        ppm image(xSize, zSize);
-        unsigned int seed = 237;
-        PerlinNoise pn(seed);
+        // Get square size from input
+        int xSize = 12;
+        int zSize = 12;
 
+        for (const auto& setting: settings) {
+            if (setting.active && setting.type == "inputInt") {
+                xSize = settings[1].intVal;
+                zSize = settings[2].intVal;
 
+            }
+        }
         int v = 0;
-        arModel.vertices.resize((xSize+1) * (zSize + 1));
+
+        arModel.vertexCount = (xSize + 1) * (zSize + 1);
+        arModel.indexCount = xSize * zSize * 6;
+        // Alloc memory for vertices and indices
+
+        arModel.vertices.clear();
+        arModel.indices.clear();
+
+        arModel.vertices = std::vector<Vertex>(arModel.vertexCount);
+
         for (int z = 0; z <= zSize; ++z) {
             for (int x = 0; x <= xSize; ++x) {
                 Vertex vertex{};
 
                 // Use the grid size to determine the perlin noise image.
-                double i = (double) x / ((double)xSize);
-                double j = (double) z / ((double)zSize);
-                double n = pn.noise(settings.val * i, settings.val * j, 0.8);
-
-                vertex.pos = glm::vec3(x, n, z);;
-
+                double i = (double) x / ((double) xSize);
+                double j = (double) z / ((double) zSize);
+                double n = pn->noise(settings[0].floatVal * i, settings[0].floatVal * j, 0.8);
+                vertex.pos = glm::vec3(x, n, z);
                 arModel.vertices[v] = vertex;
                 v++;
 
                 // calculate Normals for every 3 vertices
-                if ((v % 3) == 0){
-                    glm::vec3 A =  arModel.vertices[v - 2].pos;
-                    glm::vec3 B =  arModel.vertices[v - 1].pos;
-                    glm::vec3 C =  arModel.vertices[v].pos;
+                if ((v % 3) == 0) {
+                    glm::vec3 A = arModel.vertices[v - 2].pos;
+                    glm::vec3 B = arModel.vertices[v - 1].pos;
+                    glm::vec3 C = arModel.vertices[v].pos;
                     glm::vec3 AB = B - A;
                     glm::vec3 AC = C - A;
 
@@ -139,7 +136,7 @@ private:
             }
         }
 
-        arModel.indices.resize(xSize * zSize * 6);
+        arModel.indices = std::vector<uint32_t>(arModel.indexCount);
         int tris = 0;
         int vert = 0;
         for (int z = 0; z < zSize; ++z) {
@@ -158,8 +155,6 @@ private:
             vert++;
         }
 
-        arModel.indexCount = arModel.indices.size();
-        arModel.vertexCount = arModel.vertices.size();
     }
 
 

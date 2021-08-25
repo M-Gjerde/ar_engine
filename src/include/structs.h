@@ -14,13 +14,15 @@
 #include <string>
 #include <array>
 
-struct ArGuiSliderMeshGenerator {
+struct ArMeshInfoUI {
     std::string name;
-    float val = 0.0f;
+    float floatVal = 0.0f;
     float minRange;
     float maxRange;
     bool active = false;
     std::string type;
+    int intVal;
+    bool update;
 };
 
 struct ThreadPushConstantBlock {
@@ -70,8 +72,9 @@ struct ArModel {
 
     VkQueue transferQueue;              // TODO out from here. Use handles in arEngine
     VkCommandPool transferCommandPool;  // TODO out from here. Use handles in arEngine
-    std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
+    std::vector<Vertex> vertices;
+    uint32_t * pIndices;
     uint32_t vertexCount{};
     VkBuffer vertexBuffer{};
     VkDeviceMemory vertexBufferMemory{};

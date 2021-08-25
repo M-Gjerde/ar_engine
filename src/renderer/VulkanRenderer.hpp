@@ -85,7 +85,7 @@ private:
     bool visible = false;
     GUI *gui{};
     uint32_t frameNumber = 0;
-    std::vector<ArGuiSliderMeshGenerator> settings;
+    std::vector<ArMeshInfoUI> settings;
     MeshGenerator *meshGenerator;
 
     // Compute pipeline

@@ -7,7 +7,8 @@
 
 #include <nlohmann/json.hpp>
 #include <iostream>
-#include "VulkanRenderer.hpp"
+#include <fstream>
+#include <utility>
 
 class LoadSettings {
 
@@ -21,7 +22,7 @@ public:
     LoadSettings(std::string file);
 
     void init();
-    void saveScene(const VulkanRenderer& vulkanRenderer);
+    //void saveScene(const VulkanRenderer& vulkanRenderer);
     [[nodiscard]] const std::vector<std::map<std::string, std::string>> &getSceneObjects() const;
 };
 

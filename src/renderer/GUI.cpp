@@ -2,8 +2,6 @@
 // Created by magnus on 8/2/21.
 //
 
-#include <algorithm>
-#include <utility>
 #include "GUI.h"
 
 GUI::GUI(ArEngine mArEngine) {
@@ -308,7 +306,7 @@ void GUI::newFrame(bool updateFrameGraph) {
     ImGui::TextUnformatted("DeviceName");
 
     ImGui::PlotLines("Framerate", &uiSettings.frameTimes[0], 1000, 0, "FPS", 0,
-                    1000, ImVec2(0, 80));
+                     1000, ImVec2(0, 80));
     ImGui::Text("Avg framerate %.3f", uiSettings.average);
     ImGui::Text("FPS cap:  %.3f", uiSettings.frameLimiter);
 
@@ -320,10 +318,18 @@ void GUI::newFrame(bool updateFrameGraph) {
     // Input Available settings
     // Reload Shader
     // Reload Mesh with different settings
-    for (auto & setting : settings) {
-        if (setting.active){
-            if (setting.type == "slider"){
-                ImGui::SliderFloat(setting.name.c_str(), &setting.val, setting.minRange, setting.maxRange);
+    ImGui::Text("Available Settings");
+
+    for (auto &setting : settings) {
+        if (setting.active) {
+            if (setting.type == "slider") {
+                if (ImGui::SliderFloat(setting.name.c_str(), &setting.floatVal, setting.minRange, setting.maxRange))
+                    setting.update = true;
+            }
+
+            if (setting.type == "inputInt") {
+                if (ImGui::InputInt(setting.name.c_str(), &setting.intVal))
+                    setting.update = true;
 
             }
         }
@@ -340,7 +346,8 @@ void GUI::newFrame(bool updateFrameGraph) {
     ImGui::Checkbox("Display background", &uiSettings.displayBackground);
     ImGui::Checkbox("Animate light", &uiSettings.animateLight);
     ImGui::SliderFloat("Light speed", &uiSettings.lightSpeed, 0.1f, 1.0f);
-    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate,
+                ImGui::GetIO().Framerate);
     ImGui::Button("Button Label");
     ImGui::End();
 
@@ -388,7 +395,7 @@ void GUI::updateBuffers() {
     }
 
     // Index buffer
-    if ((indexBuffer->buffer == VK_NULL_HANDLE) ||  (indexCount < imDrawData->TotalIdxCount)) {
+    if ((indexBuffer->buffer == VK_NULL_HANDLE) || (indexCount < imDrawData->TotalIdxCount)) {
         indexBuffer->unmap();
         indexBuffer->destroy();
         indexBuffer->bufferSize = indexBufferSize;
@@ -417,39 +424,39 @@ void GUI::updateBuffers() {
 }
 
 void GUI::drawNewFrame(VkCommandBuffer commandBuffer) {
-    ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO &io = ImGui::GetIO();
 
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, arPipeline.pipelineLayout, 0, 1, &descriptor.descriptorSets[0], 0, nullptr);
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, arPipeline.pipelineLayout, 0, 1,
+                            &descriptor.descriptorSets[0], 0, nullptr);
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, arPipeline.pipeline);
 
 
     // UI scale and translate via push constants
     pushConstBlock.scale = glm::vec2(2.0f / io.DisplaySize.x, 2.0f / io.DisplaySize.y);
     pushConstBlock.translate = glm::vec2(-1.0f);
-    vkCmdPushConstants(commandBuffer, arPipeline.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstBlock), &pushConstBlock);
+    vkCmdPushConstants(commandBuffer, arPipeline.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstBlock),
+                       &pushConstBlock);
 
     // Render commands
-    ImDrawData* imDrawData = ImGui::GetDrawData();
+    ImDrawData *imDrawData = ImGui::GetDrawData();
     int32_t vertexOffset = 0;
     int32_t indexOffset = 0;
 
     if (imDrawData->CmdListsCount > 0) {
 
-        VkDeviceSize offsets[1] = { 0 };
+        VkDeviceSize offsets[1] = {0};
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer->buffer, offsets);
         vkCmdBindIndexBuffer(commandBuffer, indexBuffer->buffer, 0, VK_INDEX_TYPE_UINT16);
 
-        for (int32_t i = 0; i < imDrawData->CmdListsCount; i++)
-        {
-            const ImDrawList* cmd_list = imDrawData->CmdLists[i];
-            for (int32_t j = 0; j < cmd_list->CmdBuffer.Size; j++)
-            {
-                const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[j];
+        for (int32_t i = 0; i < imDrawData->CmdListsCount; i++) {
+            const ImDrawList *cmd_list = imDrawData->CmdLists[i];
+            for (int32_t j = 0; j < cmd_list->CmdBuffer.Size; j++) {
+                const ImDrawCmd *pcmd = &cmd_list->CmdBuffer[j];
                 VkRect2D scissorRect;
-                scissorRect.offset.x = std::max((int32_t)(pcmd->ClipRect.x), 0);
-                scissorRect.offset.y = std::max((int32_t)(pcmd->ClipRect.y), 0);
-                scissorRect.extent.width = (uint32_t)(pcmd->ClipRect.z - pcmd->ClipRect.x);
-                scissorRect.extent.height = (uint32_t)(pcmd->ClipRect.w - pcmd->ClipRect.y);
+                scissorRect.offset.x = std::max((int32_t) (pcmd->ClipRect.x), 0);
+                scissorRect.offset.y = std::max((int32_t) (pcmd->ClipRect.y), 0);
+                scissorRect.extent.width = (uint32_t) (pcmd->ClipRect.z - pcmd->ClipRect.x);
+                scissorRect.extent.height = (uint32_t) (pcmd->ClipRect.w - pcmd->ClipRect.y);
                 vkCmdSetScissor(commandBuffer, 0, 1, &scissorRect);
                 vkCmdDrawIndexed(commandBuffer, pcmd->ElemCount, 1, indexOffset, vertexOffset, 0);
                 indexOffset += pcmd->ElemCount;
@@ -463,11 +470,11 @@ void GUI::drawNewFrame(VkRenderPass renderPass, std::vector<VkFramebuffer> frame
 
 }
 
-void GUI::setSettings(std::vector<ArGuiSliderMeshGenerator> _settings) {
+void GUI::setSettings(std::vector<ArMeshInfoUI> _settings) {
     settings = std::move(_settings);
 }
 
-std::vector<ArGuiSliderMeshGenerator> GUI::getSettings(){
+std::vector<ArMeshInfoUI> GUI::getSettings() {
     return settings;
 }
 

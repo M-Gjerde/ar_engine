@@ -51,7 +51,7 @@ SceneObject::SceneObject(ArEngine mArEngine, const ArShadersPath &shaders, ArMod
 
 
     // Create Mesh
-    meshModel.createMeshFromModel(arEngine.mainDevice, std::move(arModel));
+    meshModel.createMeshFromModel(arEngine.mainDevice, arModel);
 
     // --- DESCRIPTOR BUFFERS
     // Create descriptors
@@ -78,6 +78,8 @@ SceneObject::SceneObject(ArEngine mArEngine, const ArShadersPath &shaders, ArMod
     // Create standard mat for model
     model = glm::mat4(1.0f);
 
+    delete descriptors;
+    delete buffer;
 }
 
 
