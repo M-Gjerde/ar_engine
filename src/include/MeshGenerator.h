@@ -59,17 +59,53 @@ public:
 
     SceneObject createSceneObject(){
 
+        shadersPath.fragmentShader = "phongLightFrag";
+        shadersPath.vertexShader = "defaultVert";
+
+
+        // DescriptorInfo
+        // Create descriptor
+        // Font uses a separate descriptor pool
+        // poolcount and descriptor set counts
+        descriptorInfo.descriptorPoolCount = 1;
+        descriptorInfo.descriptorCount = 2;
+        descriptorInfo.descriptorSetLayoutCount = 2;
+        descriptorInfo.descriptorSetCount = 2;
+        std::vector<uint32_t> descriptorCounts;
+        descriptorCounts.push_back(1);
+        descriptorCounts.push_back(1);
+        descriptorInfo.pDescriptorSplitCount = descriptorCounts.data();
+        std::vector<uint32_t> bindings;
+        bindings.push_back(0);
+        bindings.push_back(1);
+        descriptorInfo.pBindings = bindings.data();
+        // dataSizes
+        std::vector<uint32_t> dataSizes;
+        dataSizes.push_back(sizeof(uboModel));
+        dataSizes.push_back(sizeof(FragmentColor));
+        descriptorInfo.dataSizes = dataSizes.data();
+        // types
+        std::vector<VkDescriptorType> types(2);
+        types[0] = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        types[1] = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorInfo.pDescriptorType = types.data();
+        // stages
+        std::array<VkShaderStageFlags, 2> stageFlags = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
+        descriptorInfo.stageFlags = stageFlags.data();
+
+        SceneObject object(arEngine, shadersPath, &arModel, descriptorInfo);
+        object.createPipeline(renderPass);
+        return object;
     }
 
 
-    void update(std::vector<ArMeshInfoUI> _settings, ArModel* _arModel) {
+    void update(std::vector<ArMeshInfoUI> _settings) {
         // Delete old mesh
         reload = true;
         // update setting
         settings = std::move(_settings);
         // recreate Mesh
         generateSquare();
-        *_arModel = arModel;
     }
 
 private:

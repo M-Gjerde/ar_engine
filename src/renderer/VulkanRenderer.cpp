@@ -352,7 +352,7 @@ void VulkanRenderer::cleanup() {
     }
 
 
-    vulkanCompute->cleanup();
+    //vulkanCompute->cleanup();
     //commandBuffers->cleanUp();
     gui->cleanUp();
     delete gui;
@@ -728,8 +728,21 @@ void VulkanRenderer::updateDisparityData() {
 
 
 void VulkanRenderer::testFunction() {
+    /*
+    if (meshGenerator->reload){
+        objects.pop_back();
+        arPipelines.pop_back();
+        arDescriptors.pop_back();
+    }
 
-    onUIUpdate();
+    meshGenerator->update(settings);
+    SceneObject object = meshGenerator->createSceneObject();
+
+
+    objects.push_back(object);
+    arPipelines.push_back(object.getArPipeline());
+    arDescriptors.push_back(object.getArDescriptor());
+     */
 }
 
 std::vector<SceneObject> VulkanRenderer::getSceneObjects() const {
@@ -760,7 +773,7 @@ void VulkanRenderer::updateUI(UISettings uiSettings_) {
         sum = 0;
     }
 
-
+    onUIUpdate();
     //std::rotate(gui->uiSettings.frameTimes.begin(), gui->uiSettings.frameTimes.begin() + (1),gui->uiSettings.frameTimes.end());
     //gui.cleanUp();
 }
@@ -774,58 +787,8 @@ void VulkanRenderer::onUIUpdate() {
     for (auto &setting: gui->getSettings()) {
         if (setting.active && setting.update) {
 
-            int k = 0;
-            auto a = &k;
-
-            ArShadersPath shadersPath{};
-            ArModel arModel{};
-            ArDescriptorInfo descriptorInfo{};
-
-            meshGenerator->update(settings, &arModel);
 
 
-            shadersPath.fragmentShader = "phongLightFrag";
-            shadersPath.vertexShader = "defaultVert";
-
-
-            // DescriptorInfo
-            // Create descriptor
-            // Font uses a separate descriptor pool
-            // poolcount and descriptor set counts
-            descriptorInfo.descriptorPoolCount = 1;
-            descriptorInfo.descriptorCount = 2;
-            descriptorInfo.descriptorSetLayoutCount = 2;
-            descriptorInfo.descriptorSetCount = 2;
-            std::vector<uint32_t> descriptorCounts;
-            descriptorCounts.push_back(1);
-            descriptorCounts.push_back(1);
-            descriptorInfo.pDescriptorSplitCount = descriptorCounts.data();
-            std::vector<uint32_t> bindings;
-            bindings.push_back(0);
-            bindings.push_back(1);
-            descriptorInfo.pBindings = bindings.data();
-            // dataSizes
-            std::vector<uint32_t> dataSizes;
-            dataSizes.push_back(sizeof(uboModel));
-            dataSizes.push_back(sizeof(FragmentColor));
-            descriptorInfo.dataSizes = dataSizes.data();
-            // types
-            std::vector<VkDescriptorType> types(2);
-            types[0] = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            types[1] = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorInfo.pDescriptorType = types.data();
-            // stages
-            std::array<VkShaderStageFlags, 2> stageFlags = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
-            descriptorInfo.stageFlags = stageFlags.data();
-
-            SceneObject object(arEngine, shadersPath, arModel, descriptorInfo);
-            object.createPipeline(renderPass);
-
-            /*
-            objects.push_back(object);
-            arPipelines.push_back(object.getArPipeline());
-            arDescriptors.push_back(object.getArDescriptor());
-*/
             setting.update = false;
         }
     }

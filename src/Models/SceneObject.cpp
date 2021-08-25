@@ -38,7 +38,7 @@ SceneObject::SceneObject(std::map<std::string, std::string> modelSettings, ArEng
 }
 
 // Create template sceneobject
-SceneObject::SceneObject(ArEngine mArEngine, const ArShadersPath &shaders, ArModel arModel,
+SceneObject::SceneObject(ArEngine mArEngine, const ArShadersPath &shaders, ArModel *arModel,
                          ArDescriptorInfo descriptorInfo) {
     arEngine = std::move(mArEngine);
     // Helper classes handles
@@ -51,7 +51,7 @@ SceneObject::SceneObject(ArEngine mArEngine, const ArShadersPath &shaders, ArMod
 
 
     // Create Mesh
-    meshModel.createMeshFromModel(arEngine.mainDevice, arModel);
+    meshModel.createMeshFromModel(arEngine.mainDevice, *arModel);
 
     // --- DESCRIPTOR BUFFERS
     // Create descriptors

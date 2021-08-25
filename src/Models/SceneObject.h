@@ -19,7 +19,7 @@ public:
     bool visible = true;
 
     /* Constructor for creating SceneObjects only with predefined shaders */
-    SceneObject(ArEngine mArEngine, const ArShadersPath &shaders, ArModel arModel, ArDescriptorInfo descriptorInfo);
+    SceneObject(ArEngine mArEngine, const ArShadersPath &shaders, ArModel *arModel, ArDescriptorInfo descriptorInfo);
     /* Constructor for creating SceneObjects with a template file */
     SceneObject(std::map<std::string, std::string> modelSettings, ArEngine mArEngine);
     /* Empty SceneObject constructor */
