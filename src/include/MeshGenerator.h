@@ -44,11 +44,11 @@ public:
         settings[1].type = "inputInt";
         settings[1].name = "xSize";
         settings[1].active = true;
-        settings[1].intVal = 5;
+        settings[1].intVal = 3;
         settings[2].type = "inputInt";
         settings[2].name = "zSize";
         settings[2].active = true;
-        settings[2].intVal = 5;
+        settings[2].intVal = 3;
     }
 
     ~MeshGenerator(){
@@ -135,12 +135,9 @@ private:
         arModel.vertexCount = (xSize + 1) * (zSize + 1);
         arModel.indexCount = xSize * zSize * 6;
         // Alloc memory for vertices and indices
-
         arModel.vertices.clear();
         arModel.indices.clear();
-
-        arModel.vertices = std::vector<Vertex>(arModel.vertexCount);
-
+        arModel.vertices.resize(arModel.vertexCount);
         for (int z = 0; z <= zSize; ++z) {
             for (int x = 0; x <= xSize; ++x) {
                 Vertex vertex{};
@@ -167,12 +164,11 @@ private:
                     arModel.vertices[v - 2].normal = normal;
                     arModel.vertices[v - 1].normal = normal;
                     arModel.vertices[v].normal = normal;
-
                 }
             }
         }
 
-        arModel.indices = std::vector<uint32_t>(arModel.indexCount);
+        arModel.indices.resize(arModel.indexCount);
         int tris = 0;
         int vert = 0;
         for (int z = 0; z < zSize; ++z) {
@@ -190,10 +186,7 @@ private:
             }
             vert++;
         }
-
     }
-
-
 };
 
 
