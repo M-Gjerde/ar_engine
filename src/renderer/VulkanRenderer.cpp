@@ -729,19 +729,7 @@ void VulkanRenderer::updateDisparityData() {
 
 void VulkanRenderer::testFunction() {
     /*
-    if (meshGenerator->reload){
-        objects.pop_back();
-        arPipelines.pop_back();
-        arDescriptors.pop_back();
-    }
 
-    meshGenerator->update(settings);
-    SceneObject object = meshGenerator->createSceneObject();
-
-
-    objects.push_back(object);
-    arPipelines.push_back(object.getArPipeline());
-    arDescriptors.push_back(object.getArDescriptor());
      */
 }
 
@@ -787,7 +775,19 @@ void VulkanRenderer::onUIUpdate() {
     for (auto &setting: gui->getSettings()) {
         if (setting.active && setting.update) {
 
+            if (meshGenerator->reload){
+                objects.pop_back();
+                arPipelines.pop_back();
+                arDescriptors.pop_back();
+            }
 
+            meshGenerator->update(settings);
+            SceneObject object = meshGenerator->createSceneObject();
+
+
+            objects.push_back(object);
+            arPipelines.push_back(object.getArPipeline());
+            arDescriptors.push_back(object.getArDescriptor());
 
             setting.update = false;
         }

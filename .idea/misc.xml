@@ -6,6 +6,7 @@
       <file path="$USER_HOME$/libraries/dlib" />
     </libraryRoots>
     <excludeRoots>
+      <file path="$PROJECT_DIR$/external" />
       <file path="$PROJECT_DIR$/objects/Crate" />
       <file path="$PROJECT_DIR$/objects/models" />
       <file path="$PROJECT_DIR$/textures/stereo" />
