@@ -1,48 +1,38 @@
-#include <iostream>
+//
+// Created by magnus on 8/28/21.
+//
 
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#define GLFW_INCLUDE_VULKAN
-#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
+#include "src/GameApplication.h"
 
-#include "GLFW/glfw3.h"
-#include "src/renderer/GameApplication.h"
-
-
-GameApplication *app;
-
-GameApplication *getApplication() {
-    return new AppExtension("AppExtension");
-}
+GameApplication *application;
 
 static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
-    auto* myApp = (AppExtension*)app;
+    auto* myApp = (GameApplication*)application;
     myApp->keyCallback(window, key, scancode, action, mods);
 }
 
 static void cursor_position_callback(GLFWwindow* window, double xPos, double yPos)
 {
-    auto* myApp = (AppExtension*)app;
-    app->cursorPosCallback(window, xPos, yPos);
+    auto* myApp = (GameApplication*)application;
+    myApp->cursorPosCallback(window, xPos, yPos);
 }
 
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
-    auto* myApp = (AppExtension*)app;
-    app->mouseButtonCallback(window, button, action, mods);
+    auto* myApp = (GameApplication*)application;
+    myApp->mouseButtonCallback(window, button, action, mods);
 
 }
 
+int main(){
 
-int main() {
-    app = getApplication();
-    glfwSetKeyCallback(app->window, keyCallback);
-    glfwSetCursorPosCallback(app->window, cursor_position_callback);
-    glfwSetMouseButtonCallback(app->window, mouse_button_callback);
+    application = new GameApplication("3D Vision Generator");
 
-    glfwSetInputMode(app->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); //Normal mode mouse input
+    glfwSetKeyCallback(application->window, keyCallback);
+    glfwSetCursorPosCallback(application->window, cursor_position_callback);
+    glfwSetMouseButtonCallback(application->window, mouse_button_callback);
 
-    app->gameLoop();
+    application->gameLoop();
+
     return 0;
 }
-
-
