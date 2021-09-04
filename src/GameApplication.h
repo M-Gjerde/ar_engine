@@ -24,25 +24,21 @@
 #include "imgui_impl_vulkan.h"
 #include "VulkanRenderer.h"
 
-class GameApplication {
+class GameApplication : VulkanRenderer {
 
 public:
-    GLFWwindow *window;
+
+    explicit GameApplication(const std::string &title) : VulkanRenderer(true) {
 
 
-    explicit GameApplication(const std::string &title) {
-
-        // boilerplate stuff (ie. basic window setup, initialize OpenGL) occurs in abstract class
-        glfwInit();
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-        window = glfwCreateWindow(1280, 720, title.c_str(), nullptr, nullptr);
-        glfwMakeContextCurrent(window);
-        glfwSetErrorCallback(error_callback);
-
+        //glfwSetErrorCallback(error_callback);
+    VulkanRenderer::prepare();
         // Create Engine Instance
-        VulkanRenderer vulkanRenderer(true);
 
+    prepared = true;
+    }
+
+    void render() override {
 
     }
 
@@ -65,9 +61,9 @@ public:
             glfwPollEvents();
 
         }
-
         glfwDestroyWindow(window);
         glfwTerminate();
+
     }
 
 private:

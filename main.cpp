@@ -28,10 +28,12 @@ int main(){
 
     application = new GameApplication("3D Vision Generator");
 
+    /*
     glfwSetKeyCallback(application->window, keyCallback);
     glfwSetCursorPosCallback(application->window, cursor_position_callback);
     glfwSetMouseButtonCallback(application->window, mouse_button_callback);
 
+     */
     application->gameLoop();
 
     return 0;

@@ -24,7 +24,7 @@ add_library(GUI ${GUI_SRC})
 
 
 file(GLOB ENGINE_SRC src/*)
-add_library(VulkanRenderer ${ENGINE_SRC})
+add_library(VulkanRenderer ${ENGINE_SRC} src/VulkanDevice.h src/Utils.h src/Populate.h src/VulkanSwapchain.cpp src/VulkanSwapchain.h)
 message(Sources:  ${ENGINE_SRC})
 set_target_properties(VulkanRenderer PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(VulkanRenderer GUI ${LIBRARIES})

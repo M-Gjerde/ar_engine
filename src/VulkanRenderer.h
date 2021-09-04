@@ -4,19 +4,32 @@
 
 #ifndef AR_ENGINE_VULKANRENDERER_H
 #define AR_ENGINE_VULKANRENDERER_H
-
+#include <vulkan/vulkan.h>
+#include <GLFW/glfw3.h>
 
 #include <string>
+#include <vector>
+#include "VulkanDevice.h"
+#include "Validation.h"
+#include "Utils.h"
+#include "Populate.h"
+#include "VulkanSwapchain.h"
+#include <vector>
+
+#include <cstring>
+#include <iostream>
+#include <glm/vec2.hpp>
 
 class VulkanRenderer {
 
 public:
 
     VulkanRenderer(bool enableValidation = false);
+
     virtual ~VulkanRenderer();
+
     /** @brief Setup the vulkan instance, enable required extensions and connect to the physical device (GPU) */
     bool initVulkan();
-
 
     /** @brief Example settings that can be changed by ... */
     struct Settings {
@@ -33,34 +46,135 @@ public:
     std::string title = "Vulkan Renderer";
     std::string name = "VulkanRenderer";
     uint32_t apiVersion = VK_API_VERSION_1_0;
+    bool prepared = false;
+    bool resized = false;
+    uint32_t width = 1280;
+    uint32_t height = 720;
+
+    struct {
+        VkImage image;
+        VkDeviceMemory mem;
+        VkImageView view;
+    } depthStencil{};
+
+    /** @brief Last frame time measured using a high performance timer (if available) */
+    float frameTimer = 1.0f;
+    glm::vec2 mousePos{};
+
+    struct {
+        bool left = false;
+        bool right = false;
+        bool middle = false;
+    } mouseButtons;
+
+
+    /** @brief (Virtual) Creates the application wide Vulkan instance */
+    virtual VkResult createInstance(bool enableValidation);
+    /** @brief (Pure virtual) Render function to be implemented by the sample application */
+    [[maybe_unused]] virtual void render() = 0;
+    /** @brief (Virtual) Called when the camera view has changed */
+    virtual void viewChanged();
+    /** @brief (Virtual) Called after a key was pressed, can be used to do custom key handling */
+    virtual void keyPressed(uint32_t);
+    /** @brief (Virtual) Called after the mouse cursor moved and before internal events (like camera rotation) is handled */
+    virtual void mouseMoved(double x, double y, bool &handled);
+    /** @brief (Virtual) Called when the window has been resized, can be used by the sample application to recreate resources */
+    virtual void windowResized();
+    /** @brief (Virtual) Called when resources have been recreated that require a rebuild of the command buffers (e.g. frame buffer), to be implemented by the sample application */
+    virtual void buildCommandBuffers();
+    /** @brief (Virtual) Setup default depth and stencil views */
+    virtual void setupDepthStencil();
+    /** @brief (Virtual) Setup default framebuffers for all requested swapchain images */
+    virtual void setupFrameBuffer();
+    /** @brief (Virtual) Setup a default renderpass */
+    virtual void setupRenderPass();
+    /** @brief (Virtual) Called after the physical device features have been read, can be used to set features to enable on the device */
+    virtual void getEnabledFeatures();
+
+    /** @brief Prepares all Vulkan resources and functions required to run the sample */
+    virtual void prepare();
+
+
+    void cleanUp();
 
 protected:
+    // Window instance GLFW
+    GLFWwindow* window;
     // Vulkan Instance, stores al per-application states
-    VkInstance instance;
+    VkInstance instance{};
     // Physical Device that Vulkan will use
-    VkDevice physicalDevice;
+    VkPhysicalDevice physicalDevice{};
     //Physical device properties (device limits etc..)
-    VkPhysicalDeviceProperties deviceProperties;
+    VkPhysicalDeviceProperties deviceProperties{};
     // Features available on the physical device
-    VkPhysicalDeviceFeatures deviceFeatures;
+    VkPhysicalDeviceFeatures deviceFeatures{};
     // Features all available memory types for the physical device
-    VkPhysicalDeviceMemoryProperties deviceMemoryProperties;
+    VkPhysicalDeviceMemoryProperties deviceMemoryProperties{};
+    /** @brief Set of device extensions to be enabled for this example (must be set in the derived constructor) */
+    std::vector<const char *> enabledDeviceExtensions;
+    std::vector<const char *> enabledInstanceExtensions;
     /** @brief Logical device, application's view of the physical device (GPU) */
-    VkDevice device;
+    VkDevice device{};
+    /** @brief Encapsulated physical and logical vulkan device */
+    VulkanDevice *vulkanDevice{};
     // Handle to the device graphics queue that command buffers are submitted to
-    VkQueue queue;
+    VkQueue queue{};
+    // Depth buffer format (selected during Vulkan initialization)
+    VkFormat depthFormat;
+    // Wraps the swap chain to present images (framebuffers) to the windowing system
+    VulkanSwapchain swapchain;
+    // Synchronization semaphores
+    struct {
+        // Swap chain image presentation
+        VkSemaphore presentComplete;
+        // Command buffer submission and execution
+        VkSemaphore renderComplete;
+    } semaphores{};
+    std::vector<VkFence> waitFences;
+    /** @brief Pipeline stages used to wait at for graphics queue submissions */
+    VkPipelineStageFlags submitPipelineStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    // Contains command buffers and semaphores to be presented to the queue
+    VkSubmitInfo submitInfo{};
+    // CommandPool for render command buffers
+    VkCommandPool cmdPool{};
+    // Command buffers used for rendering
+    std::vector<VkCommandBuffer> drawCmdBuffers;
+    // Global render pass for frame buffer writes
+    VkRenderPass renderPass;
+    // List of available frame buffers (same as number of swap chain images)
+    std::vector<VkFramebuffer>frameBuffers;
+    // Active frame buffer index
+    uint32_t currentBuffer = 0;
+    // Descriptor set pool
+    VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
+    // List of shader modules created (stored for cleanup)
+    std::vector<VkShaderModule> shaderModules;
+    // Pipeline cache object
+    VkPipelineCache pipelineCache;
 
     // Handle to Debug Utils
-    VkDebugUtilsMessengerEXT debugUtilsMessenger;
+    VkDebugUtilsMessengerEXT debugUtilsMessenger{};
+
+
 private:
+    bool viewUpdated = false;
+    bool resizing = false;
+    void windowResize(uint32_t width, uint32_t height);
 
 
-    VkResult createInstance(bool enableValidation);
+    static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
+    static void resizeCallback(GLFWwindow* window, int width, int height);
 
+    void createCommandPool();
+
+    void createCommandBuffers();
+
+    void createSynchronizationPrimitives();
+
+    void createPipelineCache();
+
+    void destroyCommandBuffers();
 };
-
-
-
 
 
 #endif //AR_ENGINE_VULKANRENDERER_H
