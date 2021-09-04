@@ -32,39 +32,47 @@ public:
 
 
         //glfwSetErrorCallback(error_callback);
-    VulkanRenderer::prepare();
-        // Create Engine Instance
+        VulkanRenderer::prepare();
+        prepared = true;
 
-    prepared = true;
+
+        // Create Engine Instance
+        renderLoop();
     }
 
     void render() override {
 
+        VulkanRenderer::prepareFrame();
+
+        // Use a fence to wait until the command buffer has finished execution before using it again
+
+        VkResult result = vkWaitForFences(device, 1, &waitFences[currentBuffer], VK_TRUE, UINT64_MAX);
+        if (result != VK_SUCCESS)
+            throw std::runtime_error("Failed to wait for fence");
+        result = vkResetFences(device, 1, &waitFences[currentBuffer]);
+        if (result != VK_SUCCESS)
+            throw std::runtime_error("Failed to reset fence");
+
+
+        submitInfo.commandBufferCount = 0;
+        submitInfo.pCommandBuffers = &drawCmdBuffers[currentBuffer];
+
+        vkQueueSubmit(queue, 1, &submitInfo, waitFences[currentBuffer]);
+
+        VulkanRenderer::submitFrame();
+
     }
-
-    void keyCallback(GLFWwindow *glfWwindow, int key, int scancode, int action, int mods) const {
-        printf("GLFW Key: %d\n", key);
-
-        if (key == GLFW_KEY_ESCAPE and action == GLFW_PRESS){
-            glfwSetWindowShouldClose(window, true);
-        }
-
-    };
-
-    void cursorPosCallback(GLFWwindow *newWindow, double xPos, double yPos) {};
-    void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods){};
-    // must be overridden in derived class
-    void update(){};
 
     void gameLoop() {
-        while (!glfwWindowShouldClose(window)) {
-            glfwPollEvents();
 
-        }
-        glfwDestroyWindow(window);
-        glfwTerminate();
 
     }
+
+
+    void cursorPosCallback(GLFWwindow *newWindow, double xPos, double yPos) {};
+
+    void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {};
+
 
 private:
 
@@ -73,8 +81,6 @@ private:
     }
 
 };
-
-
 
 
 #endif //AR_ENGINE_GAMEAPPLICATION_H

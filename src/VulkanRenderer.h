@@ -67,11 +67,10 @@ public:
         bool middle = false;
     } mouseButtons;
 
-
     /** @brief (Virtual) Creates the application wide Vulkan instance */
     virtual VkResult createInstance(bool enableValidation);
     /** @brief (Pure virtual) Render function to be implemented by the sample application */
-    [[maybe_unused]] virtual void render() = 0;
+    virtual void render() = 0;
     /** @brief (Virtual) Called when the camera view has changed */
     virtual void viewChanged();
     /** @brief (Virtual) Called after a key was pressed, can be used to do custom key handling */
@@ -90,12 +89,19 @@ public:
     virtual void setupRenderPass();
     /** @brief (Virtual) Called after the physical device features have been read, can be used to set features to enable on the device */
     virtual void getEnabledFeatures();
-
     /** @brief Prepares all Vulkan resources and functions required to run the sample */
     virtual void prepare();
+    /** @brief Entry point for the main render loop */
+    void renderLoop();
+    /** @brief Adds the drawing commands for the ImGui overlay to the given command buffer */
+    void drawUI(const VkCommandBuffer commandBuffer);
+    /** Prepare the next frame for workload submission by acquiring the next swap chain image */
+    void prepareFrame();
+    /** @brief Presents the current image to the swap chain */
+    void submitFrame();
+    /** @brief (Virtual) Default image acquire + submission and command buffer submission function */
+    virtual void renderFrame();
 
-
-    void cleanUp();
 
 protected:
     // Window instance GLFW
@@ -159,7 +165,13 @@ protected:
 private:
     bool viewUpdated = false;
     bool resizing = false;
-    void windowResize(uint32_t width, uint32_t height);
+    bool quit = false;
+    uint32_t destWidth;
+    uint32_t destHeight;
+    int frameCounter = 0;
+    float lastFPS = 0;
+
+    void windowResize();
 
 
     static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
@@ -174,6 +186,9 @@ private:
     void createPipelineCache();
 
     void destroyCommandBuffers();
+
+    void setWindowSize(uint32_t width, uint32_t height);
+
 };
 
 
