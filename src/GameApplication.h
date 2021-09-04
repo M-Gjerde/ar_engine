@@ -21,30 +21,36 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
-#include "VulkanRenderer.h"
+#include "ar_engine/src/core/VulkanRenderer.h"
 
 class GameApplication : VulkanRenderer {
 
 public:
 
-    explicit GameApplication(const std::string &title) : VulkanRenderer(true){
+    explicit GameApplication(const std::string &title) : VulkanRenderer(true) {
+        // During constructor prepare backend for rendering
         VulkanRenderer::prepare();
-        prepared = true;
+        backendInitialized = true;
 
     };
 
-    void prepareEngine(){
+    void prepareEngine() {
+        camera.type = Camera::CameraType::firstperson;
+        camera.setPosition( glm::vec3(0.0f, 0.0f, 1.0f));
+        camera.setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
+        camera.setRotationSpeed(0.5f);
+        camera.setPerspective(45.0f, (float)(width / 3.0f) / (float)height, 0.1f, 256.0f);
+
+        // Prepare the game
         prepare();
     }
 
-    void run(){
-    renderLoop();
+    void run() {
+        renderLoop();
     }
 
 
-    ~GameApplication() {
-     // Cleanup
-    }
+    ~GameApplication() override = default;
 
     void render() override;
 
@@ -61,21 +67,21 @@ private:
     struct {
         VkDeviceMemory memory; // Handle to the device memory for this buffer
         VkBuffer buffer;       // Handle to the Vulkan buffer object that the memory is bound to
-    } vertices;
+    } vertices{};
 
     // Index buffer
     struct {
         VkDeviceMemory memory;
         VkBuffer buffer;
         uint32_t count;
-    } indices;
+    } indices{};
 
     // Uniform buffer block object
     struct {
         VkDeviceMemory memory;
         VkBuffer buffer;
         VkDescriptorBufferInfo descriptor;
-    }  uniformBufferVS;
+    } uniformBufferVS{};
 
     // For simplicity we use the same uniform block layout as in the shader:
     //
@@ -92,23 +98,22 @@ private:
         glm::mat4 projectionMatrix;
         glm::mat4 modelMatrix;
         glm::mat4 viewMatrix;
-    } uboVS;
+    } uboVS{};
 
-    VkPipeline pipeline;
-    VkPipelineLayout pipelineLayout;
-    VkDescriptorSet descriptorSet;
-    VkDescriptorSetLayout descriptorSetLayout;
+    VkPipeline pipeline{};
+    VkPipelineLayout pipelineLayout{};
+    VkDescriptorSet descriptorSet{};
+    VkDescriptorSetLayout descriptorSetLayout{};
 
     void addDeviceFeatures() override;
 
-    void buildCommandBuffers();
+    void buildCommandBuffers() override;
 
     void setupDescriptorPool();
+
     void setupDescriptorSetLayout();
 
     void setupDescriptorSet();
-
-    void prepareVertices(bool useStagingBuffers);
 
     void preparePipelines();
 
@@ -120,7 +125,7 @@ private:
 
     void prepareVertices();
 
-    void prepare();
+    void prepare() override;
 
     void prepareUniformBuffers();
 

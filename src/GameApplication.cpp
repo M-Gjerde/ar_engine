@@ -14,7 +14,7 @@ void GameApplication::prepare() {
     setupDescriptorPool();
     setupDescriptorSet();
     buildCommandBuffers();
-    prepared = true;
+    backendInitialized = true;
 }
 
 void GameApplication::render() {
@@ -486,16 +486,10 @@ void GameApplication::preparePipelines() {
 }
 
 void GameApplication::updateUniformBuffers() {
-    glm::vec3 cameraPos = glm::vec3(-2.0f, -0.5f, -2.0f);
-    glm::vec3 cameraFront = glm::vec3(1.0f, 0.0f, 1.0f);
-    glm::vec3 cameraUp = glm::vec3(0.0f, -1.0f, 0.0f);
-
-    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float) 1280 / (float) 720, 0.001f, 10000.0f);
-    projection[1][1] *= -1;
 
     // Pass matrices to the shaders
-    uboVS.projectionMatrix = projection;
-    uboVS.viewMatrix = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+    uboVS.projectionMatrix = camera.matrices.perspective;
+    uboVS.viewMatrix = camera.matrices.view;
     uboVS.modelMatrix = glm::mat4(1.0f);
 
     // Map uniform buffer and update it

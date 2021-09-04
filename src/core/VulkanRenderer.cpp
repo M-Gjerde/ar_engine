@@ -4,6 +4,7 @@
 
 
 #include <chrono>
+#include <imgui.h>
 #include "VulkanRenderer.h"
 
 VulkanRenderer::VulkanRenderer(bool enableValidation) {
@@ -18,6 +19,9 @@ VulkanRenderer::VulkanRenderer(bool enableValidation) {
     glfwSetWindowUserPointer(window, this);
     glfwSetKeyCallback(window, VulkanRenderer::keyCallback);
     glfwSetWindowSizeCallback(window, VulkanRenderer::resizeCallback);
+    glfwSetMouseButtonCallback(window, VulkanRenderer::mouseButtonCallback);
+    glfwSetCursorPosCallback(window, VulkanRenderer::cursorPositionCallback);
+
     initVulkan();
 }
 
@@ -381,22 +385,16 @@ void VulkanRenderer::prepare() {
     setupFrameBuffer();
 }
 
-void VulkanRenderer::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
-    printf("GLFW Key: %d\n", key);
-    if (key == GLFW_KEY_ESCAPE and action == GLFW_PRESS) {
-        glfwSetWindowShouldClose(window, true);
-    }
-}
 
 void VulkanRenderer::destroyCommandBuffers() {
     vkFreeCommandBuffers(device, cmdPool, static_cast<uint32_t>(drawCmdBuffers.size()), drawCmdBuffers.data());
 }
 
 void VulkanRenderer::windowResize() {
-    if (!prepared) {
+    if (!backendInitialized) {
         return;
     }
-    prepared = false;
+    backendInitialized = false;
     resized = true;
 
     // Ensure all operations on the device have been finished before destroying resources
@@ -426,11 +424,15 @@ void VulkanRenderer::windowResize() {
     buildCommandBuffers();
     vkDeviceWaitIdle(device);
 
+    if ((width > 0.0f) && (height > 0.0f)) {
+        camera.updateAspectRatio((float) width / (float) height);
+    }
+
     // Notify derived class
     windowResized();
     viewChanged();
 
-    prepared = true;
+    backendInitialized = true;
 }
 
 
@@ -442,23 +444,26 @@ void VulkanRenderer::renderLoop() {
 
     while (!glfwWindowShouldClose(window)) {
         auto tStart = std::chrono::high_resolution_clock::now();
-
         glfwPollEvents();
-
         if (viewUpdated) {
             viewUpdated = false;
             viewChanged();
         }
+
         render();
         frameCounter++;
         auto tEnd = std::chrono::high_resolution_clock::now();
         auto tDiff = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
         frameTimer = tDiff / 1000.0f;
 
+        camera.update(frameTimer);
+        if (camera.moving()) {
+            viewUpdated = true;
+        }
+
         float fpsTimer = std::chrono::duration<double, std::milli>(tEnd - lastTimestamp).count();
-        if (fpsTimer > 1000.0f)
-        {
-            lastFPS = (float)frameCounter * (1000.0f / fpsTimer);
+        if (fpsTimer > 1000.0f) {
+            lastFPS = (float) frameCounter * (1000.0f / fpsTimer);
             frameCounter = 0;
             lastTimestamp = tEnd;
         }
@@ -506,6 +511,13 @@ void VulkanRenderer::submitFrame() {
 void VulkanRenderer::drawUI(const VkCommandBuffer commandBuffer) {
 }
 
+
+void VulkanRenderer::renderFrame() {
+
+}
+
+/** CALLBACKS **/
+
 void VulkanRenderer::setWindowSize(uint32_t width, uint32_t height) {
     destWidth = width;
     destHeight = height;
@@ -517,6 +529,109 @@ void VulkanRenderer::resizeCallback(GLFWwindow *window, int width, int height) {
     myApp->setWindowSize(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
 }
 
-void VulkanRenderer::renderFrame() {
 
+void VulkanRenderer::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+    auto *myApp = static_cast<VulkanRenderer *>(glfwGetWindowUserPointer(window));
+    if (key == GLFW_KEY_ESCAPE and action == GLFW_PRESS) {
+        glfwSetWindowShouldClose(window, true);
+    }
+
+    if (action == GLFW_PRESS) {
+        switch (key) {
+            case GLFW_KEY_W:
+                myApp->camera.keys.up = true;
+                break;
+            case GLFW_KEY_S:
+                myApp->camera.keys.down = true;
+                break;
+            case GLFW_KEY_A:
+                myApp->camera.keys.left = true;
+                break;
+            case GLFW_KEY_D:
+                myApp->camera.keys.right = true;
+            default:
+                break;
+        }
+    }
+    if (action == GLFW_RELEASE) {
+        switch (key) {
+            case GLFW_KEY_W:
+                myApp->camera.keys.up = false;
+                break;
+            case GLFW_KEY_S:
+                myApp->camera.keys.down = false;
+                break;
+            case GLFW_KEY_A:
+                myApp->camera.keys.left = false;
+                break;
+            case GLFW_KEY_D:
+                myApp->camera.keys.right = false;
+            default:
+                break;
+        }
+    }
+}
+
+void VulkanRenderer::handleMouseMove(int32_t x, int32_t y) {
+    int32_t dx = (int32_t) mousePos.x - x;
+    int32_t dy = (int32_t) mousePos.y - y;
+
+    bool handled = false;
+
+    if (settings.overlay) {
+        //ImGuiIO& io = ImGui::GetIO();
+        //handled = io.WantCaptureMouse;
+    }
+    mouseMoved((float) x, (float) y, handled);
+
+    if (handled) {
+        mousePos = glm::vec2((float) x, (float) y);
+        return;
+    }
+
+    if (mouseButtons.left) {
+        camera.rotate(glm::vec3(dy * camera.rotationSpeed, -dx * camera.rotationSpeed, 0.0f));
+        viewUpdated = true;
+    }
+    if (mouseButtons.right) {
+        camera.translate(glm::vec3(-0.0f, 0.0f, dy * .005f));
+        viewUpdated = true;
+    }
+    if (mouseButtons.middle) {
+        camera.translate(glm::vec3(-dx * 0.01f, -dy * 0.01f, 0.0f));
+        viewUpdated = true;
+    }
+    mousePos = glm::vec2((float) x, (float) y);
+}
+
+void VulkanRenderer::cursorPositionCallback(GLFWwindow *window, double xPos, double yPos) {
+    auto *myApp = static_cast<VulkanRenderer *>(glfwGetWindowUserPointer(window));
+    myApp->handleMouseMove(xPos, yPos);
+
+}
+
+void VulkanRenderer::mouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {
+    auto *myApp = static_cast<VulkanRenderer *>(glfwGetWindowUserPointer(window));
+
+    if (action == GLFW_PRESS) {
+        switch (button) {
+            case GLFW_MOUSE_BUTTON_RIGHT:
+                myApp->mouseButtons.right = true;
+            case GLFW_MOUSE_BUTTON_MIDDLE:
+                myApp->mouseButtons.middle = true;
+            case GLFW_MOUSE_BUTTON_LEFT:
+                myApp->mouseButtons.left = true;
+        }
+    }
+
+    if (action == GLFW_RELEASE) {
+        switch (button) {
+            case GLFW_MOUSE_BUTTON_RIGHT:
+                myApp->mouseButtons.right = false;
+            case GLFW_MOUSE_BUTTON_MIDDLE:
+                myApp->mouseButtons.middle = false;
+            case GLFW_MOUSE_BUTTON_LEFT:
+                myApp->mouseButtons.left = false;
+        }
+    }
 }

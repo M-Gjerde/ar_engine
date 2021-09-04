@@ -23,8 +23,9 @@ FILE(GLOB GUI_SRC src/renderer/GUI.cpp src/renderer/GUI.h ${IMGUI_DIR}/backends/
 add_library(GUI ${GUI_SRC})
 
 
-file(GLOB ENGINE_SRC src/*)
-add_library(VulkanRenderer ${ENGINE_SRC} src/VulkanDevice.h src/Utils.h src/Populate.h src/VulkanSwapchain.cpp src/VulkanSwapchain.h src/GameApplication.cpp src/GameApplication.h)
+file(GLOB ENGINE_SRC src/core/* src/tools/* src/*)
+message(ENGINE SRC: ${ENGINE_SRC})
+add_library(VulkanRenderer ${ENGINE_SRC} src/core/Camera.h src/core/Camera.h)
 message(Sources:  ${ENGINE_SRC})
 set_target_properties(VulkanRenderer PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(VulkanRenderer GUI ${LIBRARIES})

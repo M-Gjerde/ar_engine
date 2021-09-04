@@ -11,9 +11,10 @@
 #include <vector>
 #include "VulkanDevice.h"
 #include "Validation.h"
-#include "Utils.h"
-#include "Populate.h"
+#include "ar_engine/src/tools/Utils.h"
+#include "ar_engine/src/tools/Populate.h"
 #include "VulkanSwapchain.h"
+#include "Camera.h"
 #include <vector>
 
 #include <cstring>
@@ -46,7 +47,7 @@ public:
     std::string title = "Vulkan Renderer";
     std::string name = "VulkanRenderer";
     uint32_t apiVersion = VK_API_VERSION_1_0;
-    bool prepared = false;
+    bool backendInitialized = false;
     bool resized = false;
     uint32_t width = 1280;
     uint32_t height = 720;
@@ -59,6 +60,7 @@ public:
 
     /** @brief Last frame time measured using a high performance timer (if available) */
     float frameTimer = 1.0f;
+    Camera camera;
     glm::vec2 mousePos{};
 
     struct {
@@ -179,6 +181,8 @@ private:
 
     static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
     static void resizeCallback(GLFWwindow* window, int width, int height);
+    static void cursorPositionCallback(GLFWwindow *window, double xPos, double yPos);
+    static void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods);
 
     void createCommandPool();
 
@@ -191,6 +195,8 @@ private:
     void destroyCommandBuffers();
 
     void setWindowSize(uint32_t width, uint32_t height);
+
+    void handleMouseMove(int32_t x, int32_t y);
 
 };
 
