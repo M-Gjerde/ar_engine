@@ -103,12 +103,12 @@ bool VulkanRenderer::initVulkan() {
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &deviceMemoryProperties);
 
     // Derived examples can override this to set actual features (based on above readings) to enable for logical device creation
-    getEnabledFeatures();
+    addDeviceFeatures();
     // Vulkan device creation
     // This is handled by a separate class that gets a logical device representation
     // and encapsulates functions related to a device
     vulkanDevice = new VulkanDevice(physicalDevice);
-    err = vulkanDevice->createLogicalDevice(deviceFeatures, enabledDeviceExtensions, nullptr);
+    err = vulkanDevice->createLogicalDevice(enabledFeatures, enabledDeviceExtensions, nullptr);
     if (err != VK_SUCCESS)
         throw std::runtime_error("Failed to create logical device");
 
@@ -163,7 +163,7 @@ VulkanRenderer::~VulkanRenderer() {
     glfwTerminate();
 }
 
-void VulkanRenderer::getEnabledFeatures() {
+void VulkanRenderer::addDeviceFeatures() {
 
 }
 
@@ -478,6 +478,14 @@ void VulkanRenderer::prepareFrame() {
         windowResize();
     } else if (result != VK_SUCCESS)
         throw std::runtime_error("Failed to acquire next image");
+
+    // Use a fence to wait until the command buffer has finished execution before using it again
+    result = vkWaitForFences(device, 1, &waitFences[currentBuffer], VK_TRUE, UINT64_MAX);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to wait for fence");
+    result = vkResetFences(device, 1, &waitFences[currentBuffer]);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("Failed to reset fence");
 }
 
 void VulkanRenderer::submitFrame() {

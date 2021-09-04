@@ -73,19 +73,6 @@ public:
     // must be overridden in derived class
     virtual void update(){};
 
-    void gameLoop() {
-        while (!glfwWindowShouldClose(window)) {
-            glfwPollEvents();
-            update();
-            vulkanRenderer.updateUI(uiSettings);
-            vulkanRenderer.draw();
-        }
-        //loadSettings->saveScene(vulkanRenderer);
-        vulkanRenderer.cleanup();
-        glfwDestroyWindow(window);
-        glfwTerminate();
-    }
-
 private:
 
     static void error_callback(int error, const char *description) {

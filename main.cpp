@@ -7,11 +7,10 @@
 GameApplication *application;
 
 
-int main(){
+int main() {
 
     application = new GameApplication("3D Vision Generator");
-
-    application->gameLoop();
-
+    application->prepareEngine();
+    application->run();
     return 0;
 }

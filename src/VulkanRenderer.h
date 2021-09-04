@@ -88,7 +88,7 @@ public:
     /** @brief (Virtual) Setup a default renderpass */
     virtual void setupRenderPass();
     /** @brief (Virtual) Called after the physical device features have been read, can be used to set features to enable on the device */
-    virtual void getEnabledFeatures();
+    virtual void addDeviceFeatures();
     /** @brief Prepares all Vulkan resources and functions required to run the sample */
     virtual void prepare();
     /** @brief Entry point for the main render loop */
@@ -114,9 +114,12 @@ protected:
     VkPhysicalDeviceProperties deviceProperties{};
     // Features available on the physical device
     VkPhysicalDeviceFeatures deviceFeatures{};
+    /** @brief Set of physical device features to be enabled for this example (must be set in the derived constructor) */
+    VkPhysicalDeviceFeatures enabledFeatures{};
     // Features all available memory types for the physical device
     VkPhysicalDeviceMemoryProperties deviceMemoryProperties{};
     /** @brief Set of device extensions to be enabled for this example (must be set in the derived constructor) */
+
     std::vector<const char *> enabledDeviceExtensions;
     std::vector<const char *> enabledInstanceExtensions;
     /** @brief Logical device, application's view of the physical device (GPU) */

@@ -1,7 +1,6 @@
 //
-// Created by magnus on 9/21/20.
+// Created by magnus on 9/4/21.
 //
-
 
 #ifndef AR_ENGINE_GAMEAPPLICATION_H
 #define AR_ENGINE_GAMEAPPLICATION_H
@@ -28,58 +27,104 @@ class GameApplication : VulkanRenderer {
 
 public:
 
-    explicit GameApplication(const std::string &title) : VulkanRenderer(true) {
-
-
-        //glfwSetErrorCallback(error_callback);
+    explicit GameApplication(const std::string &title) : VulkanRenderer(true){
         VulkanRenderer::prepare();
         prepared = true;
 
+    };
 
-        // Create Engine Instance
-        renderLoop();
+    void prepareEngine(){
+        prepare();
     }
 
-    void render() override {
-
-        VulkanRenderer::prepareFrame();
-
-        // Use a fence to wait until the command buffer has finished execution before using it again
-
-        VkResult result = vkWaitForFences(device, 1, &waitFences[currentBuffer], VK_TRUE, UINT64_MAX);
-        if (result != VK_SUCCESS)
-            throw std::runtime_error("Failed to wait for fence");
-        result = vkResetFences(device, 1, &waitFences[currentBuffer]);
-        if (result != VK_SUCCESS)
-            throw std::runtime_error("Failed to reset fence");
-
-
-        submitInfo.commandBufferCount = 0;
-        submitInfo.pCommandBuffers = &drawCmdBuffers[currentBuffer];
-
-        vkQueueSubmit(queue, 1, &submitInfo, waitFences[currentBuffer]);
-
-        VulkanRenderer::submitFrame();
-
-    }
-
-    void gameLoop() {
-
-
+    void run(){
+    renderLoop();
     }
 
 
-    void cursorPosCallback(GLFWwindow *newWindow, double xPos, double yPos) {};
+    ~GameApplication() {
+     // Cleanup
+    }
 
-    void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {};
-
+    void render() override;
 
 private:
 
-    static void error_callback(int error, const char *description) {
-        fprintf(stderr, "Error: %s, code: %d\n", description, error);
-    }
 
+    // Vertex layout used in this example
+    struct Vertex {
+        float position[3];
+        float color[3];
+    };
+
+    // Vertex buffer and attributes
+    struct {
+        VkDeviceMemory memory; // Handle to the device memory for this buffer
+        VkBuffer buffer;       // Handle to the Vulkan buffer object that the memory is bound to
+    } vertices;
+
+    // Index buffer
+    struct {
+        VkDeviceMemory memory;
+        VkBuffer buffer;
+        uint32_t count;
+    } indices;
+
+    // Uniform buffer block object
+    struct {
+        VkDeviceMemory memory;
+        VkBuffer buffer;
+        VkDescriptorBufferInfo descriptor;
+    }  uniformBufferVS;
+
+    // For simplicity we use the same uniform block layout as in the shader:
+    //
+    //	layout(set = 0, binding = 0) uniform UBO
+    //	{
+    //		mat4 projectionMatrix;
+    //		mat4 modelMatrix;
+    //		mat4 viewMatrix;
+    //	} ubo;
+    //
+    // This way we can just memcopy the ubo data to the ubo
+    // Note: You should use data types that align with the GPU in order to avoid manual padding (vec4, mat4)
+    struct {
+        glm::mat4 projectionMatrix;
+        glm::mat4 modelMatrix;
+        glm::mat4 viewMatrix;
+    } uboVS;
+
+    VkPipeline pipeline;
+    VkPipelineLayout pipelineLayout;
+    VkDescriptorSet descriptorSet;
+    VkDescriptorSetLayout descriptorSetLayout;
+
+    void addDeviceFeatures() override;
+
+    void buildCommandBuffers();
+
+    void setupDescriptorPool();
+    void setupDescriptorSetLayout();
+
+    void setupDescriptorSet();
+
+    void prepareVertices(bool useStagingBuffers);
+
+    void preparePipelines();
+
+    VkShaderModule loadSPIRVShader(std::string filename);
+
+    void updateUniformBuffers();
+
+    uint32_t getMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags properties);
+
+    void prepareVertices();
+
+    void prepare();
+
+    void prepareUniformBuffers();
+
+    void viewChanged() override;
 };
 
 
