@@ -52,6 +52,9 @@ public:
     uint32_t width = 1280;
     uint32_t height = 720;
 
+    /** @brief Encapsulated physical and logical vulkan device */
+    VulkanDevice *vulkanDevice{};
+
     struct {
         VkImage image;
         VkDeviceMemory mem;
@@ -105,6 +108,8 @@ public:
     virtual void renderFrame();
 
 
+    VkPipelineShaderStageCreateInfo loadShader(std::string fileName, VkShaderStageFlagBits stage);
+
 protected:
     // Window instance GLFW
     GLFWwindow* window;
@@ -126,8 +131,6 @@ protected:
     std::vector<const char *> enabledInstanceExtensions;
     /** @brief Logical device, application's view of the physical device (GPU) */
     VkDevice device{};
-    /** @brief Encapsulated physical and logical vulkan device */
-    VulkanDevice *vulkanDevice{};
     // Handle to the device graphics queue that command buffers are submitted to
     VkQueue queue{};
     // Depth buffer format (selected during Vulkan initialization)
@@ -167,13 +170,15 @@ protected:
     VkDebugUtilsMessengerEXT debugUtilsMessenger{};
 
 
+    std::string getShadersPath() const;
+
+    int frameCounter = 0;
 private:
     bool viewUpdated = false;
     bool resizing = false;
     bool quit = false;
     uint32_t destWidth;
     uint32_t destHeight;
-    int frameCounter = 0;
     float lastFPS = 0;
 
     void windowResize();

@@ -18,7 +18,20 @@ void GameApplication::prepare() {
 }
 
 void GameApplication::render() {
+    // Update imGui
+    ImGuiIO& io = ImGui::GetIO();
+
+    io.DisplaySize = ImVec2((float)width, (float)height);
+    io.DeltaTime = frameTimer;
+
+    io.MousePos = ImVec2(mousePos.x, mousePos.y);
+    io.MouseDown[0] = mouseButtons.left;
+    io.MouseDown[1] = mouseButtons.right;
+
     VulkanRenderer::prepareFrame();
+
+    buildCommandBuffers();
+
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &drawCmdBuffers[currentBuffer];
 
@@ -66,6 +79,9 @@ void GameApplication::buildCommandBuffers() {
     renderPassBeginInfo.clearValueCount = 2;
     renderPassBeginInfo.pClearValues = clearValues;
 
+    imgui->newFrame(this, (frameCounter == 0));
+    imgui->updateBuffers();
+
     for (int32_t i = 0; i < drawCmdBuffers.size(); ++i) {
         // Set target frame buffer
         renderPassBeginInfo.framebuffer = frameBuffers[i];
@@ -108,6 +124,9 @@ void GameApplication::buildCommandBuffers() {
 
         // Draw indexed triangle
         vkCmdDrawIndexed(drawCmdBuffers[i], indices.count, 1, 0, 0, 1);
+
+
+        imgui->drawFrame(drawCmdBuffers[i]);
 
         vkCmdEndRenderPass(drawCmdBuffers[i]);
 
@@ -487,6 +506,7 @@ void GameApplication::updateUniformBuffers() {
     uboVS.projectionMatrix = camera.matrices.perspective;
     uboVS.viewMatrix = camera.matrices.view;
     uboVS.modelMatrix = glm::mat4(1.0f);
+
 
     // Map uniform buffer and update it
     uint8_t *pData;

@@ -17,6 +17,7 @@
 #include <iostream>
 #include <imgui_impl_glfw.h>
 #include <thread>
+#include <ar_engine/src/imgui/ImGUI.h>
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -26,6 +27,8 @@
 class GameApplication : VulkanRenderer {
 
 public:
+
+    ImGUI* imgui;
 
     explicit GameApplication(const std::string &title) : VulkanRenderer(true) {
         // During constructor prepare backend for rendering
@@ -37,12 +40,19 @@ public:
     void prepareEngine() {
         camera.type = Camera::CameraType::firstperson;
         camera.setPosition( glm::vec3(0.0f, 0.0f, 1.0f));
-        camera.setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
+        camera.setRotation(glm::vec3(0.0f, 180.0f, 0.0f));
         camera.setRotationSpeed(0.25f);
         camera.setPerspective(45.0f, (float)(width / 3.0f) / (float)height, 0.1f, 256.0f);
 
+
+        // imgui
+        imgui = new ImGUI(this);
+        imgui->init((float)width, (float)height);
+        imgui->initResources(renderPass, queue, getShadersPath());
+
         // Prepare the game
         prepare();
+
     }
 
     void run() {

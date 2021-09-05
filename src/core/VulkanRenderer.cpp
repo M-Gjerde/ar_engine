@@ -365,6 +365,24 @@ void VulkanRenderer::createSynchronizationPrimitives() {
     }
 }
 
+std::string VulkanRenderer::getShadersPath() const
+{
+    return "../shaders/";
+}
+
+VkPipelineShaderStageCreateInfo VulkanRenderer::loadShader(std::string fileName, VkShaderStageFlagBits stage)
+{
+    VkPipelineShaderStageCreateInfo shaderStage = {};
+    shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    shaderStage.stage = stage;
+    shaderStage.module = Utils::loadShader(fileName.c_str(), device);
+    shaderStage.pName = "main";
+    assert(shaderStage.module != VK_NULL_HANDLE);
+    shaderModules.push_back(shaderStage.module);
+    return shaderStage;
+}
+
+
 void VulkanRenderer::createPipelineCache() {
     VkPipelineCacheCreateInfo pipelineCacheCreateInfo = {};
     pipelineCacheCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
