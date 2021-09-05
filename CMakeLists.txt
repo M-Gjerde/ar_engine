@@ -23,12 +23,12 @@ FILE(GLOB GUI_SRC src/renderer/GUI.cpp src/renderer/GUI.h ${IMGUI_DIR}/backends/
 add_library(GUI ${GUI_SRC})
 
 
-file(GLOB ENGINE_SRC src/core/* src/tools/* src/*)
+file(GLOB ENGINE_SRC src/core/* src/tools/* src/* src/imgui/*)
 message(ENGINE SRC: ${ENGINE_SRC})
-add_library(VulkanRenderer ${ENGINE_SRC} src/core/Camera.h src/core/Camera.h)
+add_library(VulkanRenderer ${ENGINE_SRC} src/core/Camera.h src/core/Camera.h src/core/Buffer.cpp src/core/Buffer.h)
 message(Sources:  ${ENGINE_SRC})
 set_target_properties(VulkanRenderer PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(VulkanRenderer GUI ${LIBRARIES})
 
-add_executable(engine main.cpp)
+add_executable(engine main.cpp src/imgui/ImGUI.cpp src/imgui/ImGUI.h)
 target_link_libraries(engine VulkanRenderer)
