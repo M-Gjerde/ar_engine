@@ -38,7 +38,7 @@ public:
         camera.type = Camera::CameraType::firstperson;
         camera.setPosition( glm::vec3(0.0f, 0.0f, 1.0f));
         camera.setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
-        camera.setRotationSpeed(0.5f);
+        camera.setRotationSpeed(0.25f);
         camera.setPerspective(45.0f, (float)(width / 3.0f) / (float)height, 0.1f, 256.0f);
 
         // Prepare the game

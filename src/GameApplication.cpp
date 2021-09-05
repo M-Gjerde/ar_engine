@@ -18,16 +18,12 @@ void GameApplication::prepare() {
 }
 
 void GameApplication::render() {
-
     VulkanRenderer::prepareFrame();
-
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &drawCmdBuffers[currentBuffer];
 
     vkQueueSubmit(queue, 1, &submitInfo, waitFences[currentBuffer]);
-
     VulkanRenderer::submitFrame();
-
 }
 
 void GameApplication::viewChanged() {
