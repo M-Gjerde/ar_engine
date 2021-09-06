@@ -12,8 +12,12 @@ find_package(Vulkan REQUIRED)
 find_package(glfw3 REQUIRED)
 find_package(OpenCV 4.0.0 REQUIRED)
 
+# Perlin Noise Library
+message(STATUS "Adding Perlin noise files")
+FILE(GLOB PERLIN_SRC external/Perlin_Noise/*)
+add_library(Perlin ${PERLIN_SRC})
 
-set(LIBRARIES glfw vulkan)
+set(LIBRARIES glfw vulkan Perlin)
 message(LIBRARIES:  ${LIBRARIES})
 # DEAR IMGUI LIBRARY
 set(IMGUI_DIR external/imgui)
@@ -28,5 +32,5 @@ add_library(VulkanRenderer ${ENGINE_SRC} )
 set_target_properties(VulkanRenderer PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(VulkanRenderer GUI ${LIBRARIES})
 
-add_executable(engine main.cpp src/builder/Example.cpp src/builder/Example.h src/builder/Terrain.cpp src/builder/Terrain.h)
+add_executable(engine main.cpp src/core/structs.h)
 target_link_libraries(engine VulkanRenderer)

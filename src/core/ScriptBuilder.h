@@ -9,21 +9,34 @@
 #include <iostream>
 #include <vector>
 #include <cassert>
+#include <ar_engine/src/core/structs.h>
 
-class Component {
+class SceneObject {
 public:
-    Component() = default;
 
-    virtual ~Component() = default;
+    SceneObject() = default;
+    ~SceneObject() = default;
+
+    std::vector<uint32_t> indices;
+    std::vector<Vertex> vertices;
+
+};
+
+class Base {
+public:
+
+    virtual ~Base() = default;
 
     virtual void update() = 0;
     virtual void setup() = 0;
+
+    SceneObject* sceneObject;
 };
 
 
 class ComponentMethodFactory {
 public:
-    using TCreateMethod = std::unique_ptr<Component>(*)();
+    using TCreateMethod = std::unique_ptr<Base>(*)();
     TCreateMethod m_CreateFunc;
 
 public:
@@ -38,12 +51,13 @@ public:
         return false;
     }
 
-    static std::unique_ptr<Component> Create(const std::string &name) {
-        if (auto it = s_methods.find(name); it != s_methods.end())
+    static std::unique_ptr<Base> Create(const std::string &name) {
+        if (auto it = s_methods.find(name); it != s_methods.end()){
             return it->second();
-
+        }
         return nullptr;
     }
+
 
 private:
     static std::map<std::string, TCreateMethod> s_methods;

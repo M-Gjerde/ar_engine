@@ -30,7 +30,8 @@ class GameApplication : VulkanRenderer {
 public:
 
     ImGUI* imgui;
-    std::vector<std::unique_ptr<Component>> scripts;
+    std::vector<std::unique_ptr<Base>> scripts;
+    std::vector<SceneObject> sceneObjects;
 
     explicit GameApplication(const std::string &title) : VulkanRenderer(true) {
         // During constructor prepare backend for rendering
@@ -53,14 +54,6 @@ public:
     void draw();
 
 private:
-
-
-    // Vertex layout used in this example
-    struct Vertex {
-        glm::vec3 pos;
-        glm::vec2 texCoord;
-        glm::vec3 normal;
-    };
 
     // Vertex buffer and attributes
     struct {

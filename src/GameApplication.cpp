@@ -4,6 +4,11 @@
 
 #include <fstream>
 #include <filesystem>
+
+#include <ar_engine/src/builder/Terrain.h>
+#include "ar_engine/src/builder/Cam.h"
+#include "ar_engine/src/builder/Example.h"
+
 #include "GameApplication.h"
 
 
@@ -26,7 +31,6 @@ void GameApplication::prepareEngine() {
         imgui->initResources(renderPass, queue, getShadersPath());
 
         generateScriptClasses();
-
         // Prepare the GameApplication class
         prepareVertices();
         prepareUniformBuffers();
@@ -59,17 +63,21 @@ void GameApplication::generateScriptClasses() {
         }
     }
 
+    sceneObjects.resize(1);
+
     scripts.reserve(classNames.size());
     // Create class instances of scripts
-    for (auto &className: classNames)
+    for (auto &className: classNames){
         scripts.push_back(ComponentMethodFactory::Create(className));
+    }
 
     // Run Once
     for (auto &script: scripts) {
         assert(script);
+        script->sceneObject = &sceneObjects[0];
         script->setup();
     }
-
+    printf("Setup finished\n");
 }
 
 void GameApplication::draw() {
@@ -211,12 +219,11 @@ void GameApplication::prepareVertices() {
 
     // Setup vertices from Terrain Script
     std::vector<Vertex> vertexBuffer;
-
-    uint32_t vertexBufferSize = static_cast<uint32_t>(vertexBuffer.size()) * sizeof(Vertex);
+    uint32_t vertexBufferSize = static_cast<uint32_t>(sceneObjects[0].vertices.size()) * sizeof(Vertex);
 
     // Setup indices
     std::vector<uint32_t> indexBuffer = {0, 1, 2};
-    indices.count = static_cast<uint32_t>(indexBuffer.size());
+    indices.count = static_cast<uint32_t>(sceneObjects[0].indices.size());
     uint32_t indexBufferSize = indices.count * sizeof(uint32_t);
 
     VkMemoryAllocateInfo memAlloc = {};
@@ -243,7 +250,7 @@ void GameApplication::prepareVertices() {
                                                                           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     result = (vkAllocateMemory(device, &memAlloc, nullptr, &vertices.memory));
     result = (vkMapMemory(device, vertices.memory, 0, memAlloc.allocationSize, 0, &data));
-    memcpy(data, vertexBuffer.data(), vertexBufferSize);
+    memcpy(data, sceneObjects[0].vertices.data(), vertexBufferSize);
     vkUnmapMemory(device, vertices.memory);
     result = (vkBindBufferMemory(device, vertices.buffer, vertices.memory, 0));
 
@@ -261,7 +268,7 @@ void GameApplication::prepareVertices() {
                                                                           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     result = (vkAllocateMemory(device, &memAlloc, nullptr, &indices.memory));
     result = (vkMapMemory(device, indices.memory, 0, indexBufferSize, 0, &data));
-    memcpy(data, indexBuffer.data(), indexBufferSize);
+    memcpy(data, sceneObjects[0].indices.data(), indexBufferSize);
     vkUnmapMemory(device, indices.memory);
     result = (vkBindBufferMemory(device, indices.buffer, indices.memory, 0));
 
