@@ -7,27 +7,11 @@
 
 
 void GameApplication::prepare() {
-    prepareVertices();
-    prepareUniformBuffers();
-    setupDescriptorSetLayout();
-    preparePipelines();
-    setupDescriptorPool();
-    setupDescriptorSet();
-    buildCommandBuffers();
-    backendInitialized = true;
+
 }
 
-void GameApplication::render() {
-    // Update imGui
-    ImGuiIO& io = ImGui::GetIO();
 
-    io.DisplaySize = ImVec2((float)width, (float)height);
-    io.DeltaTime = frameTimer;
-
-    io.MousePos = ImVec2(mousePos.x, mousePos.y);
-    io.MouseDown[0] = mouseButtons.left;
-    io.MouseDown[1] = mouseButtons.right;
-
+void GameApplication::draw() {
     VulkanRenderer::prepareFrame();
 
     buildCommandBuffers();
@@ -37,6 +21,23 @@ void GameApplication::render() {
 
     vkQueueSubmit(queue, 1, &submitInfo, waitFences[currentBuffer]);
     VulkanRenderer::submitFrame();
+}
+
+
+void GameApplication::render() {
+    // Update imGui
+    ImGuiIO& io = ImGui::GetIO();
+    io.DisplaySize = ImVec2((float)width, (float)height);
+    io.DeltaTime = frameTimer;
+    io.MousePos = ImVec2(mousePos.x, mousePos.y);
+    io.MouseDown[0] = mouseButtons.left;
+    io.MouseDown[1] = mouseButtons.right;
+
+    for (auto& script : scripts) {
+        script->update();
+    }
+
+    draw();
 }
 
 void GameApplication::viewChanged() {

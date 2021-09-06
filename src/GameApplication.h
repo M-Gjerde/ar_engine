@@ -18,6 +18,7 @@
 #include <imgui_impl_glfw.h>
 #include <thread>
 #include <ar_engine/src/imgui/ImGUI.h>
+#include <ar_engine/src/core/ScriptBuilder.h>
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -29,6 +30,7 @@ class GameApplication : VulkanRenderer {
 public:
 
     ImGUI* imgui;
+    std::vector<std::unique_ptr<Component>> scripts;
 
     explicit GameApplication(const std::string &title) : VulkanRenderer(true) {
         // During constructor prepare backend for rendering
@@ -50,19 +52,41 @@ public:
         imgui->init((float)width, (float)height);
         imgui->initResources(renderPass, queue, getShadersPath());
 
-        // Prepare the game
-        prepare();
+        // Load in dynamic classes
+        std::vector<std::string> classNames;
+        classNames.emplace_back("Terrain");
 
+        scripts.reserve(classNames.size());
+
+        for (auto &className: classNames) {
+            scripts.push_back(ComponentMethodFactory::Create(className));
+        }
+        // Run Once
+        for (auto & script : scripts) {
+            script->setup();
+        }
+        // Add to loop
+
+        // Prepare the GameApplication class
+        prepareVertices();
+        prepareUniformBuffers();
+        setupDescriptorSetLayout();
+        preparePipelines();
+        setupDescriptorPool();
+        setupDescriptorSet();
+        buildCommandBuffers();
     }
 
     void run() {
         renderLoop();
+
     }
 
 
     ~GameApplication() override = default;
 
     void render() override;
+    void draw();
 
 private:
 
