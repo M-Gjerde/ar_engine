@@ -3,6 +3,7 @@
 //
 
 #include <fstream>
+#include <filesystem>
 #include "GameApplication.h"
 
 
@@ -10,6 +11,66 @@ void GameApplication::prepare() {
 
 }
 
+void GameApplication::prepareEngine() {
+    {
+        camera.type = Camera::CameraType::firstperson;
+        camera.setPosition(glm::vec3(-0.2f, -0.09f, 5.0f));
+        camera.setRotation(glm::vec3(0.0f, 180.0f, 0.0f));
+        camera.setRotationSpeed(0.25f);
+        camera.setPerspective(45.0f, (float) (width / 3.0f) / (float) height, 0.1f, 256.0f);
+
+
+        // imgui
+        imgui = new ImGUI(this);
+        imgui->init((float) width, (float) height);
+        imgui->initResources(renderPass, queue, getShadersPath());
+
+        generateScriptClasses();
+
+        // Prepare the GameApplication class
+        prepareVertices();
+        prepareUniformBuffers();
+        setupDescriptorSetLayout();
+        preparePipelines();
+        setupDescriptorPool();
+        setupDescriptorSet();
+        buildCommandBuffers();
+    }
+}
+
+void GameApplication::generateScriptClasses() {
+
+    std::vector<std::string> classNames;
+
+    std::string path = getScriptsPath();
+    for (const auto &entry: std::filesystem::directory_iterator(path)) {
+        std::string file = entry.path().generic_string();
+
+        // Delete path from filename
+        auto n = file.find(path);
+        if (n != std::string::npos)
+            file.erase(n, path.length());
+
+        // Ensure we have the header file by looking for .h extension
+        std::string extension = file.substr(file.find('.') + 1, file.length());
+        if (extension == "h") {
+            std::string className = file.substr(0, file.find('.'));
+            classNames.emplace_back(className);
+        }
+    }
+
+    scripts.reserve(classNames.size());
+    // Create class instances of scripts
+    for (auto &className: classNames)
+        scripts.push_back(ComponentMethodFactory::Create(className));
+
+    // Run Once
+    for (auto &script: scripts) {
+        assert(script);
+        script->setup();
+    }
+
+}
 
 void GameApplication::draw() {
     VulkanRenderer::prepareFrame();
@@ -26,14 +87,14 @@ void GameApplication::draw() {
 
 void GameApplication::render() {
     // Update imGui
-    ImGuiIO& io = ImGui::GetIO();
-    io.DisplaySize = ImVec2((float)width, (float)height);
+    ImGuiIO &io = ImGui::GetIO();
+    io.DisplaySize = ImVec2((float) width, (float) height);
     io.DeltaTime = frameTimer;
     io.MousePos = ImVec2(mousePos.x, mousePos.y);
     io.MouseDown[0] = mouseButtons.left;
     io.MouseDown[1] = mouseButtons.right;
 
-    for (auto& script : scripts) {
+    for (auto &script: scripts) {
         script->update();
     }
 
@@ -494,7 +555,8 @@ void GameApplication::preparePipelines() {
 
 
     // Create rendering pipeline using the specified states
-    VkResult result = (vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCreateInfo, nullptr, &pipeline));
+    VkResult result = (vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCreateInfo, nullptr,
+                                                 &pipeline));
 
     // Shader modules are no longer needed once the graphics pipeline has been created
     vkDestroyShaderModule(device, shaderStages[0].module, nullptr);
@@ -574,3 +636,4 @@ void GameApplication::prepareUniformBuffers() {
 
     updateUniformBuffers();
 }
+

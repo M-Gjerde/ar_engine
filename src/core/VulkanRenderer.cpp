@@ -370,6 +370,10 @@ std::string VulkanRenderer::getShadersPath() const
     return "../shaders/";
 }
 
+std::string VulkanRenderer::getScriptsPath() const {
+    return "../src/builder/";
+}
+
 VkPipelineShaderStageCreateInfo VulkanRenderer::loadShader(std::string fileName, VkShaderStageFlagBits stage)
 {
     VkPipelineShaderStageCreateInfo shaderStage = {};

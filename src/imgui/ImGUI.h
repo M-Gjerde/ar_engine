@@ -416,8 +416,8 @@ public:
         ImGui::SliderFloat("Light speed", &uiSettings.lightSpeed, 0.1f, 1.0f);
         ImGui::End();
 
-        ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiCond_FirstUseEver);
-        ImGui::ShowDemoWindow();
+        //ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiCond_FirstUseEver);
+        //ImGui::ShowDemoWindow();
 
         // Render to generate draw buffers
         ImGui::Render();

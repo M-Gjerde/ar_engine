@@ -170,7 +170,8 @@ protected:
     VkDebugUtilsMessengerEXT debugUtilsMessenger{};
 
 
-    std::string getShadersPath() const;
+    [[nodiscard]] std::string getShadersPath() const;
+    [[nodiscard]] std::string getScriptsPath() const;
 
     int frameCounter = 0;
 private:

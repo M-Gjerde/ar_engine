@@ -39,43 +39,7 @@ public:
 
     };
 
-    void prepareEngine() {
-        camera.type = Camera::CameraType::firstperson;
-        camera.setPosition( glm::vec3(0.0f, 0.0f, 1.0f));
-        camera.setRotation(glm::vec3(0.0f, 180.0f, 0.0f));
-        camera.setRotationSpeed(0.25f);
-        camera.setPerspective(45.0f, (float)(width / 3.0f) / (float)height, 0.1f, 256.0f);
-
-
-        // imgui
-        imgui = new ImGUI(this);
-        imgui->init((float)width, (float)height);
-        imgui->initResources(renderPass, queue, getShadersPath());
-
-        // Load in dynamic classes
-        std::vector<std::string> classNames;
-        classNames.emplace_back("Terrain");
-
-        scripts.reserve(classNames.size());
-
-        for (auto &className: classNames) {
-            scripts.push_back(ComponentMethodFactory::Create(className));
-        }
-        // Run Once
-        for (auto & script : scripts) {
-            script->setup();
-        }
-        // Add to loop
-
-        // Prepare the GameApplication class
-        prepareVertices();
-        prepareUniformBuffers();
-        setupDescriptorSetLayout();
-        preparePipelines();
-        setupDescriptorPool();
-        setupDescriptorSet();
-        buildCommandBuffers();
-    }
+    void prepareEngine();
 
     void run() {
         renderLoop();
@@ -164,6 +128,8 @@ private:
     void prepareUniformBuffers();
 
     void viewChanged() override;
+
+    void generateScriptClasses();
 };
 
 
