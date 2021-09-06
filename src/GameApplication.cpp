@@ -208,13 +208,10 @@ void GameApplication::prepareVertices() {
     //	This is a very complex topic and while it's fine for an example application to small individual memory allocations that is not
     //	what should be done a real-world application, where you should allocate large chunks of memory at once instead.
 
-    // Setup vertices
-    std::vector<Vertex> vertexBuffer =
-            {
-                    {{1.0f,  1.0f,  0.0f}, {1.0f, 0.0f, 0.0f}},
-                    {{-1.0f, 1.0f,  0.0f}, {0.0f, 1.0f, 0.0f}},
-                    {{0.0f,  -1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}}
-            };
+
+    // Setup vertices from Terrain Script
+    std::vector<Vertex> vertexBuffer;
+
     uint32_t vertexBufferSize = static_cast<uint32_t>(vertexBuffer.size()) * sizeof(Vertex);
 
     // Setup indices
@@ -490,7 +487,7 @@ void GameApplication::preparePipelines() {
     vertexInputBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     // Input attribute bindings describe shader attribute locations and memory layouts
-    std::array<VkVertexInputAttributeDescription, 2> vertexInputAttributs;
+    std::array<VkVertexInputAttributeDescription, 3> vertexInputAttributs;
     // These match the following shader layout (see triangle.vert):
     //	layout (location = 0) in vec3 inPos;
     //	layout (location = 1) in vec3 inColor;
@@ -499,20 +496,26 @@ void GameApplication::preparePipelines() {
     vertexInputAttributs[0].location = 0;
     // Position attribute is three 32 bit signed (SFLOAT) floats (R32 G32 B32)
     vertexInputAttributs[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-    vertexInputAttributs[0].offset = offsetof(Vertex, position);
-    // Attribute location 1: Color
+    vertexInputAttributs[0].offset = offsetof(Vertex, pos);
+    // Attribute location 1: texcoord
     vertexInputAttributs[1].binding = 0;
     vertexInputAttributs[1].location = 1;
+    // Position attribute is two 32 bit signed (SFLOAT) floats (R32 G32)
+    vertexInputAttributs[1].format = VK_FORMAT_R32G32_SFLOAT;
+    vertexInputAttributs[1].offset = offsetof(Vertex, texCoord);
+    // Attribute location 1: Color
+    vertexInputAttributs[2].binding = 0;
+    vertexInputAttributs[2].location = 2;
     // Color attribute is three 32 bit signed (SFLOAT) floats (R32 G32 B32)
-    vertexInputAttributs[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-    vertexInputAttributs[1].offset = offsetof(Vertex, color);
+    vertexInputAttributs[2].format = VK_FORMAT_R32G32B32_SFLOAT;
+    vertexInputAttributs[2].offset = offsetof(Vertex, normal);
 
     // Vertex input state used for pipeline creation
     VkPipelineVertexInputStateCreateInfo vertexInputState = {};
     vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputState.vertexBindingDescriptionCount = 1;
     vertexInputState.pVertexBindingDescriptions = &vertexInputBinding;
-    vertexInputState.vertexAttributeDescriptionCount = 2;
+    vertexInputState.vertexAttributeDescriptionCount = 3;
     vertexInputState.pVertexAttributeDescriptions = vertexInputAttributs.data();
 
     // Shaders

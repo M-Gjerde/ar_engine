@@ -57,8 +57,9 @@ private:
 
     // Vertex layout used in this example
     struct Vertex {
-        float position[3];
-        float color[3];
+        glm::vec3 pos;
+        glm::vec2 texCoord;
+        glm::vec3 normal;
     };
 
     // Vertex buffer and attributes
