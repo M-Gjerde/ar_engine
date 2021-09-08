@@ -11,16 +11,7 @@
 #include <cassert>
 #include <ar_engine/src/core/structs.h>
 
-class SceneObject {
-public:
 
-    SceneObject() = default;
-    ~SceneObject() = default;
-
-    std::vector<uint32_t> indices;
-    std::vector<Vertex> vertices;
-
-};
 
 class Base {
 public:
@@ -30,6 +21,11 @@ public:
     virtual void update() = 0;
     virtual void setup() = 0;
 
+    virtual std::string getType() {return type;}
+    virtual void setSceneObject(SceneObject* _sceneObject) {}
+    virtual SceneObject getSceneObject() { return {};}
+
+    std::string type;
     SceneObject* sceneObject;
 };
 
@@ -43,6 +39,7 @@ public:
     ComponentMethodFactory() = delete;
 
     static bool Register(const std::string name, TCreateMethod createFunc) {
+
         if (auto it = s_methods.find(name); it == s_methods.end()) {
             s_methods[name] = createFunc;
             std::cout << name << " registered\n";

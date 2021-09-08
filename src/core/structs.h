@@ -15,4 +15,15 @@ struct Vertex {
     glm::vec3 normal;
 };
 
+class SceneObject {
+public:
+
+    SceneObject() = default;
+    ~SceneObject() = default;
+
+    std::vector<uint32_t> indices;
+    std::vector<Vertex> vertices;
+
+};
+
 #endif //AR_ENGINE_STRUCTS_H

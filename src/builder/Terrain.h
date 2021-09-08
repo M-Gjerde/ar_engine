@@ -20,13 +20,24 @@ public:
     static std::unique_ptr<Base> CreateMethod() { return std::make_unique<Terrain>(); }
     /** @brief Name which is registered for this class. Same as ClassName **/
     static std::string GetFactoryName() { return "Terrain"; }
+
     /** @brief Setup function called one during engine prepare **/
     void setup() override;
     /** @brief update function called once per frame **/
     void update() override;
-
+    /** @brief Get the type of script. This will determine how it interacts with a gameobject **/
+    std::string getType() override;
 
     void generateSquare();
+
+    /** @brief public string to determine if this script should be attaced to an object,
+     * create a new object or do nothing. Types: Generator | None | Name of object in object folder **/
+    std::string type = "generator";
+
+    void setSceneObject(SceneObject *_sceneObject) override;
+    SceneObject getSceneObject() override;
+    SceneObject* sceneObject;
+
 };
 
 

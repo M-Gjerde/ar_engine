@@ -6,7 +6,6 @@
 #include <filesystem>
 
 #include <ar_engine/src/builder/Terrain.h>
-#include "ar_engine/src/builder/Cam.h"
 #include "ar_engine/src/builder/Example.h"
 
 #include "GameApplication.h"
@@ -19,10 +18,10 @@ void GameApplication::prepare() {
 void GameApplication::prepareEngine() {
     {
         camera.type = Camera::CameraType::firstperson;
-        camera.setPosition(glm::vec3(-0.2f, -0.09f, 5.0f));
-        camera.setRotation(glm::vec3(0.0f, 180.0f, 0.0f));
+        camera.setPosition(glm::vec3(8.6f, 13.0f, 6.0f));
+        camera.setRotation(glm::vec3(-37.5f, 125.0f, 0.0f));
         camera.setRotationSpeed(0.25f);
-        camera.setPerspective(45.0f, (float) (width / 3.0f) / (float) height, 0.1f, 256.0f);
+        camera.setPerspective(45.0f, (float) (width) / (float) height, 0.1f, 256.0f);
 
 
         // imgui
@@ -63,7 +62,6 @@ void GameApplication::generateScriptClasses() {
         }
     }
 
-    sceneObjects.resize(1);
 
     scripts.reserve(classNames.size());
     // Create class instances of scripts
@@ -71,10 +69,14 @@ void GameApplication::generateScriptClasses() {
         scripts.push_back(ComponentMethodFactory::Create(className));
     }
 
+    sceneObjects.resize(scripts.size());
+
     // Run Once
-    for (auto &script: scripts) {
+    for (auto & script : scripts) {
         assert(script);
-        script->sceneObject = &sceneObjects[0];
+        if (script->getType() == "generator"){
+            script->setSceneObject(new SceneObject());
+        }
         script->setup();
     }
     printf("Setup finished\n");
@@ -219,11 +221,11 @@ void GameApplication::prepareVertices() {
 
     // Setup vertices from Terrain Script
     std::vector<Vertex> vertexBuffer;
-    uint32_t vertexBufferSize = static_cast<uint32_t>(sceneObjects[0].vertices.size()) * sizeof(Vertex);
+    uint32_t vertexBufferSize = static_cast<uint32_t>(scripts[1]->getSceneObject().vertices.size()) * sizeof(Vertex);
 
     // Setup indices
     std::vector<uint32_t> indexBuffer = {0, 1, 2};
-    indices.count = static_cast<uint32_t>(sceneObjects[0].indices.size());
+    indices.count = static_cast<uint32_t>(scripts[1]->getSceneObject().indices.size());
     uint32_t indexBufferSize = indices.count * sizeof(uint32_t);
 
     VkMemoryAllocateInfo memAlloc = {};
@@ -250,7 +252,7 @@ void GameApplication::prepareVertices() {
                                                                           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     result = (vkAllocateMemory(device, &memAlloc, nullptr, &vertices.memory));
     result = (vkMapMemory(device, vertices.memory, 0, memAlloc.allocationSize, 0, &data));
-    memcpy(data, sceneObjects[0].vertices.data(), vertexBufferSize);
+    memcpy(data, scripts[1]->getSceneObject().vertices.data(), vertexBufferSize);
     vkUnmapMemory(device, vertices.memory);
     result = (vkBindBufferMemory(device, vertices.buffer, vertices.memory, 0));
 
@@ -268,7 +270,7 @@ void GameApplication::prepareVertices() {
                                                                           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     result = (vkAllocateMemory(device, &memAlloc, nullptr, &indices.memory));
     result = (vkMapMemory(device, indices.memory, 0, indexBufferSize, 0, &data));
-    memcpy(data, sceneObjects[0].indices.data(), indexBufferSize);
+    memcpy(data, scripts[1]->getSceneObject().indices.data(), indexBufferSize);
     vkUnmapMemory(device, indices.memory);
     result = (vkBindBufferMemory(device, indices.buffer, indices.memory, 0));
 

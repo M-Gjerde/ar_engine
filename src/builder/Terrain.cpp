@@ -20,7 +20,7 @@ void Terrain::generateSquare() {
     int zSize = 12;
 
     int v = 0;
-    auto* pn = new PerlinNoise(123);
+    auto *pn = new PerlinNoise(123);
 
     uint32_t vertexCount = (xSize + 1) * (zSize + 1);
     uint32_t indexCount = xSize * zSize * 6;
@@ -57,7 +57,6 @@ void Terrain::generateSquare() {
             }
         }
     }
-
     std::vector<uint32_t> indices(indexCount);
     sceneObject->indices.resize(indexCount);
     int tris = 0;
@@ -81,4 +80,16 @@ void Terrain::generateSquare() {
 
 void Terrain::update() {
 
+}
+
+std::string Terrain::getType() {
+    return this->type;
+}
+
+void Terrain::setSceneObject(SceneObject *_sceneObject) {
+    this->sceneObject = _sceneObject;
+}
+
+SceneObject Terrain::getSceneObject() {
+    return *this->sceneObject;
 }

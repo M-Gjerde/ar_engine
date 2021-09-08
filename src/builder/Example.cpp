@@ -10,4 +10,8 @@ void Example::setup() {
 void Example::update() {
 }
 
+std::string Example::getType() {
+    return Base::getType();
+}
+
 
