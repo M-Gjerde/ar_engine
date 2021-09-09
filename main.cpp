@@ -2,14 +2,14 @@
 // Created by magnus on 8/28/21.
 //
 
-#include "src/GameApplication.h"
+#include "src/Renderer.h"
 
-GameApplication *application;
+Renderer *application;
 
 
 int main() {
 
-    application = new GameApplication("3D Vision Generator");
+    application = new Renderer("3D Vision Generator");
     application->prepareEngine();
     application->run();
     return 0;

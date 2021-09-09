@@ -8,14 +8,14 @@
 #include <ar_engine/src/builder/Terrain.h>
 #include "ar_engine/src/builder/Example.h"
 
-#include "GameApplication.h"
+#include "Renderer.h"
 
 
-void GameApplication::prepare() {
+void Renderer::prepare() {
 
 }
 
-void GameApplication::prepareEngine() {
+void Renderer::prepareEngine() {
     {
         camera.type = Camera::CameraType::firstperson;
         camera.setPosition(glm::vec3(8.6f, 13.0f, 6.0f));
@@ -30,7 +30,7 @@ void GameApplication::prepareEngine() {
         imgui->initResources(renderPass, queue, getShadersPath());
 
         generateScriptClasses();
-        // Prepare the GameApplication class
+        // Prepare the Renderer class
         prepareVertices();
         prepareUniformBuffers();
         setupDescriptorSetLayout();
@@ -41,7 +41,7 @@ void GameApplication::prepareEngine() {
     }
 }
 
-void GameApplication::generateScriptClasses() {
+void Renderer::generateScriptClasses() {
 
     std::vector<std::string> classNames;
 
@@ -82,7 +82,7 @@ void GameApplication::generateScriptClasses() {
     printf("Setup finished\n");
 }
 
-void GameApplication::draw() {
+void Renderer::draw() {
     VulkanRenderer::prepareFrame();
 
     buildCommandBuffers();
@@ -95,7 +95,7 @@ void GameApplication::draw() {
 }
 
 
-void GameApplication::render() {
+void Renderer::render() {
     // Update imGui
     ImGuiIO &io = ImGui::GetIO();
     io.DisplaySize = ImVec2((float) width, (float) height);
@@ -111,12 +111,12 @@ void GameApplication::render() {
     draw();
 }
 
-void GameApplication::viewChanged() {
+void Renderer::viewChanged() {
     updateUniformBuffers();
 
 }
 
-void GameApplication::addDeviceFeatures() {
+void Renderer::addDeviceFeatures() {
     if (deviceFeatures.fillModeNonSolid) {
         enabledFeatures.fillModeNonSolid = VK_TRUE;
         // Wide lines must be present for line width > 1.0f
@@ -129,7 +129,7 @@ void GameApplication::addDeviceFeatures() {
 // Build separate command buffers for every framebuffer image
 // Unlike in OpenGL all rendering commands are recorded once into command buffers that are then resubmitted to the queue
 // This allows to generate work upfront and from multiple threads, one of the biggest advantages of Vulkan
-void GameApplication::buildCommandBuffers() {
+void Renderer::buildCommandBuffers() {
     VkCommandBufferBeginInfo cmdBufInfo = {};
     cmdBufInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     cmdBufInfo.pNext = nullptr;
@@ -213,7 +213,7 @@ void GameApplication::buildCommandBuffers() {
 
 // Prepare vertex and index buffers for an indexed triangle
 // Also uploads them to device local memory using staging and initializes vertex input and attribute binding to match the vertex shader
-void GameApplication::prepareVertices() {
+void Renderer::prepareVertices() {
     // A note on memory management in Vulkan in general:
     //	This is a very complex topic and while it's fine for an example application to small individual memory allocations that is not
     //	what should be done a real-world application, where you should allocate large chunks of memory at once instead.
@@ -277,7 +277,7 @@ void GameApplication::prepareVertices() {
 }
 
 
-void GameApplication::setupDescriptorPool() {
+void Renderer::setupDescriptorPool() {
     // We need to tell the API the number of max. requested descriptors per type
     VkDescriptorPoolSize typeCounts[1];
     // This example only uses one descriptor type (uniform buffer) and only requests one descriptor of this type
@@ -302,7 +302,7 @@ void GameApplication::setupDescriptorPool() {
     if (result != VK_SUCCESS) throw std::runtime_error("Failed to create descriptorpool");
 }
 
-void GameApplication::setupDescriptorSetLayout() {
+void Renderer::setupDescriptorSetLayout() {
     // Setup layout of descriptors used in this example
     // Basically connects the different shader stages to descriptors for binding uniform buffers, image samplers, etc.
     // So every shader binding should map to one descriptor set layout binding
@@ -336,7 +336,7 @@ void GameApplication::setupDescriptorSetLayout() {
 
 }
 
-void GameApplication::setupDescriptorSet() {
+void Renderer::setupDescriptorSet() {
     // Allocate a new descriptor set from the global descriptor pool
     VkDescriptorSetAllocateInfo allocInfo = {};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -368,7 +368,7 @@ void GameApplication::setupDescriptorSet() {
 // Vulkan loads its shaders from an immediate binary representation called SPIR-V
 // Shaders are compiled offline from e.g. GLSL using the reference glslang compiler
 // This function loads such a shader from a binary file and returns a shader module structure
-VkShaderModule GameApplication::loadSPIRVShader(std::string filename) {
+VkShaderModule Renderer::loadSPIRVShader(std::string filename) {
     size_t shaderSize;
     char *shaderCode = NULL;
 
@@ -403,7 +403,7 @@ VkShaderModule GameApplication::loadSPIRVShader(std::string filename) {
 }
 
 
-void GameApplication::preparePipelines() {
+void Renderer::preparePipelines() {
     // Create the graphics pipeline used in this example
     // Vulkan uses the concept of rendering pipelines to encapsulate fixed states, replacing OpenGL's complex state machine
     // A pipeline is then stored and hashed on the GPU making pipeline changes very fast
@@ -575,7 +575,7 @@ void GameApplication::preparePipelines() {
     vkDestroyShaderModule(device, shaderStages[1].module, nullptr);
 }
 
-void GameApplication::updateUniformBuffers() {
+void Renderer::updateUniformBuffers() {
 
     // Pass matrices to the shaders
     uboVS.projectionMatrix = camera.matrices.perspective;
@@ -592,7 +592,7 @@ void GameApplication::updateUniformBuffers() {
     vkUnmapMemory(device, uniformBufferVS.memory);
 }
 
-uint32_t GameApplication::getMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags properties) {
+uint32_t Renderer::getMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags properties) {
     // Iterate over all memory types available for the device used in this example
     for (uint32_t i = 0; i < deviceMemoryProperties.memoryTypeCount; i++) {
         if ((typeBits & 1) == 1) {
@@ -607,7 +607,7 @@ uint32_t GameApplication::getMemoryTypeIndex(uint32_t typeBits, VkMemoryProperty
 }
 
 
-void GameApplication::prepareUniformBuffers() {
+void Renderer::prepareUniformBuffers() {
     // Prepare and initialize a uniform buffer block containing shader uniforms
     // Single uniforms like in OpenGL are no longer present in Vulkan. All Shader uniforms are passed via uniform buffer blocks
     VkMemoryRequirements memReqs;

@@ -2,8 +2,8 @@
 // Created by magnus on 9/4/21.
 //
 
-#ifndef AR_ENGINE_GAMEAPPLICATION_H
-#define AR_ENGINE_GAMEAPPLICATION_H
+#ifndef AR_ENGINE_RENDERER_H
+#define AR_ENGINE_RENDERER_H
 
 
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -25,7 +25,7 @@
 #include "imgui_impl_vulkan.h"
 #include "ar_engine/src/core/VulkanRenderer.h"
 
-class GameApplication : VulkanRenderer {
+class Renderer : VulkanRenderer {
 
 public:
 
@@ -33,7 +33,7 @@ public:
     std::vector<std::unique_ptr<Base>> scripts;
     std::vector<SceneObject> sceneObjects;
 
-    explicit GameApplication(const std::string &title) : VulkanRenderer(true) {
+    explicit Renderer(const std::string &title) : VulkanRenderer(true) {
         // During constructor prepare backend for rendering
         VulkanRenderer::prepare();
         backendInitialized = true;
@@ -48,7 +48,7 @@ public:
     }
 
 
-    ~GameApplication() override = default;
+    ~Renderer() override = default;
 
     void render() override;
     void draw();
@@ -127,4 +127,4 @@ private:
 };
 
 
-#endif //AR_ENGINE_GAMEAPPLICATION_H
+#endif //AR_ENGINE_RENDERER_H

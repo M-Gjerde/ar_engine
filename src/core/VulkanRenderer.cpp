@@ -37,7 +37,6 @@ VkResult VulkanRenderer::createInstance(bool enableValidation) {
     // Check if extensions are supported
     if (!Validation::checkInstanceExtensionSupport(enabledInstanceExtensions))
         throw std::runtime_error("Instance Extensions not supported");
-
     VkInstanceCreateInfo instanceCreateInfo = {};
     instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     instanceCreateInfo.pNext = NULL;
@@ -50,9 +49,9 @@ VkResult VulkanRenderer::createInstance(bool enableValidation) {
         instanceCreateInfo.ppEnabledExtensionNames = enabledInstanceExtensions.data();
     }
 
+    const std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
     // The VK_LAYER_KHRONOS_validation contains all current validation functionality.
     if (settings.validation) {
-        const std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
 
         // Check if this layer is available at instance level
         if (Validation::checkValidationLayerSupport(validationLayers)) {
@@ -61,8 +60,8 @@ VkResult VulkanRenderer::createInstance(bool enableValidation) {
         } else {
             std::cerr << "Validation layer VK_LAYER_KHRONOS_validation not present, validation is disabled\n";
         }
-        return vkCreateInstance(&instanceCreateInfo, nullptr, &instance);
     }
+    return vkCreateInstance(&instanceCreateInfo, nullptr, &instance);
 }
 
 bool VulkanRenderer::initVulkan() {

@@ -26,7 +26,6 @@ public:
     virtual SceneObject getSceneObject() { return {};}
 
     std::string type;
-    SceneObject* sceneObject;
 };
 
 
@@ -42,7 +41,6 @@ public:
 
         if (auto it = s_methods.find(name); it == s_methods.end()) {
             s_methods[name] = createFunc;
-            std::cout << name << " registered\n";
             return true;
         }
         return false;

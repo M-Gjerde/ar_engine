@@ -201,7 +201,7 @@ private:
     void destroyCommandBuffers();
 
     void setWindowSize(uint32_t width, uint32_t height);
-
+    /** @brief Default function to handle cursor position input, calls the override function mouseMoved(...) **/
     void handleMouseMove(int32_t x, int32_t y);
 
 };
