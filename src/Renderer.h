@@ -6,10 +6,6 @@
 #define AR_ENGINE_RENDERER_H
 
 
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
-
-#define GLFW_INCLUDE_VULKAN
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -25,6 +21,8 @@
 #include "imgui_impl_vulkan.h"
 #include "ar_engine/src/core/VulkanRenderer.h"
 
+#include "glTFModel.h"
+
 class Renderer : VulkanRenderer {
 
 public:
@@ -37,7 +35,6 @@ public:
         // During constructor prepare backend for rendering
         VulkanRenderer::prepare();
         backendInitialized = true;
-
     };
 
     void prepareEngine();
@@ -55,75 +52,53 @@ public:
 
 private:
 
-    // Vertex buffer and attributes
-    struct {
-        VkDeviceMemory memory; // Handle to the device memory for this buffer
-        VkBuffer buffer;       // Handle to the Vulkan buffer object that the memory is bound to
-    } vertices{};
+    bool wireframe = false;
 
-    // Index buffer
-    struct {
-        VkDeviceMemory memory;
-        VkBuffer buffer;
-        uint32_t count;
-    } indices{};
+    glTFModel gltfModel;
 
-    // Uniform buffer block object
-    struct {
-        VkDeviceMemory memory;
-        VkBuffer buffer;
-        VkDescriptorBufferInfo descriptor;
-    } uniformBufferVS{};
 
-    // For simplicity we use the same uniform block layout as in the shader:
-    //
-    //	layout(set = 0, binding = 0) uniform UBO
-    //	{
-    //		mat4 projectionMatrix;
-    //		mat4 modelMatrix;
-    //		mat4 viewMatrix;
-    //	} ubo;
-    //
-    // This way we can just memcopy the ubo data to the ubo
-    // Note: You should use data types that align with the GPU in order to avoid manual padding (vec4, mat4)
-    struct {
-        glm::mat4 projectionMatrix;
-        glm::mat4 modelMatrix;
-        glm::mat4 viewMatrix;
-    } uboVS{};
+    struct ShaderData {
+        Buffer buffer;
+        struct Values {
+            glm::mat4 projection;
+            glm::mat4 model;
+            glm::vec4 lightPos = glm::vec4(5.0f, 5.0f, -5.0f, 1.0f);
+        } values;
+    } shaderData;
 
-    VkPipeline pipeline{};
-    VkPipelineLayout pipelineLayout{};
-    VkDescriptorSet descriptorSet{};
-    VkDescriptorSetLayout descriptorSetLayout{};
+    struct Pipelines {
+        VkPipeline solid;
+        VkPipeline wireframe = VK_NULL_HANDLE;
+    } pipelines;
 
-    void addDeviceFeatures() override;
+    VkPipelineLayout pipelineLayout;
+    VkDescriptorSet descriptorSet;
 
-    void buildCommandBuffers() override;
+    struct DescriptorSetLayouts {
+        VkDescriptorSetLayout matrices;
+        VkDescriptorSetLayout textures;
+    } descriptorSetLayouts;
 
-    void setupDescriptorPool();
 
-    void setupDescriptorSetLayout();
 
-    void setupDescriptorSet();
-
+    void setupDescriptors();
     void preparePipelines();
 
     VkShaderModule loadSPIRVShader(std::string filename);
 
     void updateUniformBuffers();
-
     uint32_t getMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags properties);
-
     void prepareVertices();
-
-    void prepare() override;
-
     void prepareUniformBuffers();
 
     void viewChanged() override;
+    void addDeviceFeatures() override;
+    void buildCommandBuffers() override;
+    void prepare() override;
 
     void generateScriptClasses();
+    void loadglTFFile(std::string filename);
+    void loadAssets();
 };
 
 

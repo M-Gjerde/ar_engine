@@ -10,3 +10,9 @@
 [submodule "external/Perlin_Noise"]
 	path = external/Perlin_Noise
 	url = https://github.com/sol-prog/Perlin_Noise
+[submodule "external/tinygltf"]
+	path = external/tinygltf
+	url = https://github.com/syoyo/tinygltf
+[submodule "external/KTX-Software"]
+	path = external/KTX-Software
+	url = https://github.com/KhronosGroup/KTX-Software

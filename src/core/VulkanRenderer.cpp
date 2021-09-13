@@ -168,6 +168,14 @@ VulkanRenderer::~VulkanRenderer() {
 
 void VulkanRenderer::addDeviceFeatures() {
 
+    // TODO PERFORM THIS IN THE OVERRIDDEN CLASS
+    if (deviceFeatures.fillModeNonSolid) {
+        enabledFeatures.fillModeNonSolid = VK_TRUE;
+        // Wide lines must be present for line width > 1.0f
+        if (deviceFeatures.wideLines) {
+            enabledFeatures.wideLines = VK_TRUE;
+        }
+    }
 }
 
 void VulkanRenderer::viewChanged() {
@@ -364,17 +372,19 @@ void VulkanRenderer::createSynchronizationPrimitives() {
     }
 }
 
-std::string VulkanRenderer::getShadersPath() const
-{
+std::string VulkanRenderer::getShadersPath() const {
     return "../shaders/";
+}
+
+std::string VulkanRenderer::getAssetsPath() const {
+    return "../Assets/";
 }
 
 std::string VulkanRenderer::getScriptsPath() const {
     return "../src/builder/";
 }
 
-VkPipelineShaderStageCreateInfo VulkanRenderer::loadShader(std::string fileName, VkShaderStageFlagBits stage)
-{
+VkPipelineShaderStageCreateInfo VulkanRenderer::loadShader(std::string fileName, VkShaderStageFlagBits stage) {
     VkPipelineShaderStageCreateInfo shaderStage = {};
     shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     shaderStage.stage = stage;

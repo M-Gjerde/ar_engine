@@ -172,6 +172,7 @@ protected:
 
     [[nodiscard]] std::string getShadersPath() const;
     [[nodiscard]] std::string getScriptsPath() const;
+    [[nodiscard]] std::string getAssetsPath() const;
 
     int frameCounter = 0;
 private:

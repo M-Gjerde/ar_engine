@@ -183,44 +183,6 @@ public:
         }
     };
 
-
-    bool firstMouse = true;
-    /** @brief Function to handle lookaround function **/    /*
-    void Camera::lookAround(double xPos, double yPos) {
-
-        if (firstMouse)
-        {
-            lastX = xPos;
-            lastY = yPos;
-            firstMouse = false;
-        }
-
-        double xoffset = xPos - lastX;
-        double yoffset = lastY - yPos;
-        lastX = xPos;
-        lastY = yPos;
-
-        float sensitivity = 0.1f;
-        xoffset *= sensitivity;
-        yoffset *= sensitivity;
-
-        yaw   -= xoffset;
-        pitch -= yoffset;
-
-        if(pitch > 89.0f)
-            pitch = 89.0f;
-        if(pitch < -89.0f)
-            pitch = -89.0f;
-
-        glm::vec3 direction;
-        direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-        direction.y = sin(glm::radians(pitch));
-        direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-        cameraFront = glm::normalize(direction);
-
-
-    }
-*/
     // Update camera passing separate axis data (gamepad)
     // Returns true if view or position has been changed
     bool updatePad(glm::vec2 axisLeft, glm::vec2 axisRight, float deltaTime)
