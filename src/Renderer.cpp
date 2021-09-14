@@ -277,7 +277,7 @@ void Renderer::loadglTFFile(std::string filename) {
 }
 
 void Renderer::loadAssets() {
-    loadglTFFile(getAssetsPath() + "models/voyager.gltf");
+    loadglTFFile(getAssetsPath() + "models/DamagedHelmet/glTF/DamagedHelmet.gltf");
 }
 
 void Renderer::setupDescriptors() {
