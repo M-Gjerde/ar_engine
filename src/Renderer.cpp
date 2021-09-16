@@ -200,7 +200,6 @@ void Renderer::loadglTFFile(std::string filename) {
     } else {
         throw std::runtime_error(
                 "Could not open the glTF file.\n\nThe file is part of the additional asset pack.\n\nRun \"download_assets.py\" in the repository root to download the latest version.");
-        return;
     }
 
     // Create and upload vertex and index buffer

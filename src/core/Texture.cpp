@@ -3,6 +3,7 @@
 //
 
 #include <ar_engine/src/tools/Utils.h>
+#include <ar_engine/src/tools/Macros.h>
 #include "Texture.h"
 
 /*
@@ -91,7 +92,7 @@ void Texture2D::loadFromFile(std::string filename, VkFormat format, VulkanDevice
         bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
 
-        (vkCreateBuffer(device->logicalDevice, &bufferCreateInfo, nullptr, &stagingBuffer));
+        CHECK_RESULT(vkCreateBuffer(device->logicalDevice, &bufferCreateInfo, nullptr, &stagingBuffer));
 
         // Get memory requirements for the staging buffer (alignment, memory type bits)
         vkGetBufferMemoryRequirements(device->logicalDevice, stagingBuffer, &memReqs);
@@ -103,14 +104,14 @@ void Texture2D::loadFromFile(std::string filename, VkFormat format, VulkanDevice
                                                              VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
 
-        (vkAllocateMemory(device->logicalDevice, &memAllocInfo, nullptr, &stagingMemory));
+        CHECK_RESULT(vkAllocateMemory(device->logicalDevice, &memAllocInfo, nullptr, &stagingMemory));
 
-        (vkBindBufferMemory(device->logicalDevice, stagingBuffer, stagingMemory, 0));
+        CHECK_RESULT(vkBindBufferMemory(device->logicalDevice, stagingBuffer, stagingMemory, 0));
 
         // Copy texture data into staging buffer
         uint8_t *data;
 
-        (vkMapMemory(device->logicalDevice, stagingMemory, 0, memReqs.size, 0, (void **) &data));
+        CHECK_RESULT(vkMapMemory(device->logicalDevice, stagingMemory, 0, memReqs.size, 0, (void **) &data));
         memcpy(data, ktxTextureData, ktxTextureSize);
         vkUnmapMemory(device->logicalDevice, stagingMemory);
 
@@ -152,7 +153,7 @@ void Texture2D::loadFromFile(std::string filename, VkFormat format, VulkanDevice
             imageCreateInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         }
 
-        (vkCreateImage(device->logicalDevice, &imageCreateInfo, nullptr, &image));
+        CHECK_RESULT(vkCreateImage(device->logicalDevice, &imageCreateInfo, nullptr, &image));
 
         vkGetImageMemoryRequirements(device->logicalDevice, image, &memReqs);
 
@@ -161,9 +162,9 @@ void Texture2D::loadFromFile(std::string filename, VkFormat format, VulkanDevice
         memAllocInfo.memoryTypeIndex = device->getMemoryType(memReqs.memoryTypeBits,
                                                              VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        (vkAllocateMemory(device->logicalDevice, &memAllocInfo, nullptr, &deviceMemory));
+        CHECK_RESULT(vkAllocateMemory(device->logicalDevice, &memAllocInfo, nullptr, &deviceMemory));
 
-        (vkBindImageMemory(device->logicalDevice, image, deviceMemory, 0));
+        CHECK_RESULT(vkBindImageMemory(device->logicalDevice, image, deviceMemory, 0));
 
         VkImageSubresourceRange subresourceRange = {};
         subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -233,7 +234,7 @@ void Texture2D::loadFromFile(std::string filename, VkFormat format, VulkanDevice
 
         // Load mip map level 0 to linear tiling image
 
-        (vkCreateImage(device->logicalDevice, &imageCreateInfo, nullptr, &mappableImage));
+        CHECK_RESULT(vkCreateImage(device->logicalDevice, &imageCreateInfo, nullptr, &mappableImage));
 
         // Get memory requirements for this image
         // like size and alignment
@@ -248,11 +249,11 @@ void Texture2D::loadFromFile(std::string filename, VkFormat format, VulkanDevice
 
         // Allocate host memory
 
-        (vkAllocateMemory(device->logicalDevice, &memAllocInfo, nullptr, &mappableMemory));
+        CHECK_RESULT(vkAllocateMemory(device->logicalDevice, &memAllocInfo, nullptr, &mappableMemory));
 
         // Bind allocated image for use
 
-        (vkBindImageMemory(device->logicalDevice, mappableImage, mappableMemory, 0));
+        CHECK_RESULT(vkBindImageMemory(device->logicalDevice, mappableImage, mappableMemory, 0));
 
         // Get sub resource layout
         // Mip map count, array layer, etc.
@@ -269,7 +270,7 @@ void Texture2D::loadFromFile(std::string filename, VkFormat format, VulkanDevice
 
         // Map image memory
 
-        (vkMapMemory(device->logicalDevice, mappableMemory, 0, memReqs.size, 0, &data));
+        CHECK_RESULT(vkMapMemory(device->logicalDevice, mappableMemory, 0, memReqs.size, 0, &data));
 
         // Copy image data into memory
         memcpy(data, ktxTextureData, memReqs.size);
@@ -312,7 +313,7 @@ void Texture2D::loadFromFile(std::string filename, VkFormat format, VulkanDevice
     samplerCreateInfo.anisotropyEnable = device->enabledFeatures.samplerAnisotropy;
     samplerCreateInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 
-    (vkCreateSampler(device->logicalDevice, &samplerCreateInfo, nullptr, &sampler));
+    CHECK_RESULT(vkCreateSampler(device->logicalDevice, &samplerCreateInfo, nullptr, &sampler));
 
     // Create image view
     // Textures are not directly accessed by the shaders and
@@ -330,7 +331,7 @@ void Texture2D::loadFromFile(std::string filename, VkFormat format, VulkanDevice
     viewCreateInfo.subresourceRange.levelCount = (useStaging) ? mipLevels : 1;
     viewCreateInfo.image = image;
 
-    (vkCreateImageView(device->logicalDevice, &viewCreateInfo, nullptr, &view));
+    CHECK_RESULT(vkCreateImageView(device->logicalDevice, &viewCreateInfo, nullptr, &view));
 
     // Update descriptor image info member that can be used for setting up descriptor sets
     updateDescriptor();
@@ -378,7 +379,7 @@ Texture2D::fromBuffer(void *buffer, VkDeviceSize bufferSize, VkFormat format, ui
     bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
 
-    (vkCreateBuffer(device->logicalDevice, &bufferCreateInfo, nullptr, &stagingBuffer));
+    CHECK_RESULT(vkCreateBuffer(device->logicalDevice, &bufferCreateInfo, nullptr, &stagingBuffer));
 
     // Get memory requirements for the staging buffer (alignment, memory type bits)
     vkGetBufferMemoryRequirements(device->logicalDevice, stagingBuffer, &memReqs);
@@ -396,7 +397,7 @@ Texture2D::fromBuffer(void *buffer, VkDeviceSize bufferSize, VkFormat format, ui
     // Copy texture data into staging buffer
     uint8_t *data;
 
-    (vkMapMemory(device->logicalDevice, stagingMemory, 0, memReqs.size, 0, (void **) &data));
+    CHECK_RESULT(vkMapMemory(device->logicalDevice, stagingMemory, 0, memReqs.size, 0, (void **) &data));
     memcpy(data, buffer, bufferSize);
     vkUnmapMemory(device->logicalDevice, stagingMemory);
 
@@ -427,7 +428,7 @@ Texture2D::fromBuffer(void *buffer, VkDeviceSize bufferSize, VkFormat format, ui
         imageCreateInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     }
 
-    (vkCreateImage(device->logicalDevice, &imageCreateInfo, nullptr, &image));
+    CHECK_RESULT(vkCreateImage(device->logicalDevice, &imageCreateInfo, nullptr, &image));
 
     vkGetImageMemoryRequirements(device->logicalDevice, image, &memReqs);
 
@@ -435,9 +436,9 @@ Texture2D::fromBuffer(void *buffer, VkDeviceSize bufferSize, VkFormat format, ui
 
     memAllocInfo.memoryTypeIndex = device->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    (vkAllocateMemory(device->logicalDevice, &memAllocInfo, nullptr, &deviceMemory));
+    CHECK_RESULT(vkAllocateMemory(device->logicalDevice, &memAllocInfo, nullptr, &deviceMemory));
 
-    (vkBindImageMemory(device->logicalDevice, image, deviceMemory, 0));
+    CHECK_RESULT(vkBindImageMemory(device->logicalDevice, image, deviceMemory, 0));
 
     VkImageSubresourceRange subresourceRange = {};
     subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -498,7 +499,7 @@ Texture2D::fromBuffer(void *buffer, VkDeviceSize bufferSize, VkFormat format, ui
     samplerCreateInfo.maxLod = 0.0f;
     samplerCreateInfo.maxAnisotropy = 1.0f;
 
-    (vkCreateSampler(device->logicalDevice, &samplerCreateInfo, nullptr, &sampler));
+    CHECK_RESULT(vkCreateSampler(device->logicalDevice, &samplerCreateInfo, nullptr, &sampler));
 
     // Create image view
     VkImageViewCreateInfo viewCreateInfo = {};
@@ -512,7 +513,7 @@ Texture2D::fromBuffer(void *buffer, VkDeviceSize bufferSize, VkFormat format, ui
     viewCreateInfo.subresourceRange.levelCount = 1;
     viewCreateInfo.image = image;
 
-    (vkCreateImageView(device->logicalDevice, &viewCreateInfo, nullptr, &view));
+    CHECK_RESULT(vkCreateImageView(device->logicalDevice, &viewCreateInfo, nullptr, &view));
 
     // Update descriptor image info member that can be used for setting up descriptor sets
     updateDescriptor();

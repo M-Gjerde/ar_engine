@@ -38,7 +38,7 @@ set(LIBRARIES glfw vulkan Perlin ktx)
 message(LIBRARIES:  ${LIBRARIES})
 
 file(GLOB ENGINE_SRC src/core/* src/tools/* src/* src/imgui/* src/builder/*)
-add_library(VulkanRenderer ${ENGINE_SRC} src/core/VulkanglTFModel.cpp.unfinished src/core/VulkanglTFModel.h.unfinished)
+add_library(VulkanRenderer ${ENGINE_SRC} )
 set_target_properties(VulkanRenderer PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(VulkanRenderer GUI ${LIBRARIES})
 
