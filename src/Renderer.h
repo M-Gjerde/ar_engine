@@ -21,7 +21,7 @@
 #include "imgui_impl_vulkan.h"
 #include "ar_engine/src/core/VulkanRenderer.h"
 
-#include "glTFModel.h"
+#include "ar_engine/src/discarded/glTFModel.h"
 
 class Renderer : VulkanRenderer {
 
@@ -53,8 +53,6 @@ public:
 private:
 
     bool wireframe = false;
-
-    glTFModel gltfModel;
 
 
     struct ShaderData {

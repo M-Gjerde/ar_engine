@@ -9,8 +9,9 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <ar_engine/src/core/Texture.h>
 
-#define TINYGLTF_NO_STB_IMAGE_WRITE
+
 #include "tiny_gltf.h"
+
 
 class glTFModel {
 public:

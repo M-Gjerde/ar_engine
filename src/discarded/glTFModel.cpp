@@ -35,7 +35,6 @@ void glTFModel::loadImages(tinygltf::Model &input) {
             bufferSize = glTFImage.image.size();
         }
         // Load texture from image buffer
-
         images[i].texture.fromBuffer(buffer, bufferSize, VK_FORMAT_R8G8B8A8_UNORM, glTFImage.width, glTFImage.height, vulkanDevice, copyQueue);
         if (deleteBuffer) {
             delete buffer;

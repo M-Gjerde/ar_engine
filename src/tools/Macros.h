@@ -5,6 +5,9 @@
 #ifndef AR_ENGINE_MACROS_H
 #define AR_ENGINE_MACROS_H
 
+#include <vulkan/vulkan_core.h>
+#include "string"
+
 #define CHECK_RESULT(f) \
 {                                                                                                           \
     VkResult res = (f);                                                                                     \
@@ -18,7 +21,7 @@
 namespace Macros {
 
 
-    std::string errorString(VkResult errorCode) {
+    inline std::string errorString(VkResult errorCode) {
         switch (errorCode) {
 #define STR(r) case VK_ ##r: return #r
             STR(NOT_READY);

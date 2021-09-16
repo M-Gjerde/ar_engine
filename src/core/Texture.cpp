@@ -570,14 +570,14 @@ void Texture2DArray::loadFromFile(std::string filename, VkFormat format, VulkanD
                                                                                  VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
 
-    (vkAllocateMemory(device->logicalDevice, &memAllocInfo, nullptr, &stagingMemory));
+    CHECK_RESULT(vkAllocateMemory(device->logicalDevice, &memAllocInfo, nullptr, &stagingMemory));
 
-    (vkBindBufferMemory(device->logicalDevice, stagingBuffer, stagingMemory, 0));
+    CHECK_RESULT(vkBindBufferMemory(device->logicalDevice, stagingBuffer, stagingMemory, 0));
 
     // Copy texture data into staging buffer
     uint8_t *data;
 
-    (vkMapMemory(device->logicalDevice, stagingMemory, 0, memReqs.size, 0, (void **) &data));
+    CHECK_RESULT(vkMapMemory(device->logicalDevice, stagingMemory, 0, memReqs.size, 0, (void **) &data));
     memcpy(data, ktxTextureData, ktxTextureSize);
     vkUnmapMemory(device->logicalDevice, stagingMemory);
 
@@ -622,7 +622,7 @@ void Texture2DArray::loadFromFile(std::string filename, VkFormat format, VulkanD
     imageCreateInfo.mipLevels = mipLevels;
 
 
-    (vkCreateImage(device->logicalDevice, &imageCreateInfo, nullptr, &image));
+    CHECK_RESULT(vkCreateImage(device->logicalDevice, &imageCreateInfo, nullptr, &image));
 
     vkGetImageMemoryRequirements(device->logicalDevice, image, &memReqs);
 
@@ -630,9 +630,9 @@ void Texture2DArray::loadFromFile(std::string filename, VkFormat format, VulkanD
     memAllocInfo.memoryTypeIndex = device->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 
-    (vkAllocateMemory(device->logicalDevice, &memAllocInfo, nullptr, &deviceMemory));
+    CHECK_RESULT(vkAllocateMemory(device->logicalDevice, &memAllocInfo, nullptr, &deviceMemory));
 
-    (vkBindImageMemory(device->logicalDevice, image, deviceMemory, 0));
+    CHECK_RESULT(vkBindImageMemory(device->logicalDevice, image, deviceMemory, 0));
 
     // Use a separate command buffer for texture loading
     VkCommandBuffer copyCmd = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
@@ -693,7 +693,7 @@ void Texture2DArray::loadFromFile(std::string filename, VkFormat format, VulkanD
     samplerCreateInfo.maxLod = (float) mipLevels;
     samplerCreateInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 
-    (vkCreateSampler(device->logicalDevice, &samplerCreateInfo, nullptr, &sampler));
+    CHECK_RESULT(vkCreateSampler(device->logicalDevice, &samplerCreateInfo, nullptr, &sampler));
 
     // Create image view
     VkImageViewCreateInfo viewCreateInfo = Populate::imageViewCreateInfo();
@@ -756,7 +756,7 @@ void TextureCubeMap::loadFromFile(std::string filename, VkFormat format, VulkanD
     bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
 
-    (vkCreateBuffer(device->logicalDevice, &bufferCreateInfo, nullptr, &stagingBuffer));
+    CHECK_RESULT(vkCreateBuffer(device->logicalDevice, &bufferCreateInfo, nullptr, &stagingBuffer));
 
     // Get memory requirements for the staging buffer (alignment, memory type bits)
     vkGetBufferMemoryRequirements(device->logicalDevice, stagingBuffer, &memReqs);
@@ -767,14 +767,14 @@ void TextureCubeMap::loadFromFile(std::string filename, VkFormat format, VulkanD
                                                                                  VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
 
-    (vkAllocateMemory(device->logicalDevice, &memAllocInfo, nullptr, &stagingMemory));
+    CHECK_RESULT(vkAllocateMemory(device->logicalDevice, &memAllocInfo, nullptr, &stagingMemory));
 
-    (vkBindBufferMemory(device->logicalDevice, stagingBuffer, stagingMemory, 0));
+    CHECK_RESULT(vkBindBufferMemory(device->logicalDevice, stagingBuffer, stagingMemory, 0));
 
     // Copy texture data into staging buffer
     uint8_t *data;
 
-    (vkMapMemory(device->logicalDevice, stagingMemory, 0, memReqs.size, 0, (void **) &data));
+    CHECK_RESULT(vkMapMemory(device->logicalDevice, stagingMemory, 0, memReqs.size, 0, (void **) &data));
     memcpy(data, ktxTextureData, ktxTextureSize);
     vkUnmapMemory(device->logicalDevice, stagingMemory);
 
@@ -822,7 +822,7 @@ void TextureCubeMap::loadFromFile(std::string filename, VkFormat format, VulkanD
     imageCreateInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
 
-    (vkCreateImage(device->logicalDevice, &imageCreateInfo, nullptr, &image));
+    CHECK_RESULT(vkCreateImage(device->logicalDevice, &imageCreateInfo, nullptr, &image));
 
     vkGetImageMemoryRequirements(device->logicalDevice, image, &memReqs);
 
@@ -830,9 +830,9 @@ void TextureCubeMap::loadFromFile(std::string filename, VkFormat format, VulkanD
     memAllocInfo.memoryTypeIndex = device->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 
-    (vkAllocateMemory(device->logicalDevice, &memAllocInfo, nullptr, &deviceMemory));
+    CHECK_RESULT(vkAllocateMemory(device->logicalDevice, &memAllocInfo, nullptr, &deviceMemory));
 
-    (vkBindImageMemory(device->logicalDevice, image, deviceMemory, 0));
+    CHECK_RESULT(vkBindImageMemory(device->logicalDevice, image, deviceMemory, 0));
 
     // Use a separate command buffer for texture loading
     VkCommandBuffer copyCmd = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
@@ -906,7 +906,7 @@ void TextureCubeMap::loadFromFile(std::string filename, VkFormat format, VulkanD
     viewCreateInfo.subresourceRange.levelCount = mipLevels;
     viewCreateInfo.image = image;
 
-    (vkCreateImageView(device->logicalDevice, &viewCreateInfo, nullptr, &view));
+    CHECK_RESULT(vkCreateImageView(device->logicalDevice, &viewCreateInfo, nullptr, &view));
 
     // Clean up staging resources
     ktxTexture_Destroy(ktxTexture);

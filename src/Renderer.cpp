@@ -5,9 +5,10 @@
 #include <fstream>
 #include <filesystem>
 
-#include <ar_engine/src/builder/Terrain.h>
 #include "ar_engine/src/builder/Example.h"
+#include <ar_engine/src/builder/Terrain.h>
 
+#include <ar_engine/src/tools/Macros.h>
 #include "Renderer.h"
 
 
@@ -164,15 +165,15 @@ void Renderer::buildCommandBuffers() {
         vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
                           wireframe ? pipelines.wireframe : pipelines.solid);
 
-        gltfModel.draw(drawCmdBuffers[i], pipelineLayout);
         imgui->drawFrame(drawCmdBuffers[i]);
 
         vkCmdEndRenderPass(drawCmdBuffers[i]);
-        (vkEndCommandBuffer(drawCmdBuffers[i]));
+        CHECK_RESULT(vkEndCommandBuffer(drawCmdBuffers[i]));
     }
 }
 
 void Renderer::loadglTFFile(std::string filename) {
+    /*
     tinygltf::Model glTFInput;
     tinygltf::TinyGLTF gltfContext;
     std::string error, warning;
@@ -273,8 +274,10 @@ void Renderer::loadglTFFile(std::string filename) {
     vkFreeMemory(device, vertexStaging.memory, nullptr);
     vkDestroyBuffer(device, indexStaging.buffer, nullptr);
     vkFreeMemory(device, indexStaging.memory, nullptr);
-}
 
+ */
+
+}
 void Renderer::loadAssets() {
     loadglTFFile(getAssetsPath() + "models/DamagedHelmet/glTF/DamagedHelmet.gltf");
 }
@@ -282,7 +285,7 @@ void Renderer::loadAssets() {
 void Renderer::setupDescriptors() {
     /*
         This sample uses separate descriptor sets (and layouts) for the matrices and materials (textures)
-    */
+
 
     std::vector<VkDescriptorPoolSize> poolSizes = {
             Populate::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1),
@@ -336,6 +339,7 @@ void Renderer::setupDescriptors() {
                                                                                0, &image.texture.descriptor);
         vkUpdateDescriptorSets(device, 1, &writeDescriptorSet, 0, nullptr);
     }
+     */
 }
 
 void Renderer::preparePipelines() {
