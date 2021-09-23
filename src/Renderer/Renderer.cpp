@@ -106,10 +106,8 @@ void Renderer::viewChanged() {
 }
 
 void Renderer::UIUpdate(UISettings uiSettings) {
-
     printf("Clicked: %d \n" ,uiSettings.displayModels);
-
-    //printf("Index: %d, name: %s\n", uiSettings.getSelectedItem(), uiSettings.listBoxNames[uiSettings.getSelectedItem()].c_str());
+    printf("Index: %d, name: %s\n", uiSettings.getSelectedItem(), uiSettings.listBoxNames[uiSettings.getSelectedItem()].c_str());
 
 }
 
