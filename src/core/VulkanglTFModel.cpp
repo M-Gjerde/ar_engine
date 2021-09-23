@@ -8,12 +8,10 @@
 
 #pragma once
 
-// Define these only in *one* .cc file.
 #define TINYGLTF_IMPLEMENTATION
+#define TINYGLTF_NO_STB_IMAGE_WRITE
 #define STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-// #define TINYGLTF_NOEXCEPTION // optional. disable exception handling.
-#include "tiny_gltf.h"
+#define STBI_MSC_SECURE_CRT
 
 
 #include "VulkanglTFModel.h"

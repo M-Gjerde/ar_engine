@@ -1,0 +1,32 @@
+//
+// Created by magnus on 9/23/21.
+//
+
+#include "Application.h.unfinished"
+
+void Application::render() {
+}
+
+void Application::run() {
+}
+
+void Application::viewChanged() {
+}
+
+void Application::prepare() {
+}
+
+void Application::addDeviceFeatures() {
+}
+
+void Application::buildCommandBuffers() {
+}
+
+void Application::draw() {
+
+}
+
+void Application::prepareEngine() {
+}
+
+Application::~Application() = default;

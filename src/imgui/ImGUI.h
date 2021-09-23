@@ -45,7 +45,6 @@ private:
     VkDescriptorSet descriptorSet{};
 
     VulkanDevice *device;
-    VulkanRenderer *vulkanRenderer;
 
 public:
     // UI params are set via push constants
@@ -54,10 +53,12 @@ public:
         glm::vec2 translate;
     } pushConstBlock{};
 
+    std::vector<VkPipelineShaderStageCreateInfo> shaders;
+
     UISettings uiSettings;
 
-    explicit ImGUI(VulkanRenderer *vulkanRenderer) : vulkanRenderer(vulkanRenderer) {
-        device = vulkanRenderer->vulkanDevice;
+    explicit ImGUI(VulkanDevice *vulkanDevice){
+        device = vulkanDevice;
         ImGui::CreateContext();
     };
 
@@ -322,11 +323,12 @@ public:
                 Populate
                 ::pipelineDynamicStateCreateInfo(dynamicStateEnables);
 
-        std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages{};
-
         VkGraphicsPipelineCreateInfo pipelineCreateInfo = Populate
         ::pipelineCreateInfo(pipelineLayout,
                              renderPass);
+
+        std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages{};
+
 
         pipelineCreateInfo.pInputAssemblyState = &inputAssemblyState;
         pipelineCreateInfo.pRasterizationState = &rasterizationState;
@@ -335,8 +337,8 @@ public:
         pipelineCreateInfo.pViewportState = &viewportState;
         pipelineCreateInfo.pDepthStencilState = &depthStencilState;
         pipelineCreateInfo.pDynamicState = &dynamicState;
-        pipelineCreateInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
-        pipelineCreateInfo.pStages = shaderStages.data();
+        pipelineCreateInfo.stageCount = static_cast<uint32_t>(shaders.size());
+        pipelineCreateInfo.pStages = shaders.data();
 
         // Vertex bindings an attributes based on ImGui vertex definition
         std::vector<VkVertexInputBindingDescription> vertexInputBindings = {
@@ -363,9 +365,6 @@ public:
 
         pipelineCreateInfo.pVertexInputState = &vertexInputState;
 
-        shaderStages[0] = vulkanRenderer->loadShader(shadersPath + "imgui/ui.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-        shaderStages[1] = vulkanRenderer->loadShader(shadersPath + "imgui/ui.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-
         if (vkCreateGraphicsPipelines(device->logicalDevice, pipelineCache, 1, &pipelineCreateInfo, nullptr,
                                       &pipeline) != VK_SUCCESS)
             throw std::runtime_error("Failed to create graphics pipeline");
@@ -375,20 +374,20 @@ public:
     // Graphics pipeline
 
 // Starts a new imGui frame and sets up windows and ui elements
-    void newFrame(VulkanRenderer *vulkanRenderer, bool updateFrameGraph) {
+    void newFrame(bool updateFrameGraph) {
         ImGui::NewFrame();
 
         // Init imGui windows and elements
 
         ImVec4 clear_color = ImColor(114, 144, 154);
         static float f = 0.0f;
-        ImGui::TextUnformatted(vulkanRenderer->title.c_str());
+        //ImGui::TextUnformatted(vulkanRenderer->title.c_str());
         ImGui::TextUnformatted(device->properties.deviceName);
 
         // Update frame time display
         if (updateFrameGraph) {
             std::rotate(uiSettings.frameTimes.begin(), uiSettings.frameTimes.begin() + 1, uiSettings.frameTimes.end());
-            float frameTime = 1000.0f / (vulkanRenderer->frameTimer * 1000.0f);
+            float frameTime = 1000.0f; /// (vulkanRenderer->frameTimer * 1000.0f);
             uiSettings.frameTimes.back() = frameTime;
             if (frameTime < uiSettings.frameTimeMin) {
                 uiSettings.frameTimeMin = frameTime;
@@ -402,8 +401,8 @@ public:
                          uiSettings.frameTimeMax, ImVec2(0, 80));
 
         ImGui::Text("Camera");
-        float pos[3] = {vulkanRenderer->camera.position.x, vulkanRenderer->camera.position.y, vulkanRenderer->camera.position.z};
-        float rot[3] = {vulkanRenderer->camera.rotation.x, vulkanRenderer->camera.rotation.y, vulkanRenderer->camera.rotation.z};
+        float pos[3] = {0,0,0}; // {vulkanRenderer->camera.position.x, vulkanRenderer->camera.position.y, vulkanRenderer->camera.position.z};
+        float rot[3] = {0,0,0}; //{vulkanRenderer->camera.rotation.x, vulkanRenderer->camera.rotation.y, vulkanRenderer->camera.rotation.z};
         ImGui::InputFloat3("position", pos, "%.3f");
         ImGui::InputFloat3("rotation", rot, "%.3f");
 
@@ -424,16 +423,18 @@ public:
     }
 
 
+
 // Update vertex and index buffer containing the imGui elements when required
-    void updateBuffers() {
+    bool updateBuffers() {
         ImDrawData *imDrawData = ImGui::GetDrawData();
+        bool updateCommandBuffers = false;
 
         // Note: Alignment is done inside buffer creation
         VkDeviceSize vertexBufferSize = imDrawData->TotalVtxCount * sizeof(ImDrawVert);
         VkDeviceSize indexBufferSize = imDrawData->TotalIdxCount * sizeof(ImDrawIdx);
 
         if ((vertexBufferSize == 0) || (indexBufferSize == 0)) {
-            return;
+            return false;
         }
 
         // Update buffers only if vertex or index count has been changed compared to current buffer size
@@ -448,6 +449,7 @@ public:
                 throw std::runtime_error("Failed to create vertex Buffer");
             vertexCount = imDrawData->TotalVtxCount;
             vertexBuffer.map();
+            updateCommandBuffers = true;
         }
 
         // Index buffer
@@ -460,6 +462,7 @@ public:
                 throw std::runtime_error("Failed to create index buffer");
             indexCount = imDrawData->TotalIdxCount;
             indexBuffer.map();
+            updateCommandBuffers = true;
         }
 
         // Upload data
@@ -477,6 +480,8 @@ public:
         // Flush to make writes visible to GPU
         vertexBuffer.flush();
         indexBuffer.flush();
+
+        return updateCommandBuffers;
     }
 
 // Draw current imGui frame into a command buffer

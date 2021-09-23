@@ -2,13 +2,8 @@
 // Created by magnus on 9/4/21.
 //
 
-#include <fstream>
-#include <filesystem>
+#define TINYOBJLOADER_IMPLEMENTATION
 
-#include "ar_engine/src/builder/Example.h"
-#include <ar_engine/src/builder/Terrain.h>
-
-#include <ar_engine/src/tools/Macros.h>
 #include "Renderer.h"
 
 
@@ -16,7 +11,7 @@ void Renderer::prepare() {
 
 }
 
-void Renderer::prepareEngine() {
+void Renderer::prepareRenderer() {
     {
         /*
          camera.setPosition(glm::vec3(8.6f, 13.0f, 6.0f));
@@ -30,18 +25,14 @@ void Renderer::prepareEngine() {
         camera.setPerspective(60.0f, (float) width / (float) height, 0.01f, 256.0f);
         camera.setRotationSpeed(0.25f);
 
-        // imgui
-        imgui = new ImGUI(this);
-        imgui->init((float) width, (float) height);
-        imgui->initResources(renderPass, queue, getShadersPath());
 
         generateScriptClasses();
         // Prepare the Renderer class
         loadAssets();
+        loadCube();
         prepareUniformBuffers();
         setupDescriptors();
         preparePipelines();
-        buildCommandBuffers();
     }
 }
 
@@ -89,7 +80,7 @@ void Renderer::generateScriptClasses() {
 void Renderer::draw() {
     VulkanRenderer::prepareFrame();
 
-    buildCommandBuffers();
+    //buildCommandBuffers();
 
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &drawCmdBuffers[currentBuffer];
@@ -100,13 +91,6 @@ void Renderer::draw() {
 
 
 void Renderer::render() {
-    // Update imGui
-    ImGuiIO &io = ImGui::GetIO();
-    io.DisplaySize = ImVec2((float) width, (float) height);
-    io.DeltaTime = frameTimer;
-    io.MousePos = ImVec2(mousePos.x, mousePos.y);
-    io.MouseDown[0] = mouseButtons.left;
-    io.MouseDown[1] = mouseButtons.right;
 
     for (auto &script: scripts) {
         script->update();
@@ -149,9 +133,6 @@ void Renderer::buildCommandBuffers() {
     const VkViewport viewport = Populate::viewport((float) width, (float) height, 0.0f, 1.0f);
     const VkRect2D scissor = Populate::rect2D(width, height, 0, 0);
 
-    imgui->newFrame(this, (frameCounter == 0));
-    imgui->updateBuffers();
-
     for (int32_t i = 0; i < drawCmdBuffers.size(); ++i) {
         renderPassBeginInfo.framebuffer = frameBuffers[i];
         (vkBeginCommandBuffer(drawCmdBuffers[i], &cmdBufInfo));
@@ -159,13 +140,7 @@ void Renderer::buildCommandBuffers() {
         vkCmdSetViewport(drawCmdBuffers[i], 0, 1, &viewport);
         vkCmdSetScissor(drawCmdBuffers[i], 0, 1, &scissor);
 
-        // Bind scene matrices descriptor to set 0
-        vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
-                                &descriptorSet, 0, nullptr);
-        vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                          wireframe ? pipelines.wireframe : pipelines.solid);
-
-        imgui->drawFrame(drawCmdBuffers[i]);
+        UIOverlay->drawFrame(drawCmdBuffers[i]);
 
         vkCmdEndRenderPass(drawCmdBuffers[i]);
         CHECK_RESULT(vkEndCommandBuffer(drawCmdBuffers[i]));
@@ -343,69 +318,7 @@ void Renderer::setupDescriptors() {
 }
 
 void Renderer::preparePipelines() {
-    VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCI = Populate::pipelineInputAssemblyStateCreateInfo(
-            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
-    VkPipelineRasterizationStateCreateInfo rasterizationStateCI = Populate::pipelineRasterizationStateCreateInfo(
-            VK_POLYGON_MODE_FILL, VK_CULL_MODE_FRONT_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, 0);
-    VkPipelineColorBlendAttachmentState blendAttachmentStateCI = Populate::pipelineColorBlendAttachmentState(0xf,
-                                                                                                             VK_FALSE);
-    VkPipelineColorBlendStateCreateInfo colorBlendStateCI = Populate::pipelineColorBlendStateCreateInfo(1,
-                                                                                                        &blendAttachmentStateCI);
-    VkPipelineDepthStencilStateCreateInfo depthStencilStateCI = Populate::pipelineDepthStencilStateCreateInfo(VK_TRUE,
-                                                                                                              VK_TRUE,
-                                                                                                              VK_COMPARE_OP_LESS_OR_EQUAL);
-    VkPipelineViewportStateCreateInfo viewportStateCI = Populate::pipelineViewportStateCreateInfo(1, 1, 0);
-    VkPipelineMultisampleStateCreateInfo multisampleStateCI = Populate::pipelineMultisampleStateCreateInfo(
-            VK_SAMPLE_COUNT_1_BIT, 0);
-    const std::vector<VkDynamicState> dynamicStateEnables = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
-    VkPipelineDynamicStateCreateInfo dynamicStateCI = Populate::pipelineDynamicStateCreateInfo(
-            dynamicStateEnables.data(), static_cast<uint32_t>(dynamicStateEnables.size()), 0);
-    // Vertex input bindings and attributes
-    const std::vector<VkVertexInputBindingDescription> vertexInputBindings = {
-            Populate::vertexInputBindingDescription(0, sizeof(glTFModel::Vertex), VK_VERTEX_INPUT_RATE_VERTEX),
-    };
-    const std::vector<VkVertexInputAttributeDescription> vertexInputAttributes = {
-            Populate::vertexInputAttributeDescription(0, 0, VK_FORMAT_R32G32B32_SFLOAT,
-                                                      offsetof(glTFModel::Vertex, pos)),    // Location 0: Position
-            Populate::vertexInputAttributeDescription(0, 1, VK_FORMAT_R32G32B32_SFLOAT,
-                                                      offsetof(glTFModel::Vertex, normal)),// Location 1: Normal
-            Populate::vertexInputAttributeDescription(0, 2, VK_FORMAT_R32G32B32_SFLOAT, offsetof(glTFModel::Vertex,
-                                                                                                 uv)),    // Location 2: Texture coordinates
-            Populate::vertexInputAttributeDescription(0, 3, VK_FORMAT_R32G32B32_SFLOAT,
-                                                      offsetof(glTFModel::Vertex, color)),    // Location 3: Color
-    };
-    VkPipelineVertexInputStateCreateInfo vertexInputStateCI = Populate::pipelineVertexInputStateCreateInfo();
-    vertexInputStateCI.vertexBindingDescriptionCount = static_cast<uint32_t>(vertexInputBindings.size());
-    vertexInputStateCI.pVertexBindingDescriptions = vertexInputBindings.data();
-    vertexInputStateCI.vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexInputAttributes.size());
-    vertexInputStateCI.pVertexAttributeDescriptions = vertexInputAttributes.data();
 
-    const std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages = {
-            loadShader(getShadersPath() + "gltfloading/mesh.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
-            loadShader(getShadersPath() + "gltfloading/mesh.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
-    };
-
-    VkGraphicsPipelineCreateInfo pipelineCI = Populate::pipelineCreateInfo(pipelineLayout, renderPass, 0);
-    pipelineCI.pVertexInputState = &vertexInputStateCI;
-    pipelineCI.pInputAssemblyState = &inputAssemblyStateCI;
-    pipelineCI.pRasterizationState = &rasterizationStateCI;
-    pipelineCI.pColorBlendState = &colorBlendStateCI;
-    pipelineCI.pMultisampleState = &multisampleStateCI;
-    pipelineCI.pViewportState = &viewportStateCI;
-    pipelineCI.pDepthStencilState = &depthStencilStateCI;
-    pipelineCI.pDynamicState = &dynamicStateCI;
-    pipelineCI.stageCount = static_cast<uint32_t>(shaderStages.size());
-    pipelineCI.pStages = shaderStages.data();
-
-    // Solid rendering pipeline
-    (vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCI, nullptr, &pipelines.solid));
-
-    // Wire frame rendering pipeline
-    if (deviceFeatures.fillModeNonSolid) {
-        rasterizationStateCI.polygonMode = VK_POLYGON_MODE_LINE;
-        rasterizationStateCI.lineWidth = 1.0f;
-        (vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCI, nullptr, &pipelines.wireframe));
-    }
 }
 
 // Prepare and initialize uniform buffer containing shader uniforms
@@ -428,4 +341,54 @@ void Renderer::updateUniformBuffers() {
     shaderData.values.projection = camera.matrices.perspective;
     shaderData.values.model = camera.matrices.view;
     memcpy(shaderData.buffer.mapped, &shaderData.values, sizeof(shaderData.values));
+}
+
+void Renderer::loadCube() {
+
+    // Use library to load in model
+    tinyobj::attrib_t attrib;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string warn, err;
+
+    std::string MODEL_PATH = "../objects/standard/cube.obj";
+
+
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str())) {
+        throw std::runtime_error(warn + err);
+    }
+
+
+    float nx, ny, nz = 0.0f; // normal for current triangle
+    float vx1, vx2, vx3 = 0.f; // vertex 1
+    float vy1, vy2, vy3 = 0.f; // vertex 2
+    float vz1, vz2, vz3 = 0.f; // vertex 3
+
+
+    // Load vertex data // TODO Load index data as well
+    for (int i = 0; i < shapes.size(); ++i) {
+        for (int j = 0; j < shapes[i].mesh.indices.size(); ++j) {
+            Vertex vertex{};
+            glm::vec3 normal;
+
+            vertex.pos = {attrib.vertices[3 * shapes[i].mesh.indices[j].vertex_index + 0],
+                          attrib.vertices[3 * shapes[i].mesh.indices[j].vertex_index + 1],
+                          attrib.vertices[3 * shapes[i].mesh.indices[j].vertex_index + 2]};
+
+            if (!attrib.texcoords.empty())
+                vertex.texCoord = {attrib.texcoords[2 * shapes[i].mesh.indices[j].texcoord_index + 0],
+                                   1.0f - attrib.texcoords[2 * shapes[i].mesh.indices[j].texcoord_index + 1]};
+
+            // calculate normals for plane
+            if (!attrib.normals.empty()) {
+
+
+                vertex.normal = {attrib.normals[3 * shapes[i].mesh.indices[j].normal_index + 0],
+                                 attrib.normals[3 * shapes[i].mesh.indices[j].normal_index + 1],
+                                 attrib.normals[3 * shapes[i].mesh.indices[j].normal_index + 2]};
+
+            }
+        }
+    }
+
 }

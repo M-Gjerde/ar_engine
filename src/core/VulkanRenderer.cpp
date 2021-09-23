@@ -3,8 +3,6 @@
 //
 
 
-#include <chrono>
-#include <imgui.h>
 #include "VulkanRenderer.h"
 
 VulkanRenderer::VulkanRenderer(bool enableValidation) {
@@ -308,7 +306,7 @@ void VulkanRenderer::setupRenderPass() {
     subpassDescription.pResolveAttachments = nullptr;
 
     // Subpass dependencies for layout transitions
-    std::array<VkSubpassDependency, 2> dependencies;
+    std::array<VkSubpassDependency, 2> dependencies{};
 
     dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
     dependencies[0].dstSubpass = 0;
@@ -372,15 +370,15 @@ void VulkanRenderer::createSynchronizationPrimitives() {
     }
 }
 
-std::string VulkanRenderer::getShadersPath() const {
+std::string VulkanRenderer::getShadersPath() {
     return "../shaders/";
 }
 
-std::string VulkanRenderer::getAssetsPath() const {
+std::string VulkanRenderer::getAssetsPath() {
     return "../Assets/";
 }
 
-std::string VulkanRenderer::getScriptsPath() const {
+std::string VulkanRenderer::getScriptsPath() {
     return "../src/builder/";
 }
 
@@ -414,6 +412,17 @@ void VulkanRenderer::prepare() {
     setupRenderPass();
     createPipelineCache();
     setupFrameBuffer();
+
+    // Prepare UI overlay
+    UIOverlay = new ImGUI(vulkanDevice);
+    UIOverlay->init((float) width, (float) height);
+    UIOverlay->shaders = {
+            loadShader(getShadersPath() + "imgui/ui.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
+            loadShader(getShadersPath() + "imgui/ui.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT),
+    };
+    UIOverlay->initResources(renderPass, queue, getShadersPath());
+
+
 }
 
 
@@ -481,7 +490,6 @@ void VulkanRenderer::renderLoop() {
             viewChanged();
         }
 
-        render();
         frameCounter++;
         auto tEnd = std::chrono::high_resolution_clock::now();
         auto tDiff = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
@@ -498,6 +506,10 @@ void VulkanRenderer::renderLoop() {
             frameCounter = 0;
             lastTimestamp = tEnd;
         }
+
+        updateOverlay();
+        render();
+
     }
 
     // Flush device to make sure all resources can be freed
@@ -537,6 +549,27 @@ void VulkanRenderer::submitFrame() {
 
     if (vkQueueWaitIdle(queue) != VK_SUCCESS)
         throw std::runtime_error("Failed to wait for Queue Idle");
+}
+
+
+void VulkanRenderer::updateOverlay() {
+    // Update imGui
+    ImGuiIO &io = ImGui::GetIO();
+    io.DisplaySize = ImVec2((float) width, (float) height);
+    io.DeltaTime = frameTimer;
+    io.MousePos = ImVec2(mousePos.x, mousePos.y);
+    io.MouseDown[0] = mouseButtons.left;
+    io.MouseDown[1] = mouseButtons.right;
+
+    for(int i = 0; i < 2; i++){
+        UIOverlay->newFrame((frameCounter == 0));
+
+    }
+
+    if (UIOverlay->updateBuffers()){
+        buildCommandBuffers();
+    }
+
 }
 
 void VulkanRenderer::drawUI(const VkCommandBuffer commandBuffer) {
@@ -666,3 +699,4 @@ void VulkanRenderer::mouseButtonCallback(GLFWwindow *window, int button, int act
         }
     }
 }
+

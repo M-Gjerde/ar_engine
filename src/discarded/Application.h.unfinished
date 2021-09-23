@@ -1,0 +1,41 @@
+//
+// Created by magnus on 9/23/21.
+//
+
+#ifndef AR_ENGINE_APPLICATION_H_UNFINISHED
+#define AR_ENGINE_APPLICATION_H_UNFINISHED
+
+
+#include <ar_engine/src/Renderer/Renderer.h>
+
+class Application {
+
+public:
+    explicit Application(const std::string &title) {
+        this->title = title;
+    }
+
+    std::string title;
+
+    ~Application() ;
+
+    void prepareEngine() ;
+
+    void render() ;
+
+    void run() ;
+
+    void draw() ;
+
+    void prepare() ;
+
+    void viewChanged() ;
+
+    void addDeviceFeatures() ;
+
+    void buildCommandBuffers() ;
+
+};
+
+
+#endif //AR_ENGINE_APPLICATION_H_UNFINISHED

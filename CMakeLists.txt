@@ -29,6 +29,10 @@ set(TINYGLTF_HEADER_ONLY ON CACHE INTERNAL "" FORCE)
 set(TINYGLTF_INSTALL OFF CACHE INTERNAL "" FORCE)
 include_directories(external/tinygltf/)
 
+## TinyOBJ LOader
+set(TinyObj external/tinyobjloader)
+include_directories(${TinyObj}  ..)
+
 # VULKAN KTX TOOLS
 set(KTX_DIR external/KTX-Software)
 add_subdirectory(${KTX_DIR})
@@ -37,7 +41,7 @@ add_subdirectory(${KTX_DIR})
 set(LIBRARIES glfw vulkan Perlin ktx)
 message(LIBRARIES:  ${LIBRARIES})
 
-file(GLOB ENGINE_SRC src/core/* src/tools/* src/* src/imgui/* src/builder/*)
+file(GLOB ENGINE_SRC src/core/* src/tools/* src/imgui/* src/builder/* src/Renderer/*)
 add_library(VulkanRenderer ${ENGINE_SRC} )
 set_target_properties(VulkanRenderer PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(VulkanRenderer GUI ${LIBRARIES})

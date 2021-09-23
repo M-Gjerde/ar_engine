@@ -20,11 +20,16 @@
 #include <cstring>
 #include <iostream>
 #include <glm/vec2.hpp>
+#include <chrono>
+
+#include <ar_engine/src/imgui/ImGUI.h>
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_vulkan.h"
 
 class VulkanRenderer {
 
 public:
-
     VulkanRenderer(bool enableValidation = false);
 
     virtual ~VulkanRenderer();
@@ -71,6 +76,9 @@ public:
         bool right = false;
         bool middle = false;
     } mouseButtons;
+
+    /** @brief Handle for UI updates and overlay */
+    ImGUI* UIOverlay;
 
     /** @brief (Virtual) Creates the application wide Vulkan instance */
     virtual VkResult createInstance(bool enableValidation);
@@ -170,9 +178,9 @@ protected:
     VkDebugUtilsMessengerEXT debugUtilsMessenger{};
 
 
-    [[nodiscard]] std::string getShadersPath() const;
-    [[nodiscard]] std::string getScriptsPath() const;
-    [[nodiscard]] std::string getAssetsPath() const;
+    [[nodiscard]] static std::string getShadersPath() ;
+    [[nodiscard]] static std::string getScriptsPath() ;
+    [[nodiscard]] static std::string getAssetsPath() ;
 
     int frameCounter = 0;
 private:
@@ -185,6 +193,8 @@ private:
 
     void windowResize();
 
+    /** @brief (Virtual) Called once a update on the UI is detected */
+    void updateOverlay();
 
     static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
     static void resizeCallback(GLFWwindow* window, int width, int height);
@@ -192,13 +202,9 @@ private:
     static void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods);
 
     void createCommandPool();
-
     void createCommandBuffers();
-
     void createSynchronizationPrimitives();
-
     void createPipelineCache();
-
     void destroyCommandBuffers();
 
     void setWindowSize(uint32_t width, uint32_t height);
