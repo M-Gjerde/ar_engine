@@ -11,19 +11,8 @@
 #include <ar_engine/src/core/VulkanRenderer.h>
 #include <ar_engine/src/core/Buffer.h>
 #include <imgui.h>
+#include "UISettings.h"
 
-
-// Options and values to display/toggle from the UI
-struct UISettings {
-    bool displayModels = true;
-    bool displayLogos = true;
-    bool displayBackground = true;
-    bool animateLight = false;
-    float lightSpeed = 0.25f;
-    std::array<float, 50> frameTimes{};
-    float frameTimeMin = 9999.0f, frameTimeMax = 0.0f;
-    float lightTimer = 0.0f;
-};
 
 
 class ImGUI {
@@ -56,8 +45,9 @@ public:
     std::vector<VkPipelineShaderStageCreateInfo> shaders;
 
     UISettings uiSettings;
+    bool updated = false;
 
-    explicit ImGUI(VulkanDevice *vulkanDevice){
+    explicit ImGUI(VulkanDevice *vulkanDevice) {
         device = vulkanDevice;
         ImGui::CreateContext();
     };
@@ -376,6 +366,7 @@ public:
 // Starts a new imGui frame and sets up windows and ui elements
     void newFrame(bool updateFrameGraph, Camera camera, float frameTimer, std::string title) {
         ImGui::NewFrame();
+        updated = false;
 
         // Init imGui windows and elements
 
@@ -406,13 +397,34 @@ public:
         ImGui::InputFloat3("position", pos, "%.3f");
         ImGui::InputFloat3("rotation", rot, "%.3f");
 
-        ImGui::SetNextWindowSize(ImVec2(200, 200), ImGuiCond_None);
+        ImGui::SetNextWindowSize(ImVec2(200, 450), ImGuiCond_None);
         ImGui::Begin("Example settings");
-        ImGui::Checkbox("Render models", &uiSettings.displayModels);
-        ImGui::Checkbox("Display logos", &uiSettings.displayLogos);
-        ImGui::Checkbox("Display background", &uiSettings.displayBackground);
-        ImGui::Checkbox("Animate light", &uiSettings.animateLight);
-        ImGui::SliderFloat("Light speed", &uiSettings.lightSpeed, 0.1f, 1.0f);
+        updated |= ImGui::Checkbox("Render models", &uiSettings.displayModels);
+        updated |= ImGui::Checkbox("Display logos", &uiSettings.displayLogos);
+        updated |= ImGui::Checkbox("Display background", &uiSettings.displayBackground);
+        updated |= ImGui::Checkbox("Animate light", &uiSettings.animateLight);
+        updated |= ImGui::SliderFloat("Light speed", &uiSettings.lightSpeed, 0.1f, 1.0f);
+
+
+        const char *items[] = {"AAAA", "BBBB", "CCCC"};
+        static int item_current_idx = 0; // Here we store our selection data as an index.
+        if (ImGui::BeginListBox("Scripts")) {
+            for (int n = 0; n < uiSettings.listBoxNames.size(); n++) {
+                const bool is_selected = (uiSettings.selectedListboxIndex == n);
+                if (ImGui::Selectable(uiSettings.listBoxNames[n].c_str(), is_selected)){
+                    uiSettings.selectedListboxIndex = n;
+
+                }
+                // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+                if (is_selected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+
+            }
+            ImGui::EndListBox();
+        }
+
+
         ImGui::End();
 
         //ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiCond_FirstUseEver);
@@ -421,7 +433,6 @@ public:
         // Render to generate draw buffers
         ImGui::Render();
     }
-
 
 
 // Update vertex and index buffer containing the imGui elements when required
@@ -529,6 +540,21 @@ public:
                 vertexOffset += cmd_list->VtxBuffer.Size;
             }
         }
+    }
+
+
+    bool checkBox(const char *caption, bool *value) {
+        bool res = ImGui::Checkbox(caption, value);
+        if (res) { updated = true; };
+        return res;
+    }
+
+    bool checkBox(const char *caption, int32_t *value) {
+        bool val = (*value == 1);
+        bool res = ImGui::Checkbox(caption, &val);
+        *value = val;
+        if (res) { updated = true; };
+        return res;
     }
 
 };

@@ -422,7 +422,6 @@ void VulkanRenderer::prepare() {
     };
     UIOverlay->initResources(renderPass, queue, getShadersPath());
 
-
 }
 
 
@@ -489,8 +488,8 @@ void VulkanRenderer::renderLoop() {
             viewUpdated = false;
             viewChanged();
         }
-
         updateOverlay();
+
         render();
         frameCounter++;
         auto tEnd = std::chrono::high_resolution_clock::now();
@@ -508,10 +507,7 @@ void VulkanRenderer::renderLoop() {
             frameCounter = 0;
             lastTimestamp = tEnd;
         }
-
-
     }
-
     // Flush device to make sure all resources can be freed
     if (device != VK_NULL_HANDLE) {
         vkDeviceWaitIdle(device);
@@ -551,6 +547,9 @@ void VulkanRenderer::submitFrame() {
         throw std::runtime_error("Failed to wait for Queue Idle");
 }
 
+void VulkanRenderer::UIUpdate(UISettings uiSettings) {
+
+}
 
 void VulkanRenderer::updateOverlay() {
     UIOverlay->newFrame((frameCounter == 0), camera, frameTimer,  title);
@@ -566,7 +565,9 @@ void VulkanRenderer::updateOverlay() {
     if (UIOverlay->updateBuffers()) {
         buildCommandBuffers();
     }
-
+    if (UIOverlay->updated){
+        UIUpdate(UIOverlay->uiSettings);
+    }
 }
 
 void VulkanRenderer::drawUI(const VkCommandBuffer commandBuffer) {

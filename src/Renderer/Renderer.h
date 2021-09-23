@@ -156,6 +156,7 @@ protected:
     void addDeviceFeatures() override;
     void buildCommandBuffers() override;
     void prepare() override;
+    void UIUpdate(UISettings uiSettings) override;
 
     void generateScriptClasses();
     void loadglTFFile(std::string filename);

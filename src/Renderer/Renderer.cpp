@@ -57,6 +57,8 @@ void Renderer::generateScriptClasses() {
         }
     }
 
+    // Also add class names to listbox
+    UIOverlay->uiSettings.listBoxNames = classNames;
 
     scripts.reserve(classNames.size());
     // Create class instances of scripts
@@ -102,6 +104,15 @@ void Renderer::render() {
 void Renderer::viewChanged() {
     updateUniformBuffers();
 }
+
+void Renderer::UIUpdate(UISettings uiSettings) {
+
+    printf("Clicked: %d \n" ,uiSettings.displayModels);
+
+    //printf("Index: %d, name: %s\n", uiSettings.getSelectedItem(), uiSettings.listBoxNames[uiSettings.getSelectedItem()].c_str());
+
+}
+
 
 void Renderer::addDeviceFeatures() {
     printf("Overriden function\n");
@@ -392,3 +403,4 @@ void Renderer::loadCube() {
     }
 
 }
+
