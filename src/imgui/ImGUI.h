@@ -374,20 +374,20 @@ public:
     // Graphics pipeline
 
 // Starts a new imGui frame and sets up windows and ui elements
-    void newFrame(bool updateFrameGraph) {
+    void newFrame(bool updateFrameGraph, Camera camera, float frameTimer, std::string title) {
         ImGui::NewFrame();
 
         // Init imGui windows and elements
 
         ImVec4 clear_color = ImColor(114, 144, 154);
         static float f = 0.0f;
-        //ImGui::TextUnformatted(vulkanRenderer->title.c_str());
+        ImGui::TextUnformatted(title.c_str());
         ImGui::TextUnformatted(device->properties.deviceName);
 
         // Update frame time display
         if (updateFrameGraph) {
             std::rotate(uiSettings.frameTimes.begin(), uiSettings.frameTimes.begin() + 1, uiSettings.frameTimes.end());
-            float frameTime = 1000.0f; /// (vulkanRenderer->frameTimer * 1000.0f);
+            float frameTime = 1000.0f / (frameTimer * 1000.0f);
             uiSettings.frameTimes.back() = frameTime;
             if (frameTime < uiSettings.frameTimeMin) {
                 uiSettings.frameTimeMin = frameTime;
@@ -401,12 +401,12 @@ public:
                          uiSettings.frameTimeMax, ImVec2(0, 80));
 
         ImGui::Text("Camera");
-        float pos[3] = {0,0,0}; // {vulkanRenderer->camera.position.x, vulkanRenderer->camera.position.y, vulkanRenderer->camera.position.z};
-        float rot[3] = {0,0,0}; //{vulkanRenderer->camera.rotation.x, vulkanRenderer->camera.rotation.y, vulkanRenderer->camera.rotation.z};
+        float pos[3] = {camera.position.x, camera.position.y, camera.position.z};
+        float rot[3] = {camera.rotation.x, camera.rotation.y, camera.rotation.z};
         ImGui::InputFloat3("position", pos, "%.3f");
         ImGui::InputFloat3("rotation", rot, "%.3f");
 
-        ImGui::SetNextWindowSize(ImVec2(200, 200), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(200, 200), ImGuiCond_None);
         ImGui::Begin("Example settings");
         ImGui::Checkbox("Render models", &uiSettings.displayModels);
         ImGui::Checkbox("Display logos", &uiSettings.displayLogos);

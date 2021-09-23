@@ -490,6 +490,8 @@ void VulkanRenderer::renderLoop() {
             viewChanged();
         }
 
+        updateOverlay();
+        render();
         frameCounter++;
         auto tEnd = std::chrono::high_resolution_clock::now();
         auto tDiff = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
@@ -507,8 +509,6 @@ void VulkanRenderer::renderLoop() {
             lastTimestamp = tEnd;
         }
 
-        updateOverlay();
-        render();
 
     }
 
@@ -553,6 +553,8 @@ void VulkanRenderer::submitFrame() {
 
 
 void VulkanRenderer::updateOverlay() {
+    UIOverlay->newFrame((frameCounter == 0), camera, frameTimer,  title);
+
     // Update imGui
     ImGuiIO &io = ImGui::GetIO();
     io.DisplaySize = ImVec2((float) width, (float) height);
@@ -561,12 +563,7 @@ void VulkanRenderer::updateOverlay() {
     io.MouseDown[0] = mouseButtons.left;
     io.MouseDown[1] = mouseButtons.right;
 
-    for(int i = 0; i < 2; i++){
-        UIOverlay->newFrame((frameCounter == 0));
-
-    }
-
-    if (UIOverlay->updateBuffers()){
+    if (UIOverlay->updateBuffers()) {
         buildCommandBuffers();
     }
 
