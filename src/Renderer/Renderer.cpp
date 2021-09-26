@@ -30,7 +30,7 @@ void Renderer::prepareRenderer() {
         camera.setPerspective(45.0f, (float)width / (float)height, 0.1f, 256.0f);
         camera.rotationSpeed = 0.25f;
         camera.movementSpeed = 0.1f;
-        camera.setPosition({ 0.0f, 0.0f, -0.5f });
+        camera.setPosition({ 0.0f, 0.0f, -0.75f });
         camera.setRotation({ 0.0f, 0.0f, 0.0f });
 
         uniformBuffers.resize(swapchain.imageCount);
@@ -40,8 +40,6 @@ void Renderer::prepareRenderer() {
         // Prepare the Renderer class
         loadAssets();
         generateBRDFLUT();
-
-
         prepareUniformBuffers();
         setupDescriptors();
         preparePipelines();
@@ -100,8 +98,11 @@ void Renderer::draw() {
     UniformBufferSet currentUB = uniformBuffers[currentBuffer];
     currentUB.scene.map();
     currentUB.params.map();
+    currentUB.skybox.map();
     memcpy(currentUB.scene.mapped, &shaderValuesScene, sizeof(shaderValuesScene));
     memcpy(currentUB.params.mapped, &shaderValuesParams, sizeof(shaderValuesParams));
+    memcpy(currentUB.skybox.mapped, &shaderValuesSkybox, sizeof(shaderValuesSkybox));
+    currentUB.skybox.unmap();
     currentUB.scene.unmap();
     currentUB.params.unmap();
 
@@ -177,7 +178,9 @@ void Renderer::buildCommandBuffers() {
         vkCmdSetViewport(drawCmdBuffers[i], 0, 1, &viewport);
         vkCmdSetScissor(drawCmdBuffers[i], 0, 1, &scissor);
 
-
+        vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[i].skybox, 0, nullptr);
+        vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.skybox);
+        models.skybox.draw(drawCmdBuffers[i]);
 
         vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
                                 &descriptorSets[i].scene, 0, nullptr);
@@ -226,6 +229,9 @@ void Renderer::loadAssets() {
     textures.empty.loadFromFile(getAssetsPath() + "textures/empty.ktx", VK_FORMAT_R8G8B8A8_UNORM, vulkanDevice, queue);
 
     std::string environmentFile = getAssetsPath() + "environment/papermill.ktx";
+
+    models.skybox.loadFromFile( getAssetsPath() + "models/Box/glTF-Embedded/Box.gltf", vulkanDevice, queue);
+
     textures.environmentCube.loadFromFile(environmentFile, VK_FORMAT_R16G16B16A16_SFLOAT, vulkanDevice, queue);
     generateCubemaps();
 }
@@ -329,11 +335,20 @@ void Renderer::preparePipelines() {
     pipelineCI.pStages = shaderStages.data();
     multisampleStateCI.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
+// Skybox pipeline (background cube)
+    shaderStages = {
+            loadShader("pbr_example/spv/skybox.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
+            loadShader("pbr_example/spv/skybox.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
+    };
+    CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCI, nullptr, &pipelines.skybox));
+    for (auto shaderStage : shaderStages) {
+        vkDestroyShaderModule(device, shaderStage.module, nullptr);
+    }
 
     // PBR pipeline
     shaderStages = {
-            loadShader("pbr.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
-            loadShader("pbr_khr.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
+            loadShader("pbr_example/spv/pbr.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
+            loadShader("pbr_example/spv/pbr_khr.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
     };
     depthStencilStateCI.depthWriteEnable = VK_TRUE;
     depthStencilStateCI.depthTestEnable = VK_TRUE;
@@ -361,8 +376,12 @@ void Renderer::prepareUniformBuffers() {
         vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                    &uniformBuffer.scene, sizeof(shaderValuesScene));
 
+        vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                   &uniformBuffer.skybox, sizeof(shaderValuesSkybox));
+
+
         vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT| VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                   &uniformBuffer.params, sizeof(shaderValuesScene));
+                                   &uniformBuffer.params, sizeof(shaderValuesParams));
 
 
     }
@@ -412,7 +431,7 @@ void Renderer::setupDescriptors() {
     // Environment samplers (radiance, irradiance, brdf lut)
     imageSamplerCount += 3;
 
-    std::vector<vkglTF::Model *> modellist = {&models.scene};
+    std::vector<vkglTF::Model *> modellist = {&models.skybox, &models.scene};
     for (auto &model: modellist) {
         for (auto &material: model->materials) {
             imageSamplerCount += 5;
@@ -594,6 +613,41 @@ void Renderer::setupDescriptors() {
             }
         }
 
+    }
+
+    // Skybox (fixed set)
+    for (auto i = 0; i < uniformBuffers.size(); i++) {
+        VkDescriptorSetAllocateInfo descriptorSetAllocInfo{};
+        descriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        descriptorSetAllocInfo.descriptorPool = descriptorPool;
+        descriptorSetAllocInfo.pSetLayouts = &descriptorSetLayouts.scene;
+        descriptorSetAllocInfo.descriptorSetCount = 1;
+        CHECK_RESULT(vkAllocateDescriptorSets(device, &descriptorSetAllocInfo, &descriptorSets[i].skybox));
+
+        std::array<VkWriteDescriptorSet, 3> writeDescriptorSets{};
+
+        writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        writeDescriptorSets[0].descriptorCount = 1;
+        writeDescriptorSets[0].dstSet = descriptorSets[i].skybox;
+        writeDescriptorSets[0].dstBinding = 0;
+        writeDescriptorSets[0].pBufferInfo = &uniformBuffers[i].skybox.descriptor;
+
+        writeDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writeDescriptorSets[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        writeDescriptorSets[1].descriptorCount = 1;
+        writeDescriptorSets[1].dstSet = descriptorSets[i].skybox;
+        writeDescriptorSets[1].dstBinding = 1;
+        writeDescriptorSets[1].pBufferInfo = &uniformBuffers[i].params.descriptor;
+
+        writeDescriptorSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writeDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        writeDescriptorSets[2].descriptorCount = 1;
+        writeDescriptorSets[2].dstSet = descriptorSets[i].skybox;
+        writeDescriptorSets[2].dstBinding = 2;
+        writeDescriptorSets[2].pImageInfo = &textures.prefilteredCube.descriptor;
+
+        vkUpdateDescriptorSets(device, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, nullptr);
     }
 
 }
@@ -822,8 +876,8 @@ void Renderer::generateBRDFLUT() {
 
     // Look-up-table (from BRDF) pipeline
     shaderStages = {
-            loadShader(getShadersPath() + "genbrdflut.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
-            loadShader("genbrdflut.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
+            loadShader("pbr_example/spv/genbrdflut.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
+            loadShader("pbr_example/spv/genbrdflut.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
     };
     VkPipeline pipeline;
     CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCI, nullptr, &pipeline));
@@ -1222,7 +1276,6 @@ void Renderer::generateCubemaps() {
         VkGraphicsPipelineCreateInfo pipelineCI{};
         pipelineCI.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         pipelineCI.layout = pipelinelayout;
-        pipelineCI.renderPass = renderpass;
         pipelineCI.pInputAssemblyState = &inputAssemblyStateCI;
         pipelineCI.pVertexInputState = &vertexInputStateCI;
         pipelineCI.pRasterizationState = &rasterizationStateCI;
@@ -1235,13 +1288,13 @@ void Renderer::generateCubemaps() {
         pipelineCI.pStages = shaderStages.data();
         pipelineCI.renderPass = renderpass;
 
-        shaderStages[0] = loadShader("filtercube.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+        shaderStages[0] = loadShader("pbr_example/spv/filtercube.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
         switch (target) {
             case IRRADIANCE:
-                shaderStages[1] = loadShader("irradiancecube.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+                shaderStages[1] = loadShader("pbr_example/spv/irradiancecube.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
                 break;
             case PREFILTEREDENV:
-                shaderStages[1] = loadShader("prefilteredenvmap.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+                shaderStages[1] = loadShader("pbr_example/spv/prefilteredenvmap.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
                 break;
         };
         VkPipeline pipeline;
@@ -1345,6 +1398,9 @@ void Renderer::generateCubemaps() {
                                         0, NULL);
 
                 VkDeviceSize offsets[1] = {0};
+
+                models.skybox.draw(cmdBuf);
+
 
                 vkCmdEndRenderPass(cmdBuf);
 

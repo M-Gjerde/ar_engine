@@ -95,11 +95,15 @@ protected:
 
     struct Models {
         vkglTF::Model scene;
+        vkglTF::Model skybox;
+
     } models;
 
     struct UniformBufferSet {
         Buffer scene;
         Buffer params;
+        Buffer skybox;
+
     };
 
     struct UBOMatrices {
@@ -112,6 +116,7 @@ protected:
     VkPipelineLayout pipelineLayout{};
 
     struct Pipelines {
+        VkPipeline skybox;
         VkPipeline pbr;
         VkPipeline pbrAlphaBlend;
     } pipelines{};
@@ -124,6 +129,8 @@ protected:
 
     struct DescriptorSets {
         VkDescriptorSet scene;
+        VkDescriptorSet skybox;
+
     };
     std::vector<DescriptorSets> descriptorSets;
     std::vector<UniformBufferSet> uniformBuffers;

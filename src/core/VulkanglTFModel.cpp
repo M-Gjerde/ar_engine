@@ -677,7 +677,7 @@ namespace vkglTF
     {
         for (tinygltf::Texture &tex : gltfModel.textures) {
             tinygltf::Image image = gltfModel.images[tex.source];
-            vkglTF::TextureSampler textureSampler;
+            vkglTF::TextureSampler textureSampler{};
             if (tex.sampler == -1) {
                 // No sampler specified, use a default one
                 textureSampler.magFilter = VK_FILTER_LINEAR;
@@ -689,7 +689,7 @@ namespace vkglTF
             else {
                 textureSampler = textureSamplers[tex.sampler];
             }
-            vkglTF::Texture texture;
+            vkglTF::Texture texture{};
             texture.fromglTfImage(image, textureSampler, device, transferQueue);
             textures.push_back(texture);
         }
@@ -721,6 +721,9 @@ namespace vkglTF
             case 9986:
                 return VK_FILTER_LINEAR;
             case 9987:
+                return VK_FILTER_LINEAR;
+            default:
+                std::cerr << "Sampler filter defaulted to VK_FILTER_LINEAR" << std::endl;
                 return VK_FILTER_LINEAR;
         }
     }
