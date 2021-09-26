@@ -6,3 +6,13 @@ glslc ./imgui/ui.frag -o ./imgui/ui.frag.spv
 
 glslc ./gltfloading/mesh.vert -o ./gltfloading/mesh.vert.spv
 glslc ./gltfloading/mesh.frag -o ./gltfloading/mesh.frag.spv
+
+glslc ./filtercube.vert -o filtercube.vert.spv
+glslc ./irradiancecube.frag -o irradiancecube.frag.spv
+glslc ./prefilteredenvmap.frag -o prefilteredenvmap.frag.spv
+
+glslc ./genbrdflut.vert -o genbrdflut.vert.spv
+glslc ./genbrdflut.frag -o genbrdflut.frag.spv
+
+glslc ./pbr.vert -o pbr.vert.spv
+glslc ./pbr_khr.frag -o pbr_khr.frag.spv

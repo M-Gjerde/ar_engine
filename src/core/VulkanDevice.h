@@ -69,6 +69,9 @@ struct VulkanDevice {
 
     VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, bool begin = false);
 
+    void beginCommandBuffer(VkCommandBuffer commandBuffer);
+
+
     void flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, VkCommandPool pool, bool free = true);
 
     void flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free = true);

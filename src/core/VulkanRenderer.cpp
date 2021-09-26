@@ -386,7 +386,7 @@ VkPipelineShaderStageCreateInfo VulkanRenderer::loadShader(std::string fileName,
     VkPipelineShaderStageCreateInfo shaderStage = {};
     shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     shaderStage.stage = stage;
-    shaderStage.module = Utils::loadShader(fileName.c_str(), device);
+    shaderStage.module = Utils::loadShader( (getShadersPath() + fileName).c_str(), device);
     shaderStage.pName = "main";
     assert(shaderStage.module != VK_NULL_HANDLE);
     shaderModules.push_back(shaderStage.module);
@@ -417,8 +417,8 @@ void VulkanRenderer::prepare() {
     UIOverlay = new ImGUI(vulkanDevice);
     UIOverlay->init((float) width, (float) height);
     UIOverlay->shaders = {
-            loadShader(getShadersPath() + "imgui/ui.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
-            loadShader(getShadersPath() + "imgui/ui.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT),
+            loadShader("imgui/ui.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
+            loadShader("imgui/ui.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT),
     };
     UIOverlay->initResources(renderPass, queue, getShadersPath());
 

@@ -2,6 +2,7 @@
 // Created by magnus on 9/5/21.
 //
 
+#include <ar_engine/src/tools/Macros.h>
 #include "VulkanDevice.h"
 
 
@@ -498,4 +499,10 @@ void VulkanDevice::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue que
 
 void VulkanDevice::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free) {
     return flushCommandBuffer(commandBuffer, queue, commandPool, free);
+}
+
+void VulkanDevice::beginCommandBuffer(VkCommandBuffer commandBuffer) {
+    VkCommandBufferBeginInfo commandBufferBI{};
+    commandBufferBI.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    CHECK_RESULT(vkBeginCommandBuffer(commandBuffer, &commandBufferBI));
 }

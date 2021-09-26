@@ -57,6 +57,7 @@ private:
 protected:
 
     bool wireframe = false;
+    enum PBRWorkflows{ PBR_WORKFLOW_METALLIC_ROUGHNESS = 0, PBR_WORKFLOW_SPECULAR_GLOSINESS = 1 };
 
     struct Textures {
         TextureCubeMap environmentCube;
@@ -82,11 +83,11 @@ protected:
 
 
 
-    struct shaderValuesParams {
-        glm::vec4 lightDir;
+    struct {
+        glm::vec4 lightDir{};
         float exposure = 4.5f;
         float gamma = 2.2f;
-        float prefilteredCubeMipLevels;
+        float prefilteredCubeMipLevels{};
         float scaleIBLAmbient = 1.0f;
         float debugViewInputs = 0;
         float debugViewEquation = 0;
@@ -94,12 +95,10 @@ protected:
 
     struct Models {
         vkglTF::Model scene;
-        vkglTF::Model skybox;
     } models;
 
     struct UniformBufferSet {
         Buffer scene;
-        Buffer skybox;
         Buffer params;
     };
 
@@ -113,7 +112,6 @@ protected:
     VkPipelineLayout pipelineLayout{};
 
     struct Pipelines {
-        VkPipeline skybox;
         VkPipeline pbr;
         VkPipeline pbrAlphaBlend;
     } pipelines{};
@@ -126,8 +124,9 @@ protected:
 
     struct DescriptorSets {
         VkDescriptorSet scene;
-        VkDescriptorSet skybox;
     };
+    std::vector<DescriptorSets> descriptorSets;
+    std::vector<UniformBufferSet> uniformBuffers;
 
     struct PushConstBlockMaterial {
         glm::vec4 baseColorFactor;
@@ -159,10 +158,16 @@ protected:
     void UIUpdate(UISettings uiSettings) override;
 
     void generateScriptClasses();
-    void loadglTFFile(std::string filename);
     void loadAssets();
 
-    void loadCube();
+
+    void setupNodeDescriptorSet(vkglTF::Node *node);
+
+    void generateBRDFLUT();
+
+    void generateCubemaps();
+
+    void renderNode(vkglTF::Node *node, uint32_t cbIndex, vkglTF::Material::AlphaMode alphaMode);
 };
 
 

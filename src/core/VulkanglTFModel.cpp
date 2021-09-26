@@ -282,7 +282,6 @@ namespace vkglTF
         samplerInfo.anisotropyEnable = VK_FALSE;
         samplerInfo.maxLod = (float)mipLevels;
         samplerInfo.maxAnisotropy = 8.0f;
-        samplerInfo.anisotropyEnable = VK_TRUE;
         CHECK_RESULT(vkCreateSampler(device->logicalDevice, &samplerInfo, nullptr, &sampler));
 
         VkImageViewCreateInfo viewInfo{};
