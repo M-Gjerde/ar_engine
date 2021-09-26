@@ -12,38 +12,24 @@ void Renderer::prepare() {
 }
 
 void Renderer::prepareRenderer() {
-    {
-        /*
-         camera.setPosition(glm::vec3(8.6f, 13.0f, 6.0f));
-         camera.setRotation(glm::vec3(-37.5f, 125.0f, 0.0f));
-         camera.setRotationSpeed(0.25f);
-         camera.setPerspective(45.0f, (float) (width) / (float) height, 0.1f, 256.0f);
-   */
-        camera.type = Camera::CameraType::lookat;
-        camera.setPosition(glm::vec3(0.0f, -0.1f, -6.0f));
-        camera.setRotation(glm::vec3(0.0f, -135.0f, 0.0f));
-        camera.setPerspective(60.0f, (float) width / (float) height, 0.01f, 256.0f);
-        camera.setRotationSpeed(0.25f);
+    camera.type = Camera::CameraType::lookat;
+    camera.setPerspective(60.0f, (float) width / (float) height, 0.01f, 256.0f);
+    camera.rotationSpeed = 0.25f;
+    camera.movementSpeed = 0.1f;
+    camera.setPosition({0.0f, 0.0f, -0.75f});
+    camera.setRotation({0.0f, 0.0f, 0.0f});
 
-        camera.type = Camera::CameraType::lookat;
+    uniformBuffers.resize(swapchain.imageCount);
+    descriptorSets.resize(swapchain.imageCount);
 
-        camera.setPerspective(45.0f, (float)width / (float)height, 0.1f, 256.0f);
-        camera.rotationSpeed = 0.25f;
-        camera.movementSpeed = 0.1f;
-        camera.setPosition({ 0.0f, 0.0f, -0.75f });
-        camera.setRotation({ 0.0f, 0.0f, 0.0f });
+    generateScriptClasses();
+    // Prepare the Renderer class
+    loadAssets();
+    generateBRDFLUT();
+    prepareUniformBuffers();
+    setupDescriptors();
+    preparePipelines();
 
-        uniformBuffers.resize(swapchain.imageCount);
-        descriptorSets.resize(swapchain.imageCount);
-
-        generateScriptClasses();
-        // Prepare the Renderer class
-        loadAssets();
-        generateBRDFLUT();
-        prepareUniformBuffers();
-        setupDescriptors();
-        preparePipelines();
-    }
 }
 
 void Renderer::generateScriptClasses() {
@@ -178,35 +164,36 @@ void Renderer::buildCommandBuffers() {
         vkCmdSetViewport(drawCmdBuffers[i], 0, 1, &viewport);
         vkCmdSetScissor(drawCmdBuffers[i], 0, 1, &scissor);
 
-        vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[i].skybox, 0, nullptr);
+        vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
+                                &descriptorSets[i].skybox, 0, nullptr);
         vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.skybox);
         models.skybox.draw(drawCmdBuffers[i]);
 
         vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
                                 &descriptorSets[i].scene, 0, nullptr);
 
-        vkCmdBindPipeline( drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.pbr);
+        vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.pbr);
 
         vkglTF::Model &model = models.scene;
 
-        VkDeviceSize offsets[1] = { 0 };
-        vkCmdBindVertexBuffers( drawCmdBuffers[i], 0, 1, &model.vertices.buffer, offsets);
+        VkDeviceSize offsets[1] = {0};
+        vkCmdBindVertexBuffers(drawCmdBuffers[i], 0, 1, &model.vertices.buffer, offsets);
         if (model.indices.buffer != VK_NULL_HANDLE) {
-            vkCmdBindIndexBuffer( drawCmdBuffers[i], model.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+            vkCmdBindIndexBuffer(drawCmdBuffers[i], model.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
         }
 
         // Opaque primitives first
-        for (auto node : model.nodes) {
+        for (auto node: model.nodes) {
             renderNode(node, i, vkglTF::Material::ALPHAMODE_OPAQUE);
         }
         // Alpha masked primitives
-        for (auto node : model.nodes) {
+        for (auto node: model.nodes) {
             renderNode(node, i, vkglTF::Material::ALPHAMODE_MASK);
         }
         // Transparent primitives
         // TODO: Correct depth sorting
-        vkCmdBindPipeline( drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.pbrAlphaBlend);
-        for (auto node : model.nodes) {
+        vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.pbrAlphaBlend);
+        for (auto node: model.nodes) {
             renderNode(node, i, vkglTF::Material::ALPHAMODE_BLEND);
         }
 
@@ -230,7 +217,7 @@ void Renderer::loadAssets() {
 
     std::string environmentFile = getAssetsPath() + "environment/papermill.ktx";
 
-    models.skybox.loadFromFile( getAssetsPath() + "models/Box/glTF-Embedded/Box.gltf", vulkanDevice, queue);
+    models.skybox.loadFromFile(getAssetsPath() + "models/Box/glTF-Embedded/Box.gltf", vulkanDevice, queue);
 
     textures.environmentCube.loadFromFile(environmentFile, VK_FORMAT_R16G16B16A16_SFLOAT, vulkanDevice, queue);
     generateCubemaps();
@@ -250,7 +237,8 @@ void Renderer::preparePipelines() {
     rasterizationStateCI.lineWidth = 1.0f;
 
     VkPipelineColorBlendAttachmentState blendAttachmentState{};
-    blendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    blendAttachmentState.colorWriteMask =
+            VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     blendAttachmentState.blendEnable = VK_FALSE;
 
     VkPipelineColorBlendStateCreateInfo colorBlendStateCI{};
@@ -300,14 +288,15 @@ void Renderer::preparePipelines() {
     CHECK_RESULT(vkCreatePipelineLayout(device, &pipelineLayoutCI, nullptr, &pipelineLayout));
 
     // Vertex bindings an attributes
-    VkVertexInputBindingDescription vertexInputBinding = { 0, sizeof(vkglTF::Model::Vertex), VK_VERTEX_INPUT_RATE_VERTEX };
+    VkVertexInputBindingDescription vertexInputBinding = {0, sizeof(vkglTF::Model::Vertex),
+                                                          VK_VERTEX_INPUT_RATE_VERTEX};
     std::vector<VkVertexInputAttributeDescription> vertexInputAttributes = {
-            { 0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0 },
-            { 1, 0, VK_FORMAT_R32G32B32_SFLOAT, sizeof(float) * 3 },
-            { 2, 0, VK_FORMAT_R32G32_SFLOAT, sizeof(float) * 6 },
-            { 3, 0, VK_FORMAT_R32G32_SFLOAT, sizeof(float) * 8 },
-            { 4, 0, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(float) * 10 },
-            { 5, 0, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(float) * 14 }
+            {0, 0, VK_FORMAT_R32G32B32_SFLOAT,    0},
+            {1, 0, VK_FORMAT_R32G32B32_SFLOAT,    sizeof(float) * 3},
+            {2, 0, VK_FORMAT_R32G32_SFLOAT,       sizeof(float) * 6},
+            {3, 0, VK_FORMAT_R32G32_SFLOAT,       sizeof(float) * 8},
+            {4, 0, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(float) * 10},
+            {5, 0, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(float) * 14}
     };
     VkPipelineVertexInputStateCreateInfo vertexInputStateCI{};
     vertexInputStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -341,7 +330,7 @@ void Renderer::preparePipelines() {
             loadShader("pbr_example/spv/skybox.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
     };
     CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCI, nullptr, &pipelines.skybox));
-    for (auto shaderStage : shaderStages) {
+    for (auto shaderStage: shaderStages) {
         vkDestroyShaderModule(device, shaderStage.module, nullptr);
     }
 
@@ -356,7 +345,8 @@ void Renderer::preparePipelines() {
 
     rasterizationStateCI.cullMode = VK_CULL_MODE_NONE;
     blendAttachmentState.blendEnable = VK_TRUE;
-    blendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    blendAttachmentState.colorWriteMask =
+            VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     blendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
     blendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
     blendAttachmentState.colorBlendOp = VK_BLEND_OP_ADD;
@@ -365,7 +355,7 @@ void Renderer::preparePipelines() {
     blendAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
     CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCI, nullptr, &pipelines.pbrAlphaBlend));
 
-    for (auto shaderStage : shaderStages) {
+    for (auto shaderStage: shaderStages) {
         vkDestroyShaderModule(device, shaderStage.module, nullptr);
     }
 }
@@ -373,14 +363,17 @@ void Renderer::preparePipelines() {
 void Renderer::prepareUniformBuffers() {
     for (auto &uniformBuffer: uniformBuffers) {
 
-        vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                    &uniformBuffer.scene, sizeof(shaderValuesScene));
 
-        vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                    &uniformBuffer.skybox, sizeof(shaderValuesSkybox));
 
 
-        vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT| VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                    &uniformBuffer.params, sizeof(shaderValuesParams));
 
 
@@ -647,7 +640,8 @@ void Renderer::setupDescriptors() {
         writeDescriptorSets[2].dstBinding = 2;
         writeDescriptorSets[2].pImageInfo = &textures.prefilteredCube.descriptor;
 
-        vkUpdateDescriptorSets(device, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, nullptr);
+        vkUpdateDescriptorSets(device, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0,
+                               nullptr);
     }
 
 }
@@ -1294,7 +1288,8 @@ void Renderer::generateCubemaps() {
                 shaderStages[1] = loadShader("pbr_example/spv/irradiancecube.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
                 break;
             case PREFILTEREDENV:
-                shaderStages[1] = loadShader("pbr_example/spv/prefilteredenvmap.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+                shaderStages[1] = loadShader("pbr_example/spv/prefilteredenvmap.frag.spv",
+                                             VK_SHADER_STAGE_FRAGMENT_BIT);
                 break;
         };
         VkPipeline pipeline;
@@ -1516,63 +1511,80 @@ void Renderer::generateCubemaps() {
 }
 
 void Renderer::renderNode(vkglTF::Node *node, uint32_t cbIndex, vkglTF::Material::AlphaMode alphaMode) {
-        if (node->mesh) {
-            // Render mesh primitives
-            for (vkglTF::Primitive * primitive : node->mesh->primitives) {
-                if (primitive->material.alphaMode == alphaMode) {
+    if (node->mesh) {
+        // Render mesh primitives
+        for (vkglTF::Primitive *primitive: node->mesh->primitives) {
+            if (primitive->material.alphaMode == alphaMode) {
 
-                    const std::vector<VkDescriptorSet> descriptorsets = {
-                            descriptorSets[cbIndex].scene,
-                            primitive->material.descriptorSet,
-                            node->mesh->uniformBuffer.descriptorSet,
-                    };
-                    vkCmdBindDescriptorSets(drawCmdBuffers[cbIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, static_cast<uint32_t>(descriptorsets.size()), descriptorsets.data(), 0, NULL);
+                const std::vector<VkDescriptorSet> descriptorsets = {
+                        descriptorSets[cbIndex].scene,
+                        primitive->material.descriptorSet,
+                        node->mesh->uniformBuffer.descriptorSet,
+                };
+                vkCmdBindDescriptorSets(drawCmdBuffers[cbIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0,
+                                        static_cast<uint32_t>(descriptorsets.size()), descriptorsets.data(), 0, NULL);
 
-                    // Pass material parameters as push constants
-                    pushConstBlockMaterial.emissiveFactor = primitive->material.emissiveFactor;
-                    // To save push constant space, availabilty and texture coordiante set are combined
-                    // -1 = texture not used for this material, >= 0 texture used and index of texture coordinate set
-                    pushConstBlockMaterial.colorTextureSet = primitive->material.baseColorTexture != nullptr ? primitive->material.texCoordSets.baseColor : -1;
-                    pushConstBlockMaterial.normalTextureSet = primitive->material.normalTexture != nullptr ? primitive->material.texCoordSets.normal : -1;
-                    pushConstBlockMaterial.occlusionTextureSet = primitive->material.occlusionTexture != nullptr ? primitive->material.texCoordSets.occlusion : -1;
-                    pushConstBlockMaterial.emissiveTextureSet = primitive->material.emissiveTexture != nullptr ? primitive->material.texCoordSets.emissive : -1;
-                    pushConstBlockMaterial.alphaMask = static_cast<float>(primitive->material.alphaMode == vkglTF::Material::ALPHAMODE_MASK);
-                    pushConstBlockMaterial.alphaMaskCutoff = primitive->material.alphaCutoff;
+                // Pass material parameters as push constants
+                pushConstBlockMaterial.emissiveFactor = primitive->material.emissiveFactor;
+                // To save push constant space, availabilty and texture coordiante set are combined
+                // -1 = texture not used for this material, >= 0 texture used and index of texture coordinate set
+                pushConstBlockMaterial.colorTextureSet =
+                        primitive->material.baseColorTexture != nullptr ? primitive->material.texCoordSets.baseColor
+                                                                        : -1;
+                pushConstBlockMaterial.normalTextureSet =
+                        primitive->material.normalTexture != nullptr ? primitive->material.texCoordSets.normal : -1;
+                pushConstBlockMaterial.occlusionTextureSet =
+                        primitive->material.occlusionTexture != nullptr ? primitive->material.texCoordSets.occlusion
+                                                                        : -1;
+                pushConstBlockMaterial.emissiveTextureSet =
+                        primitive->material.emissiveTexture != nullptr ? primitive->material.texCoordSets.emissive : -1;
+                pushConstBlockMaterial.alphaMask = static_cast<float>(primitive->material.alphaMode ==
+                                                                      vkglTF::Material::ALPHAMODE_MASK);
+                pushConstBlockMaterial.alphaMaskCutoff = primitive->material.alphaCutoff;
 
-                    // TODO: glTF specs states that metallic roughness should be preferred, even if specular glosiness is present
+                // TODO: glTF specs states that metallic roughness should be preferred, even if specular glosiness is present
 
-                    if (primitive->material.pbrWorkflows.metallicRoughness) {
-                        // Metallic roughness workflow
-                        pushConstBlockMaterial.workflow = static_cast<float>(PBR_WORKFLOW_METALLIC_ROUGHNESS);
-                        pushConstBlockMaterial.baseColorFactor = primitive->material.baseColorFactor;
-                        pushConstBlockMaterial.metallicFactor = primitive->material.metallicFactor;
-                        pushConstBlockMaterial.roughnessFactor = primitive->material.roughnessFactor;
-                        pushConstBlockMaterial.PhysicalDescriptorTextureSet = primitive->material.metallicRoughnessTexture != nullptr ? primitive->material.texCoordSets.metallicRoughness : -1;
-                        pushConstBlockMaterial.colorTextureSet = primitive->material.baseColorTexture != nullptr ? primitive->material.texCoordSets.baseColor : -1;
-                    }
+                if (primitive->material.pbrWorkflows.metallicRoughness) {
+                    // Metallic roughness workflow
+                    pushConstBlockMaterial.workflow = static_cast<float>(PBR_WORKFLOW_METALLIC_ROUGHNESS);
+                    pushConstBlockMaterial.baseColorFactor = primitive->material.baseColorFactor;
+                    pushConstBlockMaterial.metallicFactor = primitive->material.metallicFactor;
+                    pushConstBlockMaterial.roughnessFactor = primitive->material.roughnessFactor;
+                    pushConstBlockMaterial.PhysicalDescriptorTextureSet =
+                            primitive->material.metallicRoughnessTexture != nullptr
+                            ? primitive->material.texCoordSets.metallicRoughness : -1;
+                    pushConstBlockMaterial.colorTextureSet =
+                            primitive->material.baseColorTexture != nullptr ? primitive->material.texCoordSets.baseColor
+                                                                            : -1;
+                }
 
-                    if (primitive->material.pbrWorkflows.specularGlossiness) {
-                        // Specular glossiness workflow
-                        pushConstBlockMaterial.workflow = static_cast<float>(PBR_WORKFLOW_SPECULAR_GLOSINESS);
-                        pushConstBlockMaterial.PhysicalDescriptorTextureSet = primitive->material.extension.specularGlossinessTexture != nullptr ? primitive->material.texCoordSets.specularGlossiness : -1;
-                        pushConstBlockMaterial.colorTextureSet = primitive->material.extension.diffuseTexture != nullptr ? primitive->material.texCoordSets.baseColor : -1;
-                        pushConstBlockMaterial.diffuseFactor = primitive->material.extension.diffuseFactor;
-                        pushConstBlockMaterial.specularFactor = glm::vec4(primitive->material.extension.specularFactor, 1.0f);
-                    }
+                if (primitive->material.pbrWorkflows.specularGlossiness) {
+                    // Specular glossiness workflow
+                    pushConstBlockMaterial.workflow = static_cast<float>(PBR_WORKFLOW_SPECULAR_GLOSINESS);
+                    pushConstBlockMaterial.PhysicalDescriptorTextureSet =
+                            primitive->material.extension.specularGlossinessTexture != nullptr
+                            ? primitive->material.texCoordSets.specularGlossiness : -1;
+                    pushConstBlockMaterial.colorTextureSet = primitive->material.extension.diffuseTexture != nullptr
+                                                             ? primitive->material.texCoordSets.baseColor : -1;
+                    pushConstBlockMaterial.diffuseFactor = primitive->material.extension.diffuseFactor;
+                    pushConstBlockMaterial.specularFactor = glm::vec4(primitive->material.extension.specularFactor,
+                                                                      1.0f);
+                }
 
-                    vkCmdPushConstants(drawCmdBuffers[cbIndex], pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstBlockMaterial), &pushConstBlockMaterial);
+                vkCmdPushConstants(drawCmdBuffers[cbIndex], pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                                   sizeof(PushConstBlockMaterial), &pushConstBlockMaterial);
 
-                    if (primitive->hasIndices) {
-                        vkCmdDrawIndexed(drawCmdBuffers[cbIndex], primitive->indexCount, 1, primitive->firstIndex, 0, 0);
-                    } else {
-                        vkCmdDraw(drawCmdBuffers[cbIndex], primitive->vertexCount, 1, 0, 0);
-                    }
+                if (primitive->hasIndices) {
+                    vkCmdDrawIndexed(drawCmdBuffers[cbIndex], primitive->indexCount, 1, primitive->firstIndex, 0, 0);
+                } else {
+                    vkCmdDraw(drawCmdBuffers[cbIndex], primitive->vertexCount, 1, 0, 0);
                 }
             }
-
-        };
-        for (auto child : node->children) {
-            renderNode(child, cbIndex, alphaMode);
         }
+
+    };
+    for (auto child: node->children) {
+        renderNode(child, cbIndex, alphaMode);
+    }
 }
 
