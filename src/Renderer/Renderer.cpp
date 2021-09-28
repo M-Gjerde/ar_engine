@@ -215,7 +215,7 @@ void Renderer::loadAssets() {
 
     textures.empty.loadFromFile(getAssetsPath() + "textures/empty.ktx", VK_FORMAT_R8G8B8A8_UNORM, vulkanDevice, queue);
 
-    std::string environmentFile = getAssetsPath() + "environment/papermill.ktx";
+    std::string environmentFile = getAssetsPath() + "environments/papermill.ktx";
 
     models.skybox.loadFromFile(getAssetsPath() + "models/Box/glTF-Embedded/Box.gltf", vulkanDevice, queue);
 
