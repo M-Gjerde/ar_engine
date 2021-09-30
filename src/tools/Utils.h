@@ -112,7 +112,7 @@ namespace Utils {
                 imageMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
                 break;
             default:
-                // Other source layouts aren't handled (yet)
+                // Other source layouts aren't firstUpdate (yet)
                 break;
         }
 
@@ -154,7 +154,7 @@ namespace Utils {
                 imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
                 break;
             default:
-                // Other source layouts aren't handled (yet)
+                // Other source layouts aren't firstUpdate (yet)
                 break;
         }
 

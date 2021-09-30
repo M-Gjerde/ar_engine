@@ -46,6 +46,7 @@ public:
 
     UISettings uiSettings;
     bool updated = false;
+    bool firstUpdate = true;
 
     explicit ImGUI(VulkanDevice *vulkanDevice) {
         device = vulkanDevice;
@@ -384,14 +385,13 @@ public:
 
         ImGui::SetNextWindowSize(ImVec2(200, 450), ImGuiCond_None);
         ImGui::Begin("Example settings");
-        updated |= ImGui::Checkbox("Render models", &uiSettings.displayModels);
+        updated |= ImGui::Checkbox("Render models", &uiSettings.rotate);
         updated |= ImGui::Checkbox("Display logos", &uiSettings.displayLogos);
         updated |= ImGui::Checkbox("Display background", &uiSettings.displayBackground);
         updated |= ImGui::Checkbox("Animate light", &uiSettings.animateLight);
-        updated |= ImGui::SliderFloat("Light speed", &uiSettings.lightSpeed, 0.1f, 1.0f);
+        updated |= ImGui::SliderFloat("Light speed", &uiSettings.lightSpeed, 0.05f, 1.0f);
 
 
-        const char *items[] = {"AAAA", "BBBB", "CCCC"};
         static int item_current_idx = 0; // Here we store our selection data as an index.
         if (ImGui::BeginListBox("Scripts")) {
             for (int n = 0; n < uiSettings.listBoxNames.size(); n++) {

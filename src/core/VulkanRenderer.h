@@ -90,7 +90,7 @@ public:
     virtual void keyPressed(uint32_t);
     /** @brief (Virtual) Called once a update on the UI is detected */
     virtual void UIUpdate(UISettings uiSettings);
-    /** @brief (Virtual) Called after the mouse cursor moved and before internal events (like camera rotation) is handled */
+    /** @brief (Virtual) Called after the mouse cursor moved and before internal events (like camera rotation) is firstUpdate */
     virtual void mouseMoved(double x, double y, bool &handled);
     /** @brief (Virtual) Called when the window has been resized, can be used by the sample application to recreate resources */
     virtual void windowResized();

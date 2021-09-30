@@ -12,8 +12,8 @@ void Renderer::prepare() {
 }
 
 void Renderer::prepareRenderer() {
-    camera.type = Camera::CameraType::lookat;
-    camera.setPerspective(60.0f, (float) width / (float) height, 0.01f, 256.0f);
+    camera.type = Camera::CameraType::firstperson;
+    camera.setPerspective(60.0f, (float) width / (float) height, 0.001f, 1024.0f);
     camera.rotationSpeed = 0.25f;
     camera.movementSpeed = 0.1f;
     camera.setPosition({0.0f, 0.0f, -0.75f});
@@ -120,9 +120,18 @@ void Renderer::viewChanged() {
 }
 
 void Renderer::UIUpdate(UISettings uiSettings) {
-    printf("Clicked: %d \n", uiSettings.displayModels);
+    printf("Clicked: %d \n", uiSettings.rotate);
     printf("Index: %d, name: %s\n", uiSettings.getSelectedItem(),
            uiSettings.listBoxNames[uiSettings.getSelectedItem()].c_str());
+
+    if (uiSettings.rotate){
+        glm::mat4 model = shaderValuesScene.model;
+        model = glm::rotate(model, glm::radians(10.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        shaderValuesScene.model = model;
+    }
+
+    camera.movementSpeed = uiSettings.lightSpeed * 100;
+    printf("Movementspeed: %f\n", uiSettings.lightSpeed * 100);
 
 }
 
@@ -215,11 +224,13 @@ void Renderer::loadAssets() {
 
     textures.empty.loadFromFile(getAssetsPath() + "textures/empty.ktx", VK_FORMAT_R8G8B8A8_UNORM, vulkanDevice, queue);
 
-    std::string environmentFile = getAssetsPath() + "environments/papermill.ktx";
+    //std::string environmentFile = getAssetsPath() + "environments/papermill.ktx";
+    std::string environmentFile = getAssetsPath() + "textures/cubemap_vulkan.ktx";
 
     models.skybox.loadFromFile(getAssetsPath() + "models/Box/glTF-Embedded/Box.gltf", vulkanDevice, queue);
 
-    textures.environmentCube.loadFromFile(environmentFile, VK_FORMAT_R16G16B16A16_SFLOAT, vulkanDevice, queue);
+    textures.environmentCube.loadFromFile(environmentFile, vulkanDevice, queue, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     generateCubemaps();
 }
 
@@ -378,6 +389,8 @@ void Renderer::prepareUniformBuffers() {
 
 
     }
+
+
     updateUniformBuffers();
 }
 
@@ -397,6 +410,10 @@ void Renderer::updateUniformBuffers() {
     shaderValuesScene.model[0][0] = scale;
     shaderValuesScene.model[1][1] = scale;
     shaderValuesScene.model[2][2] = scale;
+    shaderValuesScene.model = glm::translate(shaderValuesScene.model, translate);
+    shaderValuesScene.model = glm::mat4(1.0f);
+
+    translate = glm::vec3(0.0f, 0.0f, -2.0f);
     shaderValuesScene.model = glm::translate(shaderValuesScene.model, translate);
 
     shaderValuesScene.camPos = glm::vec3(
@@ -452,7 +469,7 @@ void Renderer::setupDescriptors() {
         Descriptor sets
     */
 
-    // Scene (matrices and environment maps)
+    // Scene (matrices and environments maps)
     {
         std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
                 {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1,

@@ -156,7 +156,7 @@ public:
     void update(float deltaTime)
     {
         updated = false;
-        if (type == CameraType::firstperson)
+        if (type == CameraType::firstperson || type == CameraType::lookat)
         {
             if (moving())
             {

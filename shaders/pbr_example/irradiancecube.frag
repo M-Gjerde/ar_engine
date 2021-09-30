@@ -1,4 +1,4 @@
-// Generates an irradiance cube from an environment map using convolution
+// Generates an irradiance cube from an environments map using convolution
 
 #version 450
 

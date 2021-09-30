@@ -728,19 +728,18 @@ void Texture2DArray::loadFromFile(std::string filename, VkFormat format, VulkanD
 * @param (Optional) imageLayout Usage layout for the texture (defaults VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 *
 */
-void TextureCubeMap::loadFromFile(std::string filename, VkFormat format, VulkanDevice *device, VkQueue copyQueue,
+void TextureCubeMap::loadFromFile(std::string filename, VulkanDevice *device, VkQueue copyQueue,
                                   VkImageUsageFlags imageUsageFlags, VkImageLayout imageLayout) {
     ktxTexture *ktxTexture;
     ktxResult result = loadKTXFile(filename, &ktxTexture);
     assert(result == KTX_SUCCESS);
-
     this->device = device;
     width = ktxTexture->baseWidth;
     height = ktxTexture->baseHeight;
     mipLevels = ktxTexture->numLevels;
-
     ktx_uint8_t *ktxTextureData = ktxTexture_GetData(ktxTexture);
     ktx_size_t ktxTextureSize = ktxTexture_GetDataSize(ktxTexture);
+    VkFormat format = ktxTexture_GetVkFormat(ktxTexture);
 
     VkMemoryAllocateInfo memAllocInfo = Populate::memoryAllocateInfo();
     VkMemoryRequirements memReqs;
@@ -757,18 +756,13 @@ void TextureCubeMap::loadFromFile(std::string filename, VkFormat format, VulkanD
 
 
     CHECK_RESULT(vkCreateBuffer(device->logicalDevice, &bufferCreateInfo, nullptr, &stagingBuffer));
-
     // Get memory requirements for the staging buffer (alignment, memory type bits)
     vkGetBufferMemoryRequirements(device->logicalDevice, stagingBuffer, &memReqs);
-
     memAllocInfo.allocationSize = memReqs.size;
     // Get memory type index for a host visible buffer
     memAllocInfo.memoryTypeIndex = device->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                                                                                  VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-
     CHECK_RESULT(vkAllocateMemory(device->logicalDevice, &memAllocInfo, nullptr, &stagingMemory));
-
     CHECK_RESULT(vkBindBufferMemory(device->logicalDevice, stagingBuffer, stagingMemory, 0));
 
     // Copy texture data into staging buffer
@@ -811,13 +805,13 @@ void TextureCubeMap::loadFromFile(std::string filename, VkFormat format, VulkanD
     imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageCreateInfo.extent = {width, height, 1};
-    imageCreateInfo.usage = imageUsageFlags;
+    imageCreateInfo.usage = imageUsageFlags | VK_IMAGE_USAGE_SAMPLED_BIT;
     // Ensure that the TRANSFER_DST bit is set for staging
     if (!(imageCreateInfo.usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
         imageCreateInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     }
     // Cube faces count as array layers in Vulkan
-    imageCreateInfo.arrayLayers = 6;
+     imageCreateInfo.arrayLayers = 6;
     // This flag is required for cube map images
     imageCreateInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
@@ -872,7 +866,7 @@ void TextureCubeMap::loadFromFile(std::string filename, VkFormat format, VulkanD
             imageLayout,
             subresourceRange,
             VK_PIPELINE_STAGE_TRANSFER_BIT,
-            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+            VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
     device->flushCommandBuffer(copyCmd, copyQueue);
 

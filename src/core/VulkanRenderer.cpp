@@ -106,7 +106,7 @@ bool VulkanRenderer::initVulkan() {
     // Derived examples can override this to set actual features (based on above readings) to enable for logical device creation
     addDeviceFeatures();
     // Vulkan device creation
-    // This is handled by a separate class that gets a logical device representation
+    // This is firstUpdate by a separate class that gets a logical device representation
     // and encapsulates functions related to a device
     vulkanDevice = new VulkanDevice(physicalDevice);
     err = vulkanDevice->createLogicalDevice(enabledFeatures, enabledDeviceExtensions, nullptr);
@@ -565,8 +565,9 @@ void VulkanRenderer::updateOverlay() {
     if (UIOverlay->updateBuffers()) {
         buildCommandBuffers();
     }
-    if (UIOverlay->updated){
+    if (UIOverlay->updated || UIOverlay->firstUpdate){
         UIUpdate(UIOverlay->uiSettings);
+        UIOverlay->firstUpdate = false;
     }
 }
 
@@ -642,7 +643,7 @@ void VulkanRenderer::handleMouseMove(int32_t x, int32_t y) {
 
     if (settings.overlay) {
         //ImGuiIO& io = ImGui::GetIO();
-        //handled = io.WantCaptureMouse;
+        //firstUpdate = io.WantCaptureMouse;
     }
     mouseMoved((float) x, (float) y, handled);
 
