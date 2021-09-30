@@ -14,6 +14,8 @@ out gl_PerVertex {
 
 void main()
 {
-    outUVW = inPos;
+
+    // Flip the cubemap by multiplying -1.
+    outUVW = inPos; //* (-1);
     gl_Position = pushConsts.mvp * vec4(inPos.xyz, 1.0);
 }

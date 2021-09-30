@@ -740,10 +740,8 @@ void TextureCubeMap::loadFromFile(std::string filename, VulkanDevice *device, Vk
     ktx_uint8_t *ktxTextureData = ktxTexture_GetData(ktxTexture);
     ktx_size_t ktxTextureSize = ktxTexture_GetDataSize(ktxTexture);
     VkFormat format = ktxTexture_GetVkFormat(ktxTexture);
-
     VkMemoryAllocateInfo memAllocInfo = Populate::memoryAllocateInfo();
     VkMemoryRequirements memReqs;
-
     // Create a host-visible staging buffer that contains the raw image data
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingMemory;

@@ -1,4 +1,5 @@
 #version 450
+#define PI 3.1415926535897932384626433832795
 
 layout (binding = 2) uniform samplerCube samplerEnv;
 
@@ -39,6 +40,18 @@ vec4 SRGBtoLINEAR(vec4 srgbIn)
 	vec3 bLess = step(vec3(0.04045),srgbIn.xyz);
 	vec3 linOut = mix( srgbIn.xyz/vec3(12.92), pow((srgbIn.xyz+vec3(0.055))/vec3(1.055),vec3(2.4)), bLess );
 	return vec4(linOut,srgbIn.w);;
+}
+
+vec2 rotateUV(vec2 uv, vec2 pivot, float rotation) {
+	float sine = sin(rotation);
+	float cosine = cos(rotation);
+
+	uv -= pivot;
+	uv.x = uv.x * cosine - uv.y * sine;
+	uv.y = uv.x * sine + uv.y * cosine;
+	uv += pivot;
+
+	return uv;
 }
 
 void main() 

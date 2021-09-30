@@ -225,12 +225,15 @@ void Renderer::loadAssets() {
     textures.empty.loadFromFile(getAssetsPath() + "textures/empty.ktx", VK_FORMAT_R8G8B8A8_UNORM, vulkanDevice, queue);
 
     //std::string environmentFile = getAssetsPath() + "environments/papermill.ktx";
+    //std::string environmentFile = getAssetsPath() + "textures/cubemap_yokohama_rgba.ktx";
+    //std::string environmentFile = getAssetsPath() + "environments/cubemap_space.ktx";
     std::string environmentFile = getAssetsPath() + "textures/cubemap_vulkan.ktx";
 
     models.skybox.loadFromFile(getAssetsPath() + "models/Box/glTF-Embedded/Box.gltf", vulkanDevice, queue);
 
     textures.environmentCube.loadFromFile(environmentFile, vulkanDevice, queue, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
     generateCubemaps();
 }
 
