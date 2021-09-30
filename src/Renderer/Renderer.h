@@ -85,7 +85,7 @@ protected:
 
     struct {
         glm::vec4 lightDir{};
-        float exposure = 4.5f;
+        float exposure = 10.5f;
         float gamma = 2.2f;
         float prefilteredCubeMipLevels{};
         float scaleIBLAmbient = 1.0f;
