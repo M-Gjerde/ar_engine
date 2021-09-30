@@ -11,7 +11,6 @@ layout (binding = 0) uniform UBO
 	mat4 viewMatrix;
 } ubo;
 
-
 layout(location = 0) out vec3 outNormal;
 layout(location = 1) out vec2 fragTexCoord;
 layout(location = 2) out vec3 fragPos;

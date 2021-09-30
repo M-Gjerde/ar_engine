@@ -160,22 +160,7 @@ public:
 
         // Copy
         // Copy staging buffer to image
-
-        VkBufferImageCopy bufferCopyRegion = {};
-        bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        bufferCopyRegion.imageSubresource.layerCount = 1;
-        bufferCopyRegion.imageExtent.width = texWidth;
-        bufferCopyRegion.imageExtent.height = texHeight;
-        bufferCopyRegion.imageExtent.depth = 1;
-
-        vkCmdCopyBufferToImage(
-                copyCmd,
-                stagingBuffer.buffer,
-                fontImage,
-                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                1,
-                &bufferCopyRegion
-        );
+        Utils::copyBufferToImage(copyCmd, stagingBuffer.buffer, fontImage, texWidth, texHeight, VK_IMAGE_ASPECT_COLOR_BIT);
 
         // Prepare image for shader read
         // Prepare for shader read

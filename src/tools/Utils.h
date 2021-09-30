@@ -187,6 +187,27 @@ namespace Utils {
         setImageLayout(cmdbuffer, image, oldImageLayout, newImageLayout, subresourceRange, srcStageMask, dstStageMask);
     }
 
+    inline void copyBufferToImage(VkCommandBuffer cmdBuffer, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, VkImageAspectFlagBits aspectFlagBits){
+        VkBufferImageCopy bufferCopyRegion = {};
+        bufferCopyRegion.imageSubresource.aspectMask = aspectFlagBits;
+        bufferCopyRegion.imageSubresource.layerCount = 1;
+        bufferCopyRegion.imageSubresource.mipLevel = 0;
+        bufferCopyRegion.imageSubresource.baseArrayLayer = 0;
+        bufferCopyRegion.imageExtent.width = width;
+        bufferCopyRegion.imageExtent.height = height;
+        bufferCopyRegion.imageExtent.depth = 1;
+
+        vkCmdCopyBufferToImage(
+                cmdBuffer,
+                buffer,
+                image,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                1,
+                &bufferCopyRegion
+        );
+
+    }
+
     inline VkShaderModule loadShader(const char *fileName, VkDevice device) {
         std::ifstream is(fileName, std::ios::binary | std::ios::in | std::ios::ate);
 
