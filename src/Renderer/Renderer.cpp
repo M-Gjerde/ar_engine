@@ -1415,8 +1415,6 @@ void Renderer::generateCubemaps() {
                 VkDeviceSize offsets[1] = {0};
 
                 models.skybox.draw(cmdBuf);
-
-
                 vkCmdEndRenderPass(cmdBuf);
 
                 VkImageSubresourceRange subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
