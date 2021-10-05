@@ -246,7 +246,13 @@ VulkanDevice::createLogicalDevice(VkPhysicalDeviceFeatures enabledFeatures, std:
 
     // Create a default command pool for graphics command buffers
     commandPool = createCommandPool(queueFamilyIndices.graphics);
+
+    // Initialize a transfer queue
+    vkGetDeviceQueue(logicalDevice, queueFamilyIndices.transfer, 0, &transferQueue);
+
     return result;
+
+
 }
 
 /**

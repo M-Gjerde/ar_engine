@@ -25,7 +25,10 @@
 #include <ar_engine/src/core/ScriptBuilder.h>
 #include <ar_engine/src/core/VulkanglTFModel.h>
 #include <ar_engine/src/core/Texture.h>
+#include <ar_engine/src/core/vkMyModel.h>
 #include "ar_engine/src/core/VulkanRenderer.h"
+
+class Model;
 
 class Renderer : VulkanRenderer {
 
@@ -81,6 +84,12 @@ protected:
         glm::vec3 rotation = glm::vec3(75.0f, 40.0f, 0.0f);
     } lightSource;
 
+    struct FragShaderParams {
+        glm::vec4 objectColor;
+        glm::vec4 lightColor;
+        glm::vec4 lightPos;
+        glm::vec4 viewPos;
+    } fragShaderParams{};
 
 
     struct {
@@ -96,14 +105,16 @@ protected:
     struct Models {
         vkglTF::Model scene;
         vkglTF::Model skybox;
+        vkMyModel object;
 
     } models;
 
     struct UniformBufferSet {
+        Buffer object;
         Buffer scene;
         Buffer params;
         Buffer skybox;
-
+        Buffer lightParams;
     };
 
     struct UBOMatrices {
@@ -113,15 +124,24 @@ protected:
         glm::vec3 camPos;
     } shaderValuesScene{}, shaderValuesSkybox{};
 
+    struct SimpleUBOMatrix {
+        glm::mat4 projection;
+        glm::mat4 model;
+        glm::mat4 view;
+    } shaderValuesObject{};
+
     VkPipelineLayout pipelineLayout{};
+    VkPipelineLayout pipelineLayout2{};
 
     struct Pipelines {
         VkPipeline skybox;
         VkPipeline pbr;
         VkPipeline pbrAlphaBlend;
+        VkPipeline object;
     } pipelines{};
 
     struct DescriptorSetLayouts {
+        VkDescriptorSetLayout object;
         VkDescriptorSetLayout scene;
         VkDescriptorSetLayout material;
         VkDescriptorSetLayout node;
@@ -130,6 +150,8 @@ protected:
     struct DescriptorSets {
         VkDescriptorSet scene;
         VkDescriptorSet skybox;
+        VkDescriptorSet object;
+        VkDescriptorSet lightParams;
 
     };
     std::vector<DescriptorSets> descriptorSets;

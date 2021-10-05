@@ -85,9 +85,15 @@ void Renderer::draw() {
     currentUB.scene.map();
     currentUB.params.map();
     currentUB.skybox.map();
+    currentUB.object.map();
+    currentUB.lightParams.map();
+    memcpy(currentUB.lightParams.mapped, &fragShaderParams, sizeof(fragShaderParams));
+    memcpy(currentUB.object.mapped, &shaderValuesObject, sizeof(shaderValuesObject));
     memcpy(currentUB.scene.mapped, &shaderValuesScene, sizeof(shaderValuesScene));
     memcpy(currentUB.params.mapped, &shaderValuesParams, sizeof(shaderValuesParams));
     memcpy(currentUB.skybox.mapped, &shaderValuesSkybox, sizeof(shaderValuesSkybox));
+    currentUB.lightParams.unmap();
+    currentUB.object.unmap();
     currentUB.skybox.unmap();
     currentUB.scene.unmap();
     currentUB.params.unmap();
@@ -124,7 +130,7 @@ void Renderer::UIUpdate(UISettings uiSettings) {
     printf("Index: %d, name: %s\n", uiSettings.getSelectedItem(),
            uiSettings.listBoxNames[uiSettings.getSelectedItem()].c_str());
 
-    if (uiSettings.rotate){
+    if (uiSettings.rotate) {
         glm::mat4 model = shaderValuesScene.model;
         model = glm::rotate(model, glm::radians(10.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         shaderValuesScene.model = model;
@@ -178,6 +184,13 @@ void Renderer::buildCommandBuffers() {
         vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.skybox);
         models.skybox.draw(drawCmdBuffers[i]);
 
+        vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout2, 0, 1,
+                                &descriptorSets[i].object, 0, nullptr);
+
+        vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.object);
+        models.object.draw(drawCmdBuffers[i]);
+
+
         vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
                                 &descriptorSets[i].scene, 0, nullptr);
 
@@ -206,6 +219,7 @@ void Renderer::buildCommandBuffers() {
             renderNode(node, i, vkglTF::Material::ALPHAMODE_BLEND);
         }
 
+
         UIOverlay->drawFrame(drawCmdBuffers[i]);
 
         vkCmdEndRenderPass(drawCmdBuffers[i]);
@@ -225,14 +239,16 @@ void Renderer::loadAssets() {
     textures.empty.loadFromFile(getAssetsPath() + "textures/empty.ktx", VK_FORMAT_R8G8B8A8_UNORM, vulkanDevice, queue);
 
     //std::string environmentFile = getAssetsPath() + "environments/papermill.ktx";
-    //std::string environmentFile = getAssetsPath() + "textures/cubemap_yokohama_rgba.ktx";
+    //std::string environmentFile = getAssetsPath() + "environments/cubemap_yokohama_rgba.ktx";
     //std::string environmentFile = getAssetsPath() + "environments/cubemap_space.ktx";
-    std::string environmentFile = getAssetsPath() + "textures/cubemap_vulkan.ktx";
+    std::string environmentFile = getAssetsPath() + "environments/cubemap_vulkan.ktx";
 
     models.skybox.loadFromFile(getAssetsPath() + "models/Box/glTF-Embedded/Box.gltf", vulkanDevice, queue);
-
     textures.environmentCube.loadFromFile(environmentFile, vulkanDevice, queue, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+
+    models.object.load(vulkanDevice);
 
     generateCubemaps();
 }
@@ -286,6 +302,7 @@ void Renderer::preparePipelines() {
     dynamicStateCI.pDynamicStates = dynamicStateEnables.data();
     dynamicStateCI.dynamicStateCount = static_cast<uint32_t>(dynamicStateEnables.size());
 
+
     // Pipeline layout
     const std::vector<VkDescriptorSetLayout> setLayouts = {
             descriptorSetLayouts.scene, descriptorSetLayouts.material, descriptorSetLayouts.node
@@ -300,6 +317,13 @@ void Renderer::preparePipelines() {
     pipelineLayoutCI.pushConstantRangeCount = 1;
     pipelineLayoutCI.pPushConstantRanges = &pushConstantRange;
     CHECK_RESULT(vkCreatePipelineLayout(device, &pipelineLayoutCI, nullptr, &pipelineLayout));
+
+    pipelineLayoutCI.pushConstantRangeCount = 0;
+    pipelineLayoutCI.pPushConstantRanges = nullptr;
+    pipelineLayoutCI.setLayoutCount = 1;
+    pipelineLayoutCI.pSetLayouts = &descriptorSetLayouts.object;
+
+    CHECK_RESULT(vkCreatePipelineLayout(device, &pipelineLayoutCI, nullptr, &pipelineLayout2));
 
     // Vertex bindings an attributes
     VkVertexInputBindingDescription vertexInputBinding = {0, sizeof(vkglTF::Model::Vertex),
@@ -356,7 +380,25 @@ void Renderer::preparePipelines() {
     depthStencilStateCI.depthWriteEnable = VK_TRUE;
     depthStencilStateCI.depthTestEnable = VK_TRUE;
     CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCI, nullptr, &pipelines.pbr));
+    for (auto shaderStage: shaderStages) {
+        vkDestroyShaderModule(device, shaderStage.module, nullptr);
+    }
 
+    /// ------------------- TRIANGLE ----------------- ///
+
+    // PBR pipeline
+    shaderStages = {
+            loadShader("triangle.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
+            loadShader("triangle.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
+    };
+    pipelineCI.layout = pipelineLayout2;
+    rasterizationStateCI.cullMode = VK_CULL_MODE_FRONT_BIT;
+    rasterizationStateCI.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+
+    CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCI, nullptr, &pipelines.object));
+
+
+    pipelineCI.layout = pipelineLayout;
     rasterizationStateCI.cullMode = VK_CULL_MODE_NONE;
     blendAttachmentState.blendEnable = VK_TRUE;
     blendAttachmentState.colorWriteMask =
@@ -383,6 +425,14 @@ void Renderer::prepareUniformBuffers() {
 
         vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                   &uniformBuffer.lightParams, sizeof(fragShaderParams));
+
+        vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                   &uniformBuffer.object, sizeof(shaderValuesObject));
+
+        vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                    &uniformBuffer.skybox, sizeof(shaderValuesSkybox));
 
 
@@ -402,6 +452,18 @@ void Renderer::updateUniformBuffers() {
     shaderValuesScene.projection = camera.matrices.perspective;
     shaderValuesScene.view = camera.matrices.view;
 
+    shaderValuesObject.projection = camera.matrices.perspective;
+    shaderValuesObject.view = camera.matrices.view;
+    glm::vec4 objectColor;
+    glm::vec4 lightColor;
+    glm::vec4 lightPos;
+    glm::vec4 viewPos;
+
+    fragShaderParams.objectColor = glm::vec4(0.25f, 0.25f, 0.25f, 1.0f);
+    fragShaderParams.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    fragShaderParams.lightPos = glm::vec4(camera.position, 1.0f);
+    fragShaderParams.viewPos = fragShaderParams.lightPos;
+
     // Center and scale model
     float scale =
             (1.0f / std::max(models.scene.aabb[0][0], std::max(models.scene.aabb[1][1], models.scene.aabb[2][2]))) *
@@ -416,8 +478,11 @@ void Renderer::updateUniformBuffers() {
     shaderValuesScene.model = glm::translate(shaderValuesScene.model, translate);
     shaderValuesScene.model = glm::mat4(1.0f);
 
-    translate = glm::vec3(0.0f, 0.0f, -2.0f);
+    translate = glm::vec3(0.0f, 0.0f, -3.0f);
     shaderValuesScene.model = glm::translate(shaderValuesScene.model, translate);
+
+    translate = glm::vec3(0.0f, 0.0f, -5.0f);
+    shaderValuesObject.model = glm::translate(shaderValuesScene.model, translate);
 
     shaderValuesScene.camPos = glm::vec3(
             -camera.position.z * sin(glm::radians(camera.rotation.y)) * cos(glm::radians(camera.rotation.x)),
@@ -433,6 +498,7 @@ void Renderer::updateUniformBuffers() {
 
 
 void Renderer::setupDescriptors() {
+    // My cube
 
     /*
     Descriptor Pool
@@ -458,8 +524,8 @@ void Renderer::setupDescriptors() {
     }
 
     std::vector<VkDescriptorPoolSize> poolSizes = {
-            {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         (4 + meshCount) * swapchain.imageCount},
-            {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, imageSamplerCount * swapchain.imageCount}
+            {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         (4 + meshCount) * swapchain.imageCount + 1},
+            {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, imageSamplerCount * swapchain.imageCount + 1}
     };
     VkDescriptorPoolCreateInfo descriptorPoolCI{};
     descriptorPoolCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -471,6 +537,42 @@ void Renderer::setupDescriptors() {
     /*
         Descriptor sets
     */
+
+    // My cube
+    std::vector<VkDescriptorSetLayoutBinding> bindings = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT,
+                                                                  nullptr},
+                                                          {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                                                  nullptr},};
+    VkDescriptorSetLayoutCreateInfo layoutCreateInfo = Populate::descriptorSetLayoutCreateInfo(bindings.data(),
+                                                                                               bindings.size());
+    CHECK_RESULT(vkCreateDescriptorSetLayout(device, &layoutCreateInfo, nullptr, &descriptorSetLayouts.object));
+
+    for (auto i = 0; i < uniformBuffers.size(); i++) {
+        VkDescriptorSetAllocateInfo descriptorSetAllocInfo = Populate::descriptorSetAllocateInfo(descriptorPool,
+                                                                                                 &descriptorSetLayouts.object,
+                                                                                                 1);
+
+        CHECK_RESULT(vkAllocateDescriptorSets(device, &descriptorSetAllocInfo, &descriptorSets[i].object));
+
+        std::vector<VkWriteDescriptorSet> writeDescriptorSet = {{Populate::writeDescriptorSet(descriptorSets[i].object,
+                                                                                              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                                                                              0,
+                                                                                              &uniformBuffers[i].object.descriptor,
+                                                                                              1)},
+                                                                {
+                                                                 Populate::writeDescriptorSet(descriptorSets[i].object,
+                                                                                              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                                                                              1,
+                                                                                              &uniformBuffers[i].lightParams.descriptor,
+                                                                                              1)
+                                                                }
+        };
+
+        vkUpdateDescriptorSets(device, 2, writeDescriptorSet.data(), 0,
+                               nullptr);
+    }
+
+
 
     // Scene (matrices and environments maps)
     {
@@ -663,6 +765,7 @@ void Renderer::setupDescriptors() {
         vkUpdateDescriptorSets(device, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0,
                                nullptr);
     }
+
 
 }
 
