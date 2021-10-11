@@ -478,7 +478,7 @@ void Renderer::updateUniformBuffers() {
     shaderValuesScene.model = glm::translate(shaderValuesScene.model, translate);
     shaderValuesScene.model = glm::mat4(1.0f);
 
-    translate = glm::vec3(0.0f, 0.0f, -3.0f);
+    translate = glm::vec3(0.0f, 1.0f, -3.0f);
     shaderValuesScene.model = glm::translate(shaderValuesScene.model, translate);
 
     translate = glm::vec3(0.0f, 0.0f, -5.0f);
