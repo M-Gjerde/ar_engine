@@ -9,7 +9,29 @@
 
 void Renderer::prepare() {
 
+    defaultUniformBuffers();
+
+    createSkybox();
 }
+
+void Renderer::createSkybox() {
+
+    textures.empty.loadFromFile(getAssetsPath() + "textures/empty.ktx", VK_FORMAT_R8G8B8A8_UNORM, vulkanDevice, queue);
+    //std::string environmentFile = getAssetsPath() + "environments/papermill.ktx";
+    //std::string environmentFile = getAssetsPath() + "environments/cubemap_yokohama_rgba.ktx";
+    //std::string environmentFile = getAssetsPath() + "environments/cubemap_space.ktx";
+    std::string environmentFile = getAssetsPath() + "environments/cubemap_vulkan.ktx";
+    models.skybox.loadFromFile(getAssetsPath() + "models/Box/glTF-Embedded/Box.gltf", vulkanDevice, queue);
+    textures.environmentCube.loadFromFile(environmentFile, vulkanDevice, queue, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    generateCubemaps();
+
+}
+
+void Renderer::defaultUniformBuffers() {
+
+}
+
 
 void Renderer::prepareRenderer() {
     camera.type = Camera::CameraType::firstperson;
@@ -25,6 +47,7 @@ void Renderer::prepareRenderer() {
     generateScriptClasses();
     // Prepare the Renderer class
     loadAssets();
+    createSkybox();
     generateBRDFLUT();
     prepareUniformBuffers();
     setupDescriptors();
@@ -111,7 +134,6 @@ void Renderer::draw() {
     VulkanRenderer::submitFrame();
 }
 
-
 void Renderer::render() {
 
     for (auto &script: scripts) {
@@ -140,7 +162,6 @@ void Renderer::UIUpdate(UISettings uiSettings) {
     printf("Movementspeed: %f\n", uiSettings.lightSpeed * 100);
 
 }
-
 
 void Renderer::addDeviceFeatures() {
     printf("Overriden function\n");
@@ -227,32 +248,12 @@ void Renderer::buildCommandBuffers() {
     }
 }
 
-
 void Renderer::loadAssets() {
-
     std::string sceneFile = getAssetsPath() + "models/DamagedHelmet/glTF-Embedded/DamagedHelmet.gltf";
-
     std::cout << "Loading scene from " << sceneFile << std::endl;
-
     models.scene.loadFromFile(sceneFile, vulkanDevice, queue);
-
-    textures.empty.loadFromFile(getAssetsPath() + "textures/empty.ktx", VK_FORMAT_R8G8B8A8_UNORM, vulkanDevice, queue);
-
-    //std::string environmentFile = getAssetsPath() + "environments/papermill.ktx";
-    //std::string environmentFile = getAssetsPath() + "environments/cubemap_yokohama_rgba.ktx";
-    //std::string environmentFile = getAssetsPath() + "environments/cubemap_space.ktx";
-    std::string environmentFile = getAssetsPath() + "environments/cubemap_vulkan.ktx";
-
-    models.skybox.loadFromFile(getAssetsPath() + "models/Box/glTF-Embedded/Box.gltf", vulkanDevice, queue);
-    textures.environmentCube.loadFromFile(environmentFile, vulkanDevice, queue, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-
     models.object.load(vulkanDevice);
-
-    generateCubemaps();
 }
-
 
 void Renderer::preparePipelines() {
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCI{};
@@ -495,7 +496,6 @@ void Renderer::updateUniformBuffers() {
     shaderValuesSkybox.view = camera.matrices.view;
     shaderValuesSkybox.model = glm::mat4(glm::mat3(camera.matrices.view));
 }
-
 
 void Renderer::setupDescriptors() {
     // My cube
@@ -1708,4 +1708,5 @@ void Renderer::renderNode(vkglTF::Node *node, uint32_t cbIndex, vkglTF::Material
         renderNode(child, cbIndex, alphaMode);
     }
 }
+
 

@@ -117,6 +117,7 @@ protected:
         Buffer lightParams;
     };
 
+
     struct UBOMatrices {
         glm::mat4 projection;
         glm::mat4 model;
@@ -129,6 +130,9 @@ protected:
         glm::mat4 model;
         glm::mat4 view;
     } shaderValuesObject{};
+
+    std::vector<Buffer> uniformBuffers{};
+    std::vector<UBOMatrices> UniformBuffersData{};
 
     VkPipelineLayout pipelineLayout{};
     VkPipelineLayout pipelineLayout2{};
@@ -197,6 +201,10 @@ protected:
     void generateCubemaps();
 
     void renderNode(vkglTF::Node *node, uint32_t cbIndex, vkglTF::Material::AlphaMode alphaMode);
+
+    void defaultUniformBuffers();
+
+    void createSkybox();
 };
 
 
