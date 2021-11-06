@@ -25,6 +25,8 @@ void Renderer::createSkybox() {
     textures.environmentCube.loadFromFile(environmentFile, vulkanDevice, queue, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     generateCubemaps();
+    generateBRDFLUT();
+
 
 }
 
@@ -48,7 +50,6 @@ void Renderer::prepareRenderer() {
     // Prepare the Renderer class
     loadAssets();
     createSkybox();
-    generateBRDFLUT();
     prepareUniformBuffers();
     setupDescriptors();
     preparePipelines();
@@ -729,6 +730,7 @@ void Renderer::setupDescriptors() {
         }
 
     }
+
 
     // Skybox (fixed set)
     for (auto i = 0; i < uniformBuffers.size(); i++) {

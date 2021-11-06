@@ -70,14 +70,6 @@ protected:
         TextureCubeMap prefilteredCube;
     } textures{};
 
-    struct ShaderData {
-        Buffer buffer;
-        struct Values {
-            glm::mat4 projection;
-            glm::mat4 model;
-            glm::vec4 lightPos = glm::vec4(5.0f, 5.0f, -5.0f, 1.0f);
-        } values;
-    } shaderData;
 
     struct LightSource {
         glm::vec3 color = glm::vec3(1.0f);
@@ -131,7 +123,7 @@ protected:
         glm::mat4 view;
     } shaderValuesObject{};
 
-    std::vector<Buffer> uniformBuffers{};
+    std::vector<UniformBufferSet> uniformBuffers{};
     std::vector<UBOMatrices> UniformBuffersData{};
 
     VkPipelineLayout pipelineLayout{};
@@ -159,7 +151,15 @@ protected:
 
     };
     std::vector<DescriptorSets> descriptorSets;
-    std::vector<UniformBufferSet> uniformBuffers;
+
+    struct SkyBox{
+        VkDescriptorSet descriptorSet;
+        VkPipeline pipeline;
+        UBOMatrices ubo;
+        Buffer uboSet;
+        vkglTF::Model model;
+        TextureCubeMap textureCubeMap;
+    } skybox;
 
     struct PushConstBlockMaterial {
         glm::vec4 baseColorFactor;
