@@ -172,6 +172,6 @@ void vkMyModel::generateSquare() {
 
 void vkMyModel::load(VulkanDevice *pDevice) {
     this->device = pDevice;
-    generateSquare();
+    //generateSquare();
     printf("Finished generating mesh\n");
 }
