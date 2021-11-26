@@ -50,6 +50,7 @@ void Renderer::prepareRenderer() {
     // Prepare the Renderer class
     loadAssets();
     createSkybox();
+
     prepareUniformBuffers();
     setupDescriptors();
     preparePipelines();
@@ -80,6 +81,8 @@ void Renderer::generateScriptClasses() {
     // Also add class names to listbox
     UIOverlay->uiSettings.listBoxNames = classNames;
 
+
+
     scripts.reserve(classNames.size());
     // Create class instances of scripts
     for (auto &className: classNames) {
@@ -96,6 +99,7 @@ void Renderer::generateScriptClasses() {
         }
         script->setup();
     }
+
     printf("Setup finished\n");
 }
 
@@ -253,7 +257,6 @@ void Renderer::loadAssets() {
     std::string sceneFile = getAssetsPath() + "models/DamagedHelmet/glTF-Embedded/DamagedHelmet.gltf";
     std::cout << "Loading scene from " << sceneFile << std::endl;
     models.scene.loadFromFile(sceneFile, vulkanDevice, queue);
-    models.object.load(vulkanDevice);
 }
 
 void Renderer::preparePipelines() {

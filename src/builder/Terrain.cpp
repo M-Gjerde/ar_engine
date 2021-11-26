@@ -12,7 +12,6 @@ void Terrain::setup() {
     generateSquare();
 
 }
-
 void Terrain::generateSquare() {
     // 16*16 mesh as our ground
     // Get square size from input
@@ -26,7 +25,7 @@ void Terrain::generateSquare() {
     uint32_t indexCount = xSize * zSize * 6;
     // Alloc memory for vertices and indices
     std::vector<Vertex> vertices(vertexCount);
-    sceneObject->vertices.resize(vertexCount);
+    vertices.resize(vertexCount);
     for (int z = 0; z <= zSize; ++z) {
         for (int x = 0; x <= xSize; ++x) {
             Vertex vertex{};
@@ -36,7 +35,7 @@ void Terrain::generateSquare() {
             double j = (double) z / ((double) zSize);
             double n = pn->noise(100 * i, 100 * j, 0.8);
             vertex.pos = glm::vec3(x, n, z);
-            sceneObject->vertices[v] = vertex;
+            vertices[v] = vertex;
             vertices[v] = vertex;
             v++;
 
@@ -58,24 +57,25 @@ void Terrain::generateSquare() {
         }
     }
     std::vector<uint32_t> indices(indexCount);
-    sceneObject->indices.resize(indexCount);
+    indices.resize(indexCount);
     int tris = 0;
     int vert = 0;
     for (int z = 0; z < zSize; ++z) {
         for (int x = 0; x < xSize; ++x) {
             // One quad
-            sceneObject->indices[tris + 0] = vert;
-            sceneObject->indices[tris + 1] = vert + 1;
-            sceneObject->indices[tris + 2] = vert + xSize + 1;
-            sceneObject->indices[tris + 3] = vert + 1;
-            sceneObject->indices[tris + 4] = vert + xSize + 2;
-            sceneObject->indices[tris + 5] = vert + xSize + 1;
+            indices[tris + 0] = vert;
+            indices[tris + 1] = vert + 1;
+            indices[tris + 2] = vert + xSize + 1;
+            indices[tris + 3] = vert + 1;
+            indices[tris + 4] = vert + xSize + 2;
+            indices[tris + 5] = vert + xSize + 1;
 
             vert++;
             tris += 6;
         }
         vert++;
     }
+
 }
 
 void Terrain::update() {

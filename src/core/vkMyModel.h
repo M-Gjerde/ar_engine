@@ -54,6 +54,9 @@ class vkMyModel {
 public:
     void load(VulkanDevice *pDevice);
 
+    void createDescriptors();
+    void createPipeline();
+
     void setMesh(std::vector<Vertex> vertexBuffer, std::vector<uint32_t> indexBuffer);
 
     void useStagingBuffer(std::vector<Vertex> vertexBuffer, std::vector<uint32_t> indexBuffer);
