@@ -39,6 +39,7 @@ public:
 
     explicit Renderer(const std::string &title) : VulkanRenderer(true) {
         // During constructor prepare backend for rendering
+        VulkanRenderer::initVulkan();
         VulkanRenderer::prepare();
         backendInitialized = true;
 

@@ -4,8 +4,6 @@
 
 #include "Example.h"
 
-void Example::setup() {
-}
 
 void Example::update() {
 }
@@ -14,11 +12,7 @@ std::string Example::getType() {
     return Base::getType();
 }
 
-void Example::initialize(VulkanDevice *device) {
-
-}
-
-void Example::draw(VkCommandBuffer commandBuffer) {
+void Example::setup(Base::SetupVars vars) {
 
 }
 

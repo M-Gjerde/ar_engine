@@ -19,11 +19,11 @@ void vkMyModel::setMesh(std::vector<Vertex> vertexBuffer, std::vector<uint32_t> 
 
 }
 
-void vkMyModel::useStagingBuffer(std::vector<Vertex> vertexBuffer, std::vector<uint32_t> indexBuffer) {
+void vkMyModel::useStagingBuffer(Vertex *_vertices, uint32_t vertexCount, glm::uint32* _indices, uint32_t indexCount) {
 
-    size_t vertexBufferSize = vertexBuffer.size() * sizeof(Vertex);
-    size_t indexBufferSize = indexBuffer.size() * sizeof(uint32_t);
-    indices.count = indexBuffer.size();
+    size_t vertexBufferSize = vertexCount * sizeof(Vertex);
+    size_t indexBufferSize = indexCount * sizeof(uint32_t);
+    indices.count = indexCount;
     struct StagingBuffer {
         VkBuffer buffer;
         VkDeviceMemory memory;
@@ -37,7 +37,7 @@ void vkMyModel::useStagingBuffer(std::vector<Vertex> vertexBuffer, std::vector<u
             vertexBufferSize,
             &vertexStaging.buffer,
             &vertexStaging.memory,
-            vertexBuffer.data()));
+            _vertices));
     // Index data
     if (indexBufferSize > 0) {
         CHECK_RESULT(device->createBuffer(
@@ -46,7 +46,7 @@ void vkMyModel::useStagingBuffer(std::vector<Vertex> vertexBuffer, std::vector<u
                 indexBufferSize,
                 &indexStaging.buffer,
                 &indexStaging.memory,
-                indexBuffer.data()));
+                _indices));
     }
 
     // Create device local buffers
@@ -104,7 +104,6 @@ void vkMyModel::getSceneDimensions() {
 }
 
 
-void vkMyModel::load(VulkanDevice *pDevice) {
-    this->device = pDevice;
-    printf("Loading mesh\n");
+vkMyModel::vkMyModel() {
+    myModel = this;
 }

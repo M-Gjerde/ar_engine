@@ -7,40 +7,54 @@
 #include "Terrain.h"
 
 
-void Terrain::setup() {
+void Terrain::setup(SetupVars vars) {
     printf("Terrain setup\n");
+    vkMyModel::device = vars.device;
 
-}
+    xSizeSlider.name = "xSize";
+    xSizeSlider.lowRange = 0;
+    xSizeSlider.highRange = 200;
+    xSizeSlider.val = 3;
+    vars.ui->createIntSlider(&xSizeSlider);
 
-void Terrain::initialize(VulkanDevice *device) {
-    load(device);
+    zSizeSlider.name = "zSize";
+    zSizeSlider.lowRange = 0;
+    zSizeSlider.highRange = 200;
+    zSizeSlider.val = 3;
+    vars.ui->createIntSlider(&zSizeSlider);
+
     generateSquare();
+
 }
 
 void Terrain::generateSquare() {
     // 16*16 mesh as our ground
     // Get square size from input
-    int xSize = 3;
-    int zSize = 3;
-
     int v = 0;
     auto *pn = new PerlinNoise(123);
 
-    uint32_t vertexCount = (xSize + 1) * (zSize + 1);
-    uint32_t indexCount = xSize * zSize * 6;
+
+
+    uint32_t vertexCount = (xSizeSlider.val + 1) * (zSizeSlider.val + 1);
+    auto* vertices = new Vertex[vertexCount + 1];
+    uint32_t indexCount = xSizeSlider.val * zSizeSlider.val * 6;
+    auto* indices = new uint32_t[indexCount + 1];
+
+
     // Alloc memory for vertices and indices
-    std::vector<Vertex> vertices(vertexCount);
-    vertices.resize(vertexCount);
-    for (int z = 0; z <= zSize; ++z) {
-        for (int x = 0; x <= xSize; ++x) {
+    for (int z = 0; z <= zSizeSlider.val; ++z) {
+        for (int x = 0; x <= xSizeSlider.val; ++x) {
             Vertex vertex{};
 
             // Use the grid size to determine the perlin noise image.
-            double i = (double) x / ((double) xSize);
-            double j = (double) z / ((double) zSize);
-            double n = pn->noise(100 * i, 100 * j, 0.8);
-            vertex.pos = glm::vec3(x, n, z);
-            vertices[v] = vertex;
+            double i = (double) x / ((double) xSizeSlider.val);
+            double j = (double) z / ((double) zSizeSlider.val);
+            double n = pn->noise(100 * i, 100 * j, 0.8) / 5;
+
+            double xPos = (double) x / 10;
+            double zPos = (double) z / 10;
+
+            vertex.pos = glm::vec3(xPos, n, zPos);
             vertices[v] = vertex;
             v++;
 
@@ -61,19 +75,18 @@ void Terrain::generateSquare() {
             }
         }
     }
-    std::vector<uint32_t> indices(indexCount);
-    indices.resize(indexCount);
+
     int tris = 0;
     int vert = 0;
-    for (int z = 0; z < zSize; ++z) {
-        for (int x = 0; x < xSize; ++x) {
+    for (int z = 0; z < zSizeSlider.val; ++z) {
+        for (int x = 0; x < xSizeSlider.val; ++x) {
             // One quad
             indices[tris + 0] = vert;
             indices[tris + 1] = vert + 1;
-            indices[tris + 2] = vert + xSize + 1;
+            indices[tris + 2] = vert + xSizeSlider.val + 1;
             indices[tris + 3] = vert + 1;
-            indices[tris + 4] = vert + xSize + 2;
-            indices[tris + 5] = vert + xSize + 1;
+            indices[tris + 4] = vert + xSizeSlider.val + 2;
+            indices[tris + 5] = vert + xSizeSlider.val + 1;
 
             vert++;
             tris += 6;
@@ -81,7 +94,12 @@ void Terrain::generateSquare() {
         vert++;
     }
 
-    useStagingBuffer(vertices, indices);
+
+    useStagingBuffer(vertices, vertexCount, indices, indexCount);
+
+    delete[] vertices;
+    delete[] indices;
+
 }
 
 void Terrain::update() {
@@ -92,18 +110,16 @@ std::string Terrain::getType() {
     return this->type;
 }
 
-void Terrain::setSceneObject(SceneObject *_sceneObject) {
-    this->sceneObject = _sceneObject;
+vkMyModel Terrain::getSceneObject() {
+    return *vkMyModel::myModel;
 }
+int counter = 0;
 
-SceneObject Terrain::getSceneObject() {
-    return *this->sceneObject;
-}
+void Terrain::onUIUpdate(UISettings uiSettings) {
+    if (uiSettings.toggleGridSize){
+        counter++;
+        generateSquare();
+        printf("Regenerated grid %d times\n", counter);
+    }
 
-void Terrain::draw(VkCommandBuffer commandBuffer) {
-    const VkDeviceSize offsets[1] = {0};
-    vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertices.buffer, offsets);
-    vkCmdBindIndexBuffer(commandBuffer, indices.buffer, 0, VK_INDEX_TYPE_UINT32);
-
-    vkCmdDrawIndexed(commandBuffer, indices.count, 1, 0, 0, 0);
 }

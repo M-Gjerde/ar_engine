@@ -91,15 +91,14 @@ void Renderer::generateScriptClasses() {
     sceneObjects.resize(scripts.size());
 
     // Run Once
+    Base::SetupVars vars{};
+    vars.device = vulkanDevice;
+    vars.ui = &UIOverlay->uiSettings;
+
     for (auto &script: scripts) {
         assert(script);
-        if (script->getType() == "generator") {
-            script->setSceneObject(new SceneObject());
-        }
-        script->setup();
+        script->setup(vars);
     }
-
-    scripts[1]->initialize(vulkanDevice);
     printf("Setup finished\n");
 }
 
@@ -166,6 +165,9 @@ void Renderer::UIUpdate(UISettings uiSettings) {
     camera.movementSpeed = uiSettings.lightSpeed * 100;
     printf("Movementspeed: %f\n", uiSettings.lightSpeed * 100);
 
+    // TODO::Each script update
+    scripts[1]->onUIUpdate(uiSettings);
+
 }
 
 void Renderer::addDeviceFeatures() {
@@ -215,7 +217,9 @@ void Renderer::buildCommandBuffers() {
 
         vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.object);
         //models.object.draw(drawCmdBuffers[i]);
-        scripts[1]->draw(drawCmdBuffers[i]);
+        //scripts[1]->draw(drawCmdBuffers[i]);
+
+        scripts[1]->getSceneObject().draw(drawCmdBuffers[i]);
 
 
         vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
@@ -259,6 +263,133 @@ void Renderer::loadAssets() {
     std::cout << "Loading scene from " << sceneFile << std::endl;
     models.scene.loadFromFile(sceneFile, vulkanDevice, queue);
 
+}
+
+void Renderer::updateUniformBuffers() {
+    // Scene
+    shaderValuesScene.projection = camera.matrices.perspective;
+    shaderValuesScene.view = camera.matrices.view;
+
+    shaderValuesObject.projection = camera.matrices.perspective;
+    shaderValuesObject.view = camera.matrices.view;
+    glm::vec4 objectColor;
+    glm::vec4 lightColor;
+    glm::vec4 lightPos;
+    glm::vec4 viewPos;
+
+    fragShaderParams.objectColor = glm::vec4(0.25f, 0.25f, 0.25f, 1.0f);
+    fragShaderParams.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    fragShaderParams.lightPos = glm::vec4(camera.position, 1.0f);
+    fragShaderParams.viewPos = fragShaderParams.lightPos;
+
+    // Center and scale model
+    float scale =
+            (1.0f / std::max(models.scene.aabb[0][0], std::max(models.scene.aabb[1][1], models.scene.aabb[2][2]))) *
+            0.5f;
+    glm::vec3 translate = -glm::vec3(models.scene.aabb[3][0], models.scene.aabb[3][1], models.scene.aabb[3][2]);
+    translate += -0.5f * glm::vec3(models.scene.aabb[0][0], models.scene.aabb[1][1], models.scene.aabb[2][2]);
+
+    shaderValuesScene.model = glm::mat4(1.0f);
+    shaderValuesScene.model[0][0] = scale;
+    shaderValuesScene.model[1][1] = scale;
+    shaderValuesScene.model[2][2] = scale;
+    shaderValuesScene.model = glm::translate(shaderValuesScene.model, translate);
+    shaderValuesScene.model = glm::mat4(1.0f);
+
+    translate = glm::vec3(0.0f, 1.0f, -3.0f);
+    shaderValuesScene.model = glm::translate(shaderValuesScene.model, translate);
+
+    translate = glm::vec3(0.0f, 0.0f, -5.0f);
+    shaderValuesObject.model = glm::translate(shaderValuesScene.model, translate);
+
+    shaderValuesScene.camPos = glm::vec3(
+            -camera.position.z * sin(glm::radians(camera.rotation.y)) * cos(glm::radians(camera.rotation.x)),
+            -camera.position.z * sin(glm::radians(camera.rotation.x)),
+            camera.position.z * cos(glm::radians(camera.rotation.y)) * cos(glm::radians(camera.rotation.x))
+    );
+
+    // Skybox
+    shaderValuesSkybox.projection = camera.matrices.perspective;
+    shaderValuesSkybox.view = camera.matrices.view;
+    shaderValuesSkybox.model = glm::mat4(glm::mat3(camera.matrices.view));
+}
+
+void Renderer::renderNode(vkglTF::Node *node, uint32_t cbIndex, vkglTF::Material::AlphaMode alphaMode) {
+    if (node->mesh) {
+        // Render mesh primitives
+        for (vkglTF::Primitive *primitive: node->mesh->primitives) {
+            if (primitive->material.alphaMode == alphaMode) {
+
+                const std::vector<VkDescriptorSet> descriptorsets = {
+                        descriptorSets[cbIndex].scene,
+                        primitive->material.descriptorSet,
+                        node->mesh->uniformBuffer.descriptorSet,
+                };
+                vkCmdBindDescriptorSets(drawCmdBuffers[cbIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0,
+                                        static_cast<uint32_t>(descriptorsets.size()), descriptorsets.data(), 0, NULL);
+
+                // Pass material parameters as push constants
+                pushConstBlockMaterial.emissiveFactor = primitive->material.emissiveFactor;
+                // To save push constant space, availabilty and texture coordiante set are combined
+                // -1 = texture not used for this material, >= 0 texture used and index of texture coordinate set
+                pushConstBlockMaterial.colorTextureSet =
+                        primitive->material.baseColorTexture != nullptr ? primitive->material.texCoordSets.baseColor
+                                                                        : -1;
+                pushConstBlockMaterial.normalTextureSet =
+                        primitive->material.normalTexture != nullptr ? primitive->material.texCoordSets.normal : -1;
+                pushConstBlockMaterial.occlusionTextureSet =
+                        primitive->material.occlusionTexture != nullptr ? primitive->material.texCoordSets.occlusion
+                                                                        : -1;
+                pushConstBlockMaterial.emissiveTextureSet =
+                        primitive->material.emissiveTexture != nullptr ? primitive->material.texCoordSets.emissive : -1;
+                pushConstBlockMaterial.alphaMask = static_cast<float>(primitive->material.alphaMode ==
+                                                                      vkglTF::Material::ALPHAMODE_MASK);
+                pushConstBlockMaterial.alphaMaskCutoff = primitive->material.alphaCutoff;
+
+                // TODO: glTF specs states that metallic roughness should be preferred, even if specular glosiness is present
+
+                if (primitive->material.pbrWorkflows.metallicRoughness) {
+                    // Metallic roughness workflow
+                    pushConstBlockMaterial.workflow = static_cast<float>(PBR_WORKFLOW_METALLIC_ROUGHNESS);
+                    pushConstBlockMaterial.baseColorFactor = primitive->material.baseColorFactor;
+                    pushConstBlockMaterial.metallicFactor = primitive->material.metallicFactor;
+                    pushConstBlockMaterial.roughnessFactor = primitive->material.roughnessFactor;
+                    pushConstBlockMaterial.PhysicalDescriptorTextureSet =
+                            primitive->material.metallicRoughnessTexture != nullptr
+                            ? primitive->material.texCoordSets.metallicRoughness : -1;
+                    pushConstBlockMaterial.colorTextureSet =
+                            primitive->material.baseColorTexture != nullptr ? primitive->material.texCoordSets.baseColor
+                                                                            : -1;
+                }
+
+                if (primitive->material.pbrWorkflows.specularGlossiness) {
+                    // Specular glossiness workflow
+                    pushConstBlockMaterial.workflow = static_cast<float>(PBR_WORKFLOW_SPECULAR_GLOSINESS);
+                    pushConstBlockMaterial.PhysicalDescriptorTextureSet =
+                            primitive->material.extension.specularGlossinessTexture != nullptr
+                            ? primitive->material.texCoordSets.specularGlossiness : -1;
+                    pushConstBlockMaterial.colorTextureSet = primitive->material.extension.diffuseTexture != nullptr
+                                                             ? primitive->material.texCoordSets.baseColor : -1;
+                    pushConstBlockMaterial.diffuseFactor = primitive->material.extension.diffuseFactor;
+                    pushConstBlockMaterial.specularFactor = glm::vec4(primitive->material.extension.specularFactor,
+                                                                      1.0f);
+                }
+
+                vkCmdPushConstants(drawCmdBuffers[cbIndex], pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                                   sizeof(PushConstBlockMaterial), &pushConstBlockMaterial);
+
+                if (primitive->hasIndices) {
+                    vkCmdDrawIndexed(drawCmdBuffers[cbIndex], primitive->indexCount, 1, primitive->firstIndex, 0, 0);
+                } else {
+                    vkCmdDraw(drawCmdBuffers[cbIndex], primitive->vertexCount, 1, 0, 0);
+                }
+            }
+        }
+
+    };
+    for (auto child: node->children) {
+        renderNode(child, cbIndex, alphaMode);
+    }
 }
 
 void Renderer::preparePipelines() {
@@ -452,55 +583,6 @@ void Renderer::prepareUniformBuffers() {
 
 
     updateUniformBuffers();
-}
-
-void Renderer::updateUniformBuffers() {
-    // Scene
-    shaderValuesScene.projection = camera.matrices.perspective;
-    shaderValuesScene.view = camera.matrices.view;
-
-    shaderValuesObject.projection = camera.matrices.perspective;
-    shaderValuesObject.view = camera.matrices.view;
-    glm::vec4 objectColor;
-    glm::vec4 lightColor;
-    glm::vec4 lightPos;
-    glm::vec4 viewPos;
-
-    fragShaderParams.objectColor = glm::vec4(0.25f, 0.25f, 0.25f, 1.0f);
-    fragShaderParams.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-    fragShaderParams.lightPos = glm::vec4(camera.position, 1.0f);
-    fragShaderParams.viewPos = fragShaderParams.lightPos;
-
-    // Center and scale model
-    float scale =
-            (1.0f / std::max(models.scene.aabb[0][0], std::max(models.scene.aabb[1][1], models.scene.aabb[2][2]))) *
-            0.5f;
-    glm::vec3 translate = -glm::vec3(models.scene.aabb[3][0], models.scene.aabb[3][1], models.scene.aabb[3][2]);
-    translate += -0.5f * glm::vec3(models.scene.aabb[0][0], models.scene.aabb[1][1], models.scene.aabb[2][2]);
-
-    shaderValuesScene.model = glm::mat4(1.0f);
-    shaderValuesScene.model[0][0] = scale;
-    shaderValuesScene.model[1][1] = scale;
-    shaderValuesScene.model[2][2] = scale;
-    shaderValuesScene.model = glm::translate(shaderValuesScene.model, translate);
-    shaderValuesScene.model = glm::mat4(1.0f);
-
-    translate = glm::vec3(0.0f, 1.0f, -3.0f);
-    shaderValuesScene.model = glm::translate(shaderValuesScene.model, translate);
-
-    translate = glm::vec3(0.0f, 0.0f, -5.0f);
-    shaderValuesObject.model = glm::translate(shaderValuesScene.model, translate);
-
-    shaderValuesScene.camPos = glm::vec3(
-            -camera.position.z * sin(glm::radians(camera.rotation.y)) * cos(glm::radians(camera.rotation.x)),
-            -camera.position.z * sin(glm::radians(camera.rotation.x)),
-            camera.position.z * cos(glm::radians(camera.rotation.y)) * cos(glm::radians(camera.rotation.x))
-    );
-
-    // Skybox
-    shaderValuesSkybox.projection = camera.matrices.perspective;
-    shaderValuesSkybox.view = camera.matrices.view;
-    shaderValuesSkybox.model = glm::mat4(glm::mat3(camera.matrices.view));
 }
 
 void Renderer::setupDescriptors() {
@@ -1638,82 +1720,5 @@ void Renderer::generateCubemaps() {
     }
 }
 
-void Renderer::renderNode(vkglTF::Node *node, uint32_t cbIndex, vkglTF::Material::AlphaMode alphaMode) {
-    if (node->mesh) {
-        // Render mesh primitives
-        for (vkglTF::Primitive *primitive: node->mesh->primitives) {
-            if (primitive->material.alphaMode == alphaMode) {
-
-                const std::vector<VkDescriptorSet> descriptorsets = {
-                        descriptorSets[cbIndex].scene,
-                        primitive->material.descriptorSet,
-                        node->mesh->uniformBuffer.descriptorSet,
-                };
-                vkCmdBindDescriptorSets(drawCmdBuffers[cbIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0,
-                                        static_cast<uint32_t>(descriptorsets.size()), descriptorsets.data(), 0, NULL);
-
-                // Pass material parameters as push constants
-                pushConstBlockMaterial.emissiveFactor = primitive->material.emissiveFactor;
-                // To save push constant space, availabilty and texture coordiante set are combined
-                // -1 = texture not used for this material, >= 0 texture used and index of texture coordinate set
-                pushConstBlockMaterial.colorTextureSet =
-                        primitive->material.baseColorTexture != nullptr ? primitive->material.texCoordSets.baseColor
-                                                                        : -1;
-                pushConstBlockMaterial.normalTextureSet =
-                        primitive->material.normalTexture != nullptr ? primitive->material.texCoordSets.normal : -1;
-                pushConstBlockMaterial.occlusionTextureSet =
-                        primitive->material.occlusionTexture != nullptr ? primitive->material.texCoordSets.occlusion
-                                                                        : -1;
-                pushConstBlockMaterial.emissiveTextureSet =
-                        primitive->material.emissiveTexture != nullptr ? primitive->material.texCoordSets.emissive : -1;
-                pushConstBlockMaterial.alphaMask = static_cast<float>(primitive->material.alphaMode ==
-                                                                      vkglTF::Material::ALPHAMODE_MASK);
-                pushConstBlockMaterial.alphaMaskCutoff = primitive->material.alphaCutoff;
-
-                // TODO: glTF specs states that metallic roughness should be preferred, even if specular glosiness is present
-
-                if (primitive->material.pbrWorkflows.metallicRoughness) {
-                    // Metallic roughness workflow
-                    pushConstBlockMaterial.workflow = static_cast<float>(PBR_WORKFLOW_METALLIC_ROUGHNESS);
-                    pushConstBlockMaterial.baseColorFactor = primitive->material.baseColorFactor;
-                    pushConstBlockMaterial.metallicFactor = primitive->material.metallicFactor;
-                    pushConstBlockMaterial.roughnessFactor = primitive->material.roughnessFactor;
-                    pushConstBlockMaterial.PhysicalDescriptorTextureSet =
-                            primitive->material.metallicRoughnessTexture != nullptr
-                            ? primitive->material.texCoordSets.metallicRoughness : -1;
-                    pushConstBlockMaterial.colorTextureSet =
-                            primitive->material.baseColorTexture != nullptr ? primitive->material.texCoordSets.baseColor
-                                                                            : -1;
-                }
-
-                if (primitive->material.pbrWorkflows.specularGlossiness) {
-                    // Specular glossiness workflow
-                    pushConstBlockMaterial.workflow = static_cast<float>(PBR_WORKFLOW_SPECULAR_GLOSINESS);
-                    pushConstBlockMaterial.PhysicalDescriptorTextureSet =
-                            primitive->material.extension.specularGlossinessTexture != nullptr
-                            ? primitive->material.texCoordSets.specularGlossiness : -1;
-                    pushConstBlockMaterial.colorTextureSet = primitive->material.extension.diffuseTexture != nullptr
-                                                             ? primitive->material.texCoordSets.baseColor : -1;
-                    pushConstBlockMaterial.diffuseFactor = primitive->material.extension.diffuseFactor;
-                    pushConstBlockMaterial.specularFactor = glm::vec4(primitive->material.extension.specularFactor,
-                                                                      1.0f);
-                }
-
-                vkCmdPushConstants(drawCmdBuffers[cbIndex], pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                                   sizeof(PushConstBlockMaterial), &pushConstBlockMaterial);
-
-                if (primitive->hasIndices) {
-                    vkCmdDrawIndexed(drawCmdBuffers[cbIndex], primitive->indexCount, 1, primitive->firstIndex, 0, 0);
-                } else {
-                    vkCmdDraw(drawCmdBuffers[cbIndex], primitive->vertexCount, 1, 0, 0);
-                }
-            }
-        }
-
-    };
-    for (auto child: node->children) {
-        renderNode(child, cbIndex, alphaMode);
-    }
-}
 
 

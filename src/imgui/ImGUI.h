@@ -388,9 +388,16 @@ public:
         updated |= ImGui::Checkbox("Render models", &uiSettings.rotate);
         updated |= ImGui::Checkbox("Display logos", &uiSettings.displayLogos);
         updated |= ImGui::Checkbox("Display background", &uiSettings.displayBackground);
-        updated |= ImGui::Checkbox("Animate light", &uiSettings.animateLight);
+        updated |= ImGui::Checkbox("Toggle grid size", &uiSettings.toggleGridSize);
         updated |= ImGui::SliderFloat("Light speed", &uiSettings.lightSpeed, 0.05f, 1.0f);
 
+        if (!uiSettings.intSliders.empty()){
+            for (const auto& slider : uiSettings.intSliders){
+                updated |= ImGui::SliderInt(slider->name.c_str(), &slider->val, slider->lowRange, slider->highRange);
+
+            }
+
+        }
 
         static int item_current_idx = 0; // Here we store our selection data as an index.
         if (ImGui::BeginListBox("Scripts")) {

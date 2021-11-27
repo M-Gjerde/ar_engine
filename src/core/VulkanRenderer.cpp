@@ -19,8 +19,6 @@ VulkanRenderer::VulkanRenderer(bool enableValidation) {
     glfwSetWindowSizeCallback(window, VulkanRenderer::resizeCallback);
     glfwSetMouseButtonCallback(window, VulkanRenderer::mouseButtonCallback);
     glfwSetCursorPosCallback(window, VulkanRenderer::cursorPositionCallback);
-
-    initVulkan();
 }
 
 VkResult VulkanRenderer::createInstance(bool enableValidation) {

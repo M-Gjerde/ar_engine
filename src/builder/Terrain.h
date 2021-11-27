@@ -8,6 +8,7 @@
 
 #include <ar_engine/src/core/ScriptBuilder.h>
 #include <ar_engine/src/core/vkMyModel.h>
+#include <ar_engine/src/imgui/UISettings.h>
 
 class Terrain : public Base, public RegisteredInFactory<Terrain>, vkMyModel {
 
@@ -23,25 +24,24 @@ public:
     static std::string GetFactoryName() { return "Terrain"; }
 
     /** @brief Setup function called one during engine prepare **/
-    void setup() override;
+    void setup(SetupVars vars) override;
     /** @brief update function called once per frame **/
     void update() override;
-    /** @brief Initialize function **/
-    void initialize(VulkanDevice* device) override;
-    /** @brief draw function **/
-    void draw(VkCommandBuffer commandBuffer) override;
     /** @brief Get the type of script. This will determine how it interacts with a gameobject **/
     std::string getType() override;
 
     void generateSquare();
+    void onUIUpdate(UISettings uiSettings) override;
 
     /** @brief public string to determine if this script should be attaced to an object,
      * create a new object or do nothing. Types: Generator | None | Name of object in object folder **/
     std::string type = "generator";
 
-    void setSceneObject(SceneObject *_sceneObject) override;
-    SceneObject getSceneObject() override;
-    SceneObject* sceneObject;
+
+    UISettings::intSlider xSizeSlider {};
+    UISettings::intSlider zSizeSlider {};
+
+    vkMyModel getSceneObject() override;
 };
 
 

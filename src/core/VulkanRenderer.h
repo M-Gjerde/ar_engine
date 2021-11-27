@@ -103,7 +103,7 @@ public:
     /** @brief (Virtual) Setup a default renderpass */
     virtual void setupRenderPass();
     /** @brief (Virtual) Called after the physical device features have been read, can be used to set features to enable on the device */
-    virtual void addDeviceFeatures();
+    virtual void addDeviceFeatures() = 0;
     /** @brief Prepares all Vulkan resources and functions required to run the sample */
     virtual void prepare();
     /** @brief Entry point for the main render loop */
