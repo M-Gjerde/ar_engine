@@ -14,4 +14,12 @@ std::string Example::getType() {
     return Base::getType();
 }
 
+void Example::initialize(VulkanDevice *device) {
+
+}
+
+void Example::draw(VkCommandBuffer commandBuffer) {
+
+}
+
 

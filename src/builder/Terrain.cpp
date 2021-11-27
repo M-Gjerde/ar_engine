@@ -9,14 +9,19 @@
 
 void Terrain::setup() {
     printf("Terrain setup\n");
-    generateSquare();
 
 }
+
+void Terrain::initialize(VulkanDevice *device) {
+    load(device);
+    generateSquare();
+}
+
 void Terrain::generateSquare() {
     // 16*16 mesh as our ground
     // Get square size from input
-    int xSize = 12;
-    int zSize = 12;
+    int xSize = 3;
+    int zSize = 3;
 
     int v = 0;
     auto *pn = new PerlinNoise(123);
@@ -76,6 +81,7 @@ void Terrain::generateSquare() {
         vert++;
     }
 
+    useStagingBuffer(vertices, indices);
 }
 
 void Terrain::update() {
@@ -92,4 +98,12 @@ void Terrain::setSceneObject(SceneObject *_sceneObject) {
 
 SceneObject Terrain::getSceneObject() {
     return *this->sceneObject;
+}
+
+void Terrain::draw(VkCommandBuffer commandBuffer) {
+    const VkDeviceSize offsets[1] = {0};
+    vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertices.buffer, offsets);
+    vkCmdBindIndexBuffer(commandBuffer, indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+
+    vkCmdDrawIndexed(commandBuffer, indices.count, 1, 0, 0, 0);
 }

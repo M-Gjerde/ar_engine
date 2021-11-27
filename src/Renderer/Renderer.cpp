@@ -11,7 +11,6 @@ void Renderer::prepare() {
 
     defaultUniformBuffers();
 
-    createSkybox();
 }
 
 void Renderer::createSkybox() {
@@ -100,6 +99,7 @@ void Renderer::generateScriptClasses() {
         script->setup();
     }
 
+    scripts[1]->initialize(vulkanDevice);
     printf("Setup finished\n");
 }
 
@@ -214,7 +214,8 @@ void Renderer::buildCommandBuffers() {
                                 &descriptorSets[i].object, 0, nullptr);
 
         vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.object);
-        models.object.draw(drawCmdBuffers[i]);
+        //models.object.draw(drawCmdBuffers[i]);
+        scripts[1]->draw(drawCmdBuffers[i]);
 
 
         vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
@@ -257,6 +258,7 @@ void Renderer::loadAssets() {
     std::string sceneFile = getAssetsPath() + "models/DamagedHelmet/glTF-Embedded/DamagedHelmet.gltf";
     std::cout << "Loading scene from " << sceneFile << std::endl;
     models.scene.loadFromFile(sceneFile, vulkanDevice, queue);
+
 }
 
 void Renderer::preparePipelines() {

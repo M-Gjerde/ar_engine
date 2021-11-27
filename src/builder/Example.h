@@ -29,6 +29,10 @@ public:
     /** @brief update function called once per frame **/
     void update() override;
 
+    /** @brief Initialize function **/
+    void initialize(VulkanDevice* device) override;
+    /** @brief draw function **/
+    void draw(VkCommandBuffer commandBuffer) override;
     /** @brief Get the type of script. This will determine how it interacts with a gameobject **/
     std::string getType() override;
 

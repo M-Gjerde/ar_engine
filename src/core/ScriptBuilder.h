@@ -10,7 +10,7 @@
 #include <vector>
 #include <cassert>
 #include <ar_engine/src/core/structs.h>
-
+#include "VulkanDevice.h"
 
 
 class Base {
@@ -20,7 +20,8 @@ public:
 
     virtual void update() = 0;
     virtual void setup() = 0;
-
+    virtual void initialize(VulkanDevice* device) = 0;
+    virtual void draw(VkCommandBuffer commandBuffer) = 0;
     virtual std::string getType() {return type;}
     virtual void setSceneObject(SceneObject* _sceneObject) {}
     virtual SceneObject getSceneObject() { return {};}

@@ -7,8 +7,9 @@
 
 
 #include <ar_engine/src/core/ScriptBuilder.h>
+#include <ar_engine/src/core/vkMyModel.h>
 
-class Terrain : public Base, public RegisteredInFactory<Terrain> {
+class Terrain : public Base, public RegisteredInFactory<Terrain>, vkMyModel {
 
 public:
     /** @brief Constructor. Just run s_bRegistered variable such that the class is
@@ -25,6 +26,10 @@ public:
     void setup() override;
     /** @brief update function called once per frame **/
     void update() override;
+    /** @brief Initialize function **/
+    void initialize(VulkanDevice* device) override;
+    /** @brief draw function **/
+    void draw(VkCommandBuffer commandBuffer) override;
     /** @brief Get the type of script. This will determine how it interacts with a gameobject **/
     std::string getType() override;
 
@@ -37,7 +42,6 @@ public:
     void setSceneObject(SceneObject *_sceneObject) override;
     SceneObject getSceneObject() override;
     SceneObject* sceneObject;
-
 };
 
 

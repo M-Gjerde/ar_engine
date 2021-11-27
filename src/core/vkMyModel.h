@@ -12,19 +12,29 @@
 
 class vkMyModel {
 
-        VulkanDevice *device;
-        VkQueue queue;
+public:
+    struct Vertex {
+        glm::vec3 pos;
+        glm::vec3 normal;
+        glm::vec2 uv0;
+        glm::vec2 uv1;
+        glm::vec4 joint0;
+        glm::vec4 weight0;
+    };
 
-        struct Vertex {
-            glm::vec3 pos;
-            glm::vec3 normal;
-            glm::vec2 uv0;
-            glm::vec2 uv1;
-            glm::vec4 joint0;
-            glm::vec4 weight0;
-        };
 
-        struct Vertices {
+    void load(VulkanDevice *pDevice);
+
+    void createDescriptors();
+    void createPipeline();
+    void setMesh(std::vector<Vertex> vertexBuffer, std::vector<uint32_t> indexBuffer);
+    void useStagingBuffer(std::vector<Vertex> vertexBuffer, std::vector<uint32_t> indexBuffer);
+    void draw(VkCommandBuffer commandBuffer);
+
+    VulkanDevice *device;
+    VkQueue queue;
+
+    struct Vertices {
             VkBuffer buffer = VK_NULL_HANDLE;
             VkDeviceMemory memory;
         } vertices;
@@ -51,19 +61,7 @@ class vkMyModel {
 
     void getSceneDimensions();
 
-public:
-    void load(VulkanDevice *pDevice);
 
-    void createDescriptors();
-    void createPipeline();
-
-    void setMesh(std::vector<Vertex> vertexBuffer, std::vector<uint32_t> indexBuffer);
-
-    void useStagingBuffer(std::vector<Vertex> vertexBuffer, std::vector<uint32_t> indexBuffer);
-
-    void generateSquare();
-
-    void draw(VkCommandBuffer commandBuffer);
 };
 
 
