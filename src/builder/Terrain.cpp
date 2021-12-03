@@ -111,7 +111,7 @@ std::string Terrain::getType() {
 }
 
 vkMyModel Terrain::getSceneObject() {
-    return *vkMyModel::myModel;
+    return *vkMyModel::model;
 }
 int counter = 0;
 

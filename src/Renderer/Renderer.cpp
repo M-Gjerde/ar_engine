@@ -21,7 +21,8 @@ void Renderer::createSkybox() {
     //std::string environmentFile = getAssetsPath() + "environments/cubemap_space.ktx";
     std::string environmentFile = getAssetsPath() + "environments/cubemap_space.ktx";
     models.skybox.loadFromFile(getAssetsPath() + "models/Box/glTF-Embedded/Box.gltf", vulkanDevice, queue);
-    textures.environmentCube.loadFromFile(environmentFile, vulkanDevice, queue, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    textures.environmentCube.loadFromFile(environmentFile, vulkanDevice, queue, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     generateCubemaps();
     generateBRDFLUT();
@@ -79,7 +80,6 @@ void Renderer::generateScriptClasses() {
 
     // Also add class names to listbox
     UIOverlay->uiSettings.listBoxNames = classNames;
-
 
 
     scripts.reserve(classNames.size());
@@ -152,22 +152,13 @@ void Renderer::viewChanged() {
 }
 
 void Renderer::UIUpdate(UISettings uiSettings) {
-    printf("Clicked: %d \n", uiSettings.rotate);
-    printf("Index: %d, name: %s\n", uiSettings.getSelectedItem(),
-           uiSettings.listBoxNames[uiSettings.getSelectedItem()].c_str());
+    //printf("Index: %d, name: %s\n", uiSettings.getSelectedItem(), uiSettings.listBoxNames[uiSettings.getSelectedItem()].c_str());
 
-    if (uiSettings.rotate) {
-        glm::mat4 model = shaderValuesScene.model;
-        model = glm::rotate(model, glm::radians(10.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        shaderValuesScene.model = model;
+    camera.setMovementSpeed(uiSettings.movementSpeed);
+
+    for (auto &script: scripts) {
+        script->onUIUpdate(uiSettings);
     }
-
-    camera.movementSpeed = uiSettings.lightSpeed * 100;
-    printf("Movementspeed: %f\n", uiSettings.lightSpeed * 100);
-
-    // TODO::Each script update
-    scripts[1]->onUIUpdate(uiSettings);
-
 }
 
 void Renderer::addDeviceFeatures() {
@@ -219,8 +210,10 @@ void Renderer::buildCommandBuffers() {
         //models.object.draw(drawCmdBuffers[i]);
         //scripts[1]->draw(drawCmdBuffers[i]);
 
-        scripts[1]->getSceneObject().draw(drawCmdBuffers[i]);
-
+        for (auto &script: scripts) {
+            if (script->getType() == "Render")
+                script->getSceneObject().draw(drawCmdBuffers[i]);
+        }
 
         vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
                                 &descriptorSets[i].scene, 0, nullptr);

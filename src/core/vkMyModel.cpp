@@ -14,12 +14,8 @@ void vkMyModel::loadFromFile(std::string filename, VulkanDevice *device, VkQueue
 
 }
 
-void vkMyModel::setMesh(std::vector<Vertex> vertexBuffer, std::vector<uint32_t> indexBuffer) {
 
-
-}
-
-void vkMyModel::useStagingBuffer(Vertex *_vertices, uint32_t vertexCount, glm::uint32* _indices, uint32_t indexCount) {
+void vkMyModel::useStagingBuffer(Vertex *_vertices, uint32_t vertexCount, glm::uint32 *_indices, uint32_t indexCount) {
 
     size_t vertexBufferSize = vertexCount * sizeof(Vertex);
     size_t indexBufferSize = indexCount * sizeof(uint32_t);
@@ -99,11 +95,10 @@ void vkMyModel::draw(VkCommandBuffer commandBuffer) {
     vkCmdDrawIndexed(commandBuffer, indices.count, 1, 0, 0, 0);
 }
 
-void vkMyModel::getSceneDimensions() {
-
-}
-
 
 vkMyModel::vkMyModel() {
-    myModel = this;
+}
+
+void vkMyModel::createDescriptors() {
+
 }

@@ -18,11 +18,11 @@ public:
 
     virtual void update() = 0;
     virtual void setup(SetupVars vars) = 0;
-    virtual void onUIUpdate(UISettings uiSettings){};
+    virtual void onUIUpdate(UISettings uiSettings) = 0;
     virtual std::string getType() {return type;}
     virtual vkMyModel getSceneObject() { return {};}
 
-    std::string type{};
+    std::string type = "None";
 };
 
 #endif //AR_ENGINE_BASE_H

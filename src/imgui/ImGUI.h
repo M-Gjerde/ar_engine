@@ -46,6 +46,8 @@ public:
 
     UISettings uiSettings;
     bool updated = false;
+    /** @brief active used to determine if camera should update view or user is currently using the UI */
+    bool active = false;
     bool firstUpdate = true;
 
     explicit ImGUI(VulkanDevice *vulkanDevice) {
@@ -354,8 +356,6 @@ public:
         ImGui::NewFrame();
         updated = false;
 
-        // Init imGui windows and elements
-
         ImVec4 clear_color = ImColor(114, 144, 154);
         static float f = 0.0f;
         ImGui::TextUnformatted(title.c_str());
@@ -383,13 +383,15 @@ public:
         ImGui::InputFloat3("position", pos, "%.3f");
         ImGui::InputFloat3("rotation", rot, "%.3f");
 
+        active = ImGui::IsItemHovered() || ImGui::IsWindowHovered();
+
         ImGui::SetNextWindowSize(ImVec2(200, 450), ImGuiCond_None);
         ImGui::Begin("Example settings");
-        updated |= ImGui::Checkbox("Render models", &uiSettings.rotate);
-        updated |= ImGui::Checkbox("Display logos", &uiSettings.displayLogos);
-        updated |= ImGui::Checkbox("Display background", &uiSettings.displayBackground);
+        //updated |= ImGui::Checkbox("Render models", &uiSettings.rotate);
+        //updated |= ImGui::Checkbox("Display logos", &uiSettings.displayLogos);
+        //updated |= ImGui::Checkbox("Display background", &uiSettings.displayBackground);
         updated |= ImGui::Checkbox("Toggle grid size", &uiSettings.toggleGridSize);
-        updated |= ImGui::SliderFloat("Light speed", &uiSettings.lightSpeed, 0.05f, 1.0f);
+        updated |= ImGui::SliderFloat("Movement speed", &uiSettings.movementSpeed, 0.05f, 1.0f);
 
         if (!uiSettings.intSliders.empty()){
             for (const auto& slider : uiSettings.intSliders){
@@ -416,6 +418,7 @@ public:
             ImGui::EndListBox();
         }
 
+        active = ImGui::IsAnyItemHovered() || ImGui::IsAnyItemFocused() || ImGui::IsAnyItemActive();
 
         ImGui::End();
 

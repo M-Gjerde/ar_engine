@@ -63,6 +63,7 @@ public:
 
     float rotationSpeed = 1.0f;
     float movementSpeed = 1.0f;
+    float speedModifier = 10.0f;
 
     bool updated = false;
     bool flipY = false;
@@ -145,12 +146,12 @@ public:
 
     void setRotationSpeed(float rotationSpeed)
     {
-        this->rotationSpeed = rotationSpeed;
+        this->rotationSpeed = rotationSpeed * speedModifier;
     }
 
     void setMovementSpeed(float movementSpeed)
     {
-        this->movementSpeed = movementSpeed;
+        this->movementSpeed = movementSpeed * speedModifier;
     }
 
     void update(float deltaTime)

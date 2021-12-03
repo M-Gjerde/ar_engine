@@ -650,7 +650,7 @@ void VulkanRenderer::handleMouseMove(int32_t x, int32_t y) {
         return;
     }
 
-    if (mouseButtons.left) {
+    if (mouseButtons.left && !UIOverlay->active) {
         camera.rotate(glm::vec3(dy * camera.rotationSpeed, -dx * camera.rotationSpeed, 0.0f));
         viewUpdated = true;
     }

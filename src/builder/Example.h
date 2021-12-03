@@ -29,6 +29,9 @@ public:
     /** @brief update function called once per frame **/
     void update() override;
 
+    /** @brief update function called once per frame **/
+    void onUIUpdate(UISettings uiSettings) override;
+
     /** @brief Get the type of script. This will determine how it interacts with a gameobject **/
     std::string getType() override;
 

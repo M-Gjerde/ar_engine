@@ -13,7 +13,7 @@ std::string Example::getType() {
 }
 
 void Example::setup(Base::SetupVars vars) {
-
 }
 
-
+void Example::onUIUpdate(UISettings uiSettings) {
+}

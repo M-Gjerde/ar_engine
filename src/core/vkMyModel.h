@@ -21,10 +21,8 @@ public:
         glm::vec4 joint0;
         glm::vec4 weight0;
     };
-
-    vkMyModel* myModel;
-    VulkanDevice *device;
-    VkQueue queue;
+    vkMyModel* model = this;
+    VulkanDevice *device{};
 
     struct Vertices {
         VkBuffer buffer = VK_NULL_HANDLE;
@@ -37,8 +35,7 @@ public:
         VkDeviceMemory memory;
     } indices;
 
-    glm::mat4 aabb;
-
+    glm::mat4 aabb{};
 
     std::vector<Texture> textures;
     std::vector<std::string> extensions;
@@ -53,15 +50,10 @@ public:
 
     void loadFromFile(std::string filename, VulkanDevice *device, VkQueue transferQueue, float scale = 1.0f);
 
-    void getSceneDimensions();
 
     void createDescriptors();
 
     void createPipeline();
-
-    void setMesh(std::vector<Vertex> vertexBuffer, std::vector<uint32_t> indexBuffer);
-
-    void useStagingBuffer(std::vector<Vertex> *vertexBuffer, std::vector<uint32_t> *indexBuffer);
 
     void draw(VkCommandBuffer commandBuffer);
 
