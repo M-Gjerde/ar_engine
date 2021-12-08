@@ -19,7 +19,7 @@ struct Buffer
     VkDevice device{};
     VkBuffer buffer = VK_NULL_HANDLE;
     VkDeviceMemory memory = VK_NULL_HANDLE;
-    VkDescriptorBufferInfo descriptor{};
+    VkDescriptorBufferInfo descriptorBufferInfo{};
     VkDeviceSize size = 0;
     VkDeviceSize alignment = 0;
     void* mapped = nullptr;

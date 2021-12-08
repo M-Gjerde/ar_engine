@@ -5,7 +5,7 @@
 #ifndef AR_ENGINE_BASE_H
 #define AR_ENGINE_BASE_H
 
-#include <ar_engine/src/core/vkMyModel.h>
+#include <ar_engine/src/core/MyModel.h>
 #include "ar_engine/src/imgui/UISettings.h"
 class Base {
 public:
@@ -14,14 +14,22 @@ public:
         VulkanDevice* device{};
         UISettings* ui{};
     };
+
+    struct prepareVars {
+        uint32_t UBCount = 0;
+        std::vector<VkPipelineShaderStageCreateInfo> *shaders{};
+        VkRenderPass *renderPass;
+    };
     virtual ~Base() = default;
 
     virtual void update() = 0;
     virtual void setup(SetupVars vars) = 0;
     virtual void onUIUpdate(UISettings uiSettings) = 0;
     virtual std::string getType() {return type;}
-    virtual vkMyModel getSceneObject() { return {};}
-
+    virtual MyModel getSceneObject() { return {};}
+    virtual void prepareObject(prepareVars vars){};
+    virtual void updateUniformBufferData(uint32_t index, FragShaderParams params, SimpleUBOMatrix matrix){};
+    virtual void draw(VkCommandBuffer commandBuffer, uint32_t i){};
     std::string type = "None";
 };
 

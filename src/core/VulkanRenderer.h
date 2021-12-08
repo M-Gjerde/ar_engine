@@ -118,7 +118,7 @@ public:
     virtual void renderFrame();
 
 
-    VkPipelineShaderStageCreateInfo loadShader(std::string fileName, VkShaderStageFlagBits stage);
+    VkPipelineShaderStageCreateInfo loadShader(const std::string& fileName, VkShaderStageFlagBits stage);
 
 protected:
     // Window instance GLFW

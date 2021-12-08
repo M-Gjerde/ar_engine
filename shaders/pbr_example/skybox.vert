@@ -22,6 +22,10 @@ out gl_PerVertex
 
 void main() 
 {
-	outUVW = (-1) * inPos;
-	gl_Position = ubo.projection * ubo.model * vec4(inPos.xyz, 1.0);
+	vec3 flipped = inPos;
+	flipped = inPos;
+	outUVW = flipped; //* (-1);
+
+	//outUVW = (-1) * inPos;
+	gl_Position = ubo.projection * ubo.model * vec4(flipped.xyz, 1.0);
 }

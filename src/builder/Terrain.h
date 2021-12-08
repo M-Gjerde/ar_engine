@@ -7,10 +7,10 @@
 
 
 #include <ar_engine/src/core/ScriptBuilder.h>
-#include <ar_engine/src/core/vkMyModel.h>
+#include <ar_engine/src/core/MyModel.h>
 #include <ar_engine/src/imgui/UISettings.h>
 
-class Terrain : public Base, public RegisteredInFactory<Terrain>, vkMyModel {
+class Terrain : public Base, public RegisteredInFactory<Terrain>, MyModel {
 
 public:
     /** @brief Constructor. Just run s_bRegistered variable such that the class is
@@ -41,7 +41,11 @@ public:
     UISettings::intSlider xSizeSlider {};
     UISettings::intSlider zSizeSlider {};
 
-    vkMyModel getSceneObject() override;
+    MyModel getSceneObject() override;
+
+    void prepareObject(prepareVars vars) override;
+    void updateUniformBufferData(uint32_t index, FragShaderParams params, SimpleUBOMatrix matrix) override;
+    void draw(VkCommandBuffer commandBuffer, uint32_t i) override;
 };
 
 

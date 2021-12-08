@@ -9,7 +9,7 @@
 
 void Terrain::setup(SetupVars vars) {
     printf("Terrain setup\n");
-    vkMyModel::device = vars.device;
+    this->device = vars.device;
 
     xSizeSlider.name = "xSize";
     xSizeSlider.lowRange = 0;
@@ -36,7 +36,7 @@ void Terrain::generateSquare() {
 
 
     uint32_t vertexCount = (xSizeSlider.val + 1) * (zSizeSlider.val + 1);
-    auto* vertices = new Vertex[vertexCount + 1];
+    auto* vertices = new MyModel::Model::Vertex[vertexCount + 1];
     uint32_t indexCount = xSizeSlider.val * zSizeSlider.val * 6;
     auto* indices = new uint32_t[indexCount + 1];
 
@@ -44,7 +44,7 @@ void Terrain::generateSquare() {
     // Alloc memory for vertices and indices
     for (int z = 0; z <= zSizeSlider.val; ++z) {
         for (int x = 0; x <= xSizeSlider.val; ++x) {
-            Vertex vertex{};
+            MyModel::Model::Vertex vertex{};
 
             // Use the grid size to determine the perlin noise image.
             double i = (double) x / ((double) xSizeSlider.val);
@@ -110,8 +110,8 @@ std::string Terrain::getType() {
     return this->type;
 }
 
-vkMyModel Terrain::getSceneObject() {
-    return *vkMyModel::model;
+MyModel Terrain::getSceneObject() {
+    return *MyModel::self;
 }
 int counter = 0;
 
@@ -122,4 +122,19 @@ void Terrain::onUIUpdate(UISettings uiSettings) {
         printf("Regenerated grid %d times\n", counter);
     }
 
+}
+
+void Terrain::prepareObject(prepareVars vars) {
+    prepareUniformBuffers(vars.UBCount);
+    createDescriptorSetLayout();
+    createDescriptors(vars.UBCount);
+    createPipeline(*vars.renderPass, *vars.shaders);
+}
+
+void Terrain::updateUniformBufferData(uint32_t index, FragShaderParams params, SimpleUBOMatrix matrix) {
+    MyModel::updateUniformBufferData(index, params, matrix);
+}
+
+void Terrain::draw(VkCommandBuffer commandBuffer, uint32_t i) {
+    MyModel::draw(commandBuffer, i);
 }

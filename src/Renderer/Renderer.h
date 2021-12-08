@@ -22,20 +22,19 @@
 #include "ar_engine/src/builder/Example.h"
 #include <ar_engine/src/builder/Terrain.h>
 #include <ar_engine/src/tools/Macros.h>
-#include <ar_engine/src/core/ScriptBuilder.h>
+
 #include <ar_engine/src/core/VulkanglTFModel.h>
 #include <ar_engine/src/core/Texture.h>
-#include <ar_engine/src/core/vkMyModel.h>
-#include "ar_engine/src/core/VulkanRenderer.h"
+#include <ar_engine/src/core/MyModel.h>
+#include <ar_engine/src/core/VulkanRenderer.h>
+#include <ar_engine/src/Renderer/shaderParams.h>
 
-class Model;
 
 class Renderer : VulkanRenderer {
 
 public:
 
     std::vector<std::unique_ptr<Base>> scripts;
-    std::vector<SceneObject> sceneObjects;
 
     explicit Renderer(const std::string &title) : VulkanRenderer(true) {
         // During constructor prepare backend for rendering
@@ -77,29 +76,15 @@ protected:
         glm::vec3 rotation = glm::vec3(75.0f, 40.0f, 0.0f);
     } lightSource;
 
-    struct FragShaderParams {
-        glm::vec4 objectColor;
-        glm::vec4 lightColor;
-        glm::vec4 lightPos;
-        glm::vec4 viewPos;
-    } fragShaderParams{};
-
-
-    struct {
-        glm::vec4 lightDir{};
-        float exposure = 10.5f;
-        float gamma = 2.2f;
-        float prefilteredCubeMipLevels{};
-        float scaleIBLAmbient = 1.0f;
-        float debugViewInputs = 0;
-        float debugViewEquation = 0;
-    } shaderValuesParams;
+    UBOMatrices shaderValuesScene{};
+    UBOMatrices shaderValuesSkybox{};
+    SimpleUBOMatrix shaderValuesObject{};
+    FragShaderParams fragShaderParams{};
+    ShaderValuesParams shaderValuesParams{};
 
     struct Models {
         vkglTF::Model scene;
         vkglTF::Model skybox;
-        vkMyModel object;
-
     } models;
 
     struct UniformBufferSet {
@@ -109,23 +94,7 @@ protected:
         Buffer skybox;
         Buffer lightParams;
     };
-
-
-    struct UBOMatrices {
-        glm::mat4 projection;
-        glm::mat4 model;
-        glm::mat4 view;
-        glm::vec3 camPos;
-    } shaderValuesScene{}, shaderValuesSkybox{};
-
-    struct SimpleUBOMatrix {
-        glm::mat4 projection;
-        glm::mat4 model;
-        glm::mat4 view;
-    } shaderValuesObject{};
-
     std::vector<UniformBufferSet> uniformBuffers{};
-    std::vector<UBOMatrices> UniformBuffersData{};
 
     VkPipelineLayout pipelineLayout{};
     VkPipelineLayout pipelineLayout2{};

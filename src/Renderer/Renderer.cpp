@@ -6,7 +6,6 @@
 
 #include "Renderer.h"
 
-
 void Renderer::prepare() {
 
     defaultUniformBuffers();
@@ -55,6 +54,23 @@ void Renderer::prepareRenderer() {
     setupDescriptors();
     preparePipelines();
 
+    /// - TERRAIN Prepare
+    std::vector<VkPipelineShaderStageCreateInfo> shaders;
+    shaders.emplace_back(loadShader("triangle.vert.spv", VK_SHADER_STAGE_VERTEX_BIT));
+    shaders.emplace_back(loadShader("triangle.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT));
+
+    for (auto &script: scripts) {
+        Base::prepareVars vars;
+        vars.shaders = &shaders;
+        vars.renderPass = &renderPass;
+        vars.UBCount = swapchain.imageCount;
+
+        if (script->getType() == "Render"){
+            script->prepareObject(vars);
+        }
+
+    }
+
 }
 
 void Renderer::generateScriptClasses() {
@@ -88,8 +104,6 @@ void Renderer::generateScriptClasses() {
         scripts.push_back(ComponentMethodFactory::Create(className));
     }
 
-    sceneObjects.resize(scripts.size());
-
     // Run Once
     Base::SetupVars vars{};
     vars.device = vulkanDevice;
@@ -108,28 +122,40 @@ void Renderer::draw() {
     buildCommandBuffers();
 
     updateUniformBuffers();
-    UniformBufferSet currentUB = uniformBuffers[currentBuffer];
-    currentUB.scene.map();
-    currentUB.params.map();
-    currentUB.skybox.map();
-    currentUB.object.map();
-    currentUB.lightParams.map();
-    memcpy(currentUB.lightParams.mapped, &fragShaderParams, sizeof(fragShaderParams));
-    memcpy(currentUB.object.mapped, &shaderValuesObject, sizeof(shaderValuesObject));
-    memcpy(currentUB.scene.mapped, &shaderValuesScene, sizeof(shaderValuesScene));
-    memcpy(currentUB.params.mapped, &shaderValuesParams, sizeof(shaderValuesParams));
-    memcpy(currentUB.skybox.mapped, &shaderValuesSkybox, sizeof(shaderValuesSkybox));
-    currentUB.lightParams.unmap();
-    currentUB.object.unmap();
-    currentUB.skybox.unmap();
-    currentUB.scene.unmap();
-    currentUB.params.unmap();
 
     shaderValuesParams.lightDir = glm::vec4(
             sin(glm::radians(lightSource.rotation.x)) * cos(glm::radians(lightSource.rotation.y)),
             sin(glm::radians(lightSource.rotation.y)),
             cos(glm::radians(lightSource.rotation.x)) * cos(glm::radians(lightSource.rotation.y)),
             0.0f);
+
+    UniformBufferSet currentUB = uniformBuffers[currentBuffer];
+
+    currentUB.scene.map();
+    currentUB.params.map();
+    currentUB.skybox.map();
+    //currentUB.object.map();
+    //currentUB.lightParams.map();
+    //memcpy(currentUB.lightParams.mapped, &fragShaderParams, sizeof(FragShaderParams));
+    //memcpy(currentUB.object.mapped, &shaderValuesObject, sizeof(SimpleUBOMatrix));
+    memcpy(currentUB.scene.mapped, &shaderValuesScene, sizeof(UBOMatrices));
+    memcpy(currentUB.params.mapped, &shaderValuesParams, sizeof(ShaderValuesParams));
+    memcpy(currentUB.skybox.mapped, &shaderValuesSkybox, sizeof(UBOMatrices));
+    //currentUB.lightParams.unmap();
+    //currentUB.object.unmap();
+    currentUB.skybox.unmap();
+    currentUB.scene.unmap();
+    currentUB.params.unmap();
+
+
+
+
+    for (auto &script: scripts) {
+        if (script->getType() == "Render"){
+            script->updateUniformBufferData(currentBuffer, fragShaderParams, shaderValuesObject);
+        }
+    }
+
 
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &drawCmdBuffers[currentBuffer];
@@ -191,7 +217,7 @@ void Renderer::buildCommandBuffers() {
     const VkViewport viewport = Populate::viewport((float) width, (float) height, 0.0f, 1.0f);
     const VkRect2D scissor = Populate::rect2D(width, height, 0, 0);
 
-    for (int32_t i = 0; i < drawCmdBuffers.size(); ++i) {
+    for (uint32_t i = 0; i < drawCmdBuffers.size(); ++i) {
         renderPassBeginInfo.framebuffer = frameBuffers[i];
         (vkBeginCommandBuffer(drawCmdBuffers[i], &cmdBufInfo));
         vkCmdBeginRenderPass(drawCmdBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -203,16 +229,10 @@ void Renderer::buildCommandBuffers() {
         vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.skybox);
         models.skybox.draw(drawCmdBuffers[i]);
 
-        vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout2, 0, 1,
-                                &descriptorSets[i].object, 0, nullptr);
-
-        vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.object);
-        //models.object.draw(drawCmdBuffers[i]);
-        //scripts[1]->draw(drawCmdBuffers[i]);
 
         for (auto &script: scripts) {
             if (script->getType() == "Render")
-                script->getSceneObject().draw(drawCmdBuffers[i]);
+                script->draw(drawCmdBuffers[i], i);
         }
 
         vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
@@ -265,10 +285,7 @@ void Renderer::updateUniformBuffers() {
 
     shaderValuesObject.projection = camera.matrices.perspective;
     shaderValuesObject.view = camera.matrices.view;
-    glm::vec4 objectColor;
-    glm::vec4 lightColor;
-    glm::vec4 lightPos;
-    glm::vec4 viewPos;
+
 
     fragShaderParams.objectColor = glm::vec4(0.25f, 0.25f, 0.25f, 1.0f);
     fragShaderParams.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -515,19 +532,12 @@ void Renderer::preparePipelines() {
         vkDestroyShaderModule(device, shaderStage.module, nullptr);
     }
 
-    /// ------------------- TRIANGLE ----------------- ///
 
-    // PBR pipeline
+// PBR pipeline
     shaderStages = {
-            loadShader("triangle.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
-            loadShader("triangle.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
+            loadShader("pbr_example/spv/pbr.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
+            loadShader("pbr_example/spv/pbr_khr.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
     };
-    pipelineCI.layout = pipelineLayout2;
-    rasterizationStateCI.cullMode = VK_CULL_MODE_FRONT_BIT;
-    rasterizationStateCI.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-
-    CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCI, nullptr, &pipelines.object));
-
 
     pipelineCI.layout = pipelineLayout;
     rasterizationStateCI.cullMode = VK_CULL_MODE_NONE;
@@ -638,13 +648,13 @@ void Renderer::setupDescriptors() {
         std::vector<VkWriteDescriptorSet> writeDescriptorSet = {{Populate::writeDescriptorSet(descriptorSets[i].object,
                                                                                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                                                                                               0,
-                                                                                              &uniformBuffers[i].object.descriptor,
+                                                                                              &uniformBuffers[i].object.descriptorBufferInfo,
                                                                                               1)},
                                                                 {
                                                                  Populate::writeDescriptorSet(descriptorSets[i].object,
                                                                                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                                                                                               1,
-                                                                                              &uniformBuffers[i].lightParams.descriptor,
+                                                                                              &uniformBuffers[i].lightParams.descriptorBufferInfo,
                                                                                               1)
                                                                 }
         };
@@ -688,7 +698,7 @@ void Renderer::setupDescriptors() {
             writeDescriptorSets[0].descriptorCount = 1;
             writeDescriptorSets[0].dstSet = descriptorSets[i].scene;
             writeDescriptorSets[0].dstBinding = 0;
-            writeDescriptorSets[0].pBufferInfo = &uniformBuffers[i].scene.descriptor;
+            writeDescriptorSets[0].pBufferInfo = &uniformBuffers[i].scene.descriptorBufferInfo;
 
 
             writeDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -696,7 +706,7 @@ void Renderer::setupDescriptors() {
             writeDescriptorSets[1].descriptorCount = 1;
             writeDescriptorSets[1].dstSet = descriptorSets[i].scene;
             writeDescriptorSets[1].dstBinding = 1;
-            writeDescriptorSets[1].pBufferInfo = &uniformBuffers[i].params.descriptor;
+            writeDescriptorSets[1].pBufferInfo = &uniformBuffers[i].params.descriptorBufferInfo;
 
             writeDescriptorSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             writeDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -828,14 +838,14 @@ void Renderer::setupDescriptors() {
         writeDescriptorSets[0].descriptorCount = 1;
         writeDescriptorSets[0].dstSet = descriptorSets[i].skybox;
         writeDescriptorSets[0].dstBinding = 0;
-        writeDescriptorSets[0].pBufferInfo = &uniformBuffers[i].skybox.descriptor;
+        writeDescriptorSets[0].pBufferInfo = &uniformBuffers[i].skybox.descriptorBufferInfo;
 
         writeDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         writeDescriptorSets[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         writeDescriptorSets[1].descriptorCount = 1;
         writeDescriptorSets[1].dstSet = descriptorSets[i].skybox;
         writeDescriptorSets[1].dstBinding = 1;
-        writeDescriptorSets[1].pBufferInfo = &uniformBuffers[i].params.descriptor;
+        writeDescriptorSets[1].pBufferInfo = &uniformBuffers[i].params.descriptorBufferInfo;
 
         writeDescriptorSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         writeDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
