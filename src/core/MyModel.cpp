@@ -170,7 +170,7 @@ void MyModel::createPipeline(VkRenderPass pT, std::vector<VkPipelineShaderStageC
     VkPipelineRasterizationStateCreateInfo rasterizationStateCI{};
     rasterizationStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterizationStateCI.polygonMode = VK_POLYGON_MODE_FILL;
-    rasterizationStateCI.cullMode = VK_CULL_MODE_BACK_BIT;
+    rasterizationStateCI.cullMode = VK_CULL_MODE_NONE;
     rasterizationStateCI.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizationStateCI.lineWidth = 1.0f;
 

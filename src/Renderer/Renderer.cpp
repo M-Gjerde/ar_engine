@@ -289,8 +289,8 @@ void Renderer::updateUniformBuffers() {
 
     fragShaderParams.objectColor = glm::vec4(0.25f, 0.25f, 0.25f, 1.0f);
     fragShaderParams.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-    fragShaderParams.lightPos = glm::vec4(camera.position, 1.0f);
-    fragShaderParams.viewPos = fragShaderParams.lightPos;
+
+
 
     // Center and scale model
     float scale =
@@ -310,13 +310,16 @@ void Renderer::updateUniformBuffers() {
     shaderValuesScene.model = glm::translate(shaderValuesScene.model, translate);
 
     translate = glm::vec3(0.0f, 0.0f, -5.0f);
-    shaderValuesObject.model = glm::translate(shaderValuesScene.model, translate);
+    shaderValuesObject.model = glm::mat4(1.0f);
 
     shaderValuesScene.camPos = glm::vec3(
             -camera.position.z * sin(glm::radians(camera.rotation.y)) * cos(glm::radians(camera.rotation.x)),
             -camera.position.z * sin(glm::radians(camera.rotation.x)),
             camera.position.z * cos(glm::radians(camera.rotation.y)) * cos(glm::radians(camera.rotation.x))
     );
+
+    fragShaderParams.lightPos = camera.viewPos; //glm::vec4(glm::vec3(50, 5, 50), 1.0f); //glm::vec4(glm::vec3(0.0f, 5.0f, -3.0f), 1.0f);
+    fragShaderParams.viewPos =  camera.viewPos; //glm::vec4(camera.viewPos, 1.0f);
 
     // Skybox
     shaderValuesSkybox.projection = camera.matrices.perspective;

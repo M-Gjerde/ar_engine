@@ -19,7 +19,7 @@ layout(binding = 1, set = 0) uniform Colors {
 void main() {
 
   // ambient
-  float ambientStrength = 0.07;
+  float ambientStrength = 0.8;
   vec3 ambient = ambientStrength * colors.lightColor.xyz;
   // diffuse
   vec3 norm = normalize(Normal);

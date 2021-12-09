@@ -391,7 +391,7 @@ public:
         //updated |= ImGui::Checkbox("Display logos", &uiSettings.displayLogos);
         //updated |= ImGui::Checkbox("Display background", &uiSettings.displayBackground);
         updated |= ImGui::Checkbox("Toggle grid size", &uiSettings.toggleGridSize);
-        updated |= ImGui::SliderFloat("Movement speed", &uiSettings.movementSpeed, 0.05f, 1.0f);
+        updated |= ImGui::SliderFloat("Movement speed", &uiSettings.movementSpeed, 0.05f, 10.0f);
 
         if (!uiSettings.intSliders.empty()){
             for (const auto& slider : uiSettings.intSliders){

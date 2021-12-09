@@ -23,24 +23,29 @@ void Terrain::setup(SetupVars vars) {
     zSizeSlider.val = 3;
     vars.ui->createIntSlider(&zSizeSlider);
 
+    noise.name = "noise_multiplier";
+    noise.lowRange = 0;
+    noise.highRange = 200;
+    noise.val = 20;
+    vars.ui->createIntSlider(&noise);
+
     generateSquare();
 
 }
 
+
 void Terrain::generateSquare() {
     // 16*16 mesh as our ground
     // Get square size from input
-    int v = 0;
     auto *pn = new PerlinNoise(123);
 
 
-
     uint32_t vertexCount = (xSizeSlider.val + 1) * (zSizeSlider.val + 1);
-    auto* vertices = new MyModel::Model::Vertex[vertexCount + 1];
+    auto *vertices = new MyModel::Model::Vertex[vertexCount + 1];
     uint32_t indexCount = xSizeSlider.val * zSizeSlider.val * 6;
-    auto* indices = new uint32_t[indexCount + 1];
+    auto *indices = new uint32_t[indexCount + 1];
 
-
+    uint32_t v = 0;
     // Alloc memory for vertices and indices
     for (int z = 0; z <= zSizeSlider.val; ++z) {
         for (int x = 0; x <= xSizeSlider.val; ++x) {
@@ -49,31 +54,39 @@ void Terrain::generateSquare() {
             // Use the grid size to determine the perlin noise image.
             double i = (double) x / ((double) xSizeSlider.val);
             double j = (double) z / ((double) zSizeSlider.val);
-            double n = pn->noise(100 * i, 100 * j, 0.8) / 5;
 
-            double xPos = (double) x / 10;
-            double zPos = (double) z / 10;
+            double n = noise.val * pn->noise(i, j, 10);
+            n = n - floor(n);
+
+            double xPos = (double) x / 1;
+            double zPos = (double) z / 1;
 
             vertex.pos = glm::vec3(xPos, n, zPos);
             vertices[v] = vertex;
             v++;
-
-            // calculate Normals for every 3 vertices
-            if ((v % 3) == 0) {
-                glm::vec3 A = vertices[v - 2].pos;
-                glm::vec3 B = vertices[v - 1].pos;
-                glm::vec3 C = vertices[v].pos;
-                glm::vec3 AB = B - A;
-                glm::vec3 AC = C - A;
-
-                glm::vec3 normal = glm::cross(AC, AB);
-                normal = glm::normalize(normal);
-                // Give normal to last three vertices
-                vertices[v - 2].normal = normal;
-                vertices[v - 1].normal = normal;
-                vertices[v].normal = normal;
-            }
         }
+    }
+
+
+    // Normals
+    int index = 0;
+    for (int z = 0; z < zSizeSlider.val; ++z) {
+        for (int x = 0; x < xSizeSlider.val; ++x) {
+            glm::vec3 A = vertices[index].pos;
+            glm::vec3 B = vertices[index + 1].pos;
+            glm::vec3 C = vertices[index + 1 + xSizeSlider.val].pos;
+            // Normals and stuff
+            glm::vec3 AB = B - A;
+            glm::vec3 AC = C - A;
+            glm::vec3 normal = glm::cross(AC, AB);
+            normal = glm::normalize(normal);
+            // Give normal to last three vertices
+            vertices[index].normal = normal;
+            vertices[index + 1].normal = normal;
+            vertices[index + 1 + xSizeSlider.val].normal = normal;
+            index++;
+        }
+        index++;
     }
 
     int tris = 0;
@@ -113,10 +126,11 @@ std::string Terrain::getType() {
 MyModel Terrain::getSceneObject() {
     return *MyModel::self;
 }
+
 int counter = 0;
 
 void Terrain::onUIUpdate(UISettings uiSettings) {
-    if (uiSettings.toggleGridSize){
+    if (uiSettings.toggleGridSize) {
         counter++;
         generateSquare();
         printf("Regenerated grid %d times\n", counter);

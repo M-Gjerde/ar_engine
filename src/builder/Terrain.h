@@ -40,6 +40,7 @@ public:
 
     UISettings::intSlider xSizeSlider {};
     UISettings::intSlider zSizeSlider {};
+    UISettings::intSlider noise {};
 
     MyModel getSceneObject() override;
 
