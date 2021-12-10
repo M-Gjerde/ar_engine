@@ -9,8 +9,9 @@
 #include <ar_engine/src/core/Base.h>
 #include <memory>
 #include <ar_engine/src/core/ScriptBuilder.h>
+#include <ar_engine/src/core/VulkanglTFModel.h>
 
-class MyModelExample : public Base, public RegisteredInFactory<MyModelExample>, MyModel {
+class MyModelExample : public Base, public RegisteredInFactory<MyModelExample> {
 
 public:
     /** @brief Constructor. Just run s_bRegistered variable such that the class is

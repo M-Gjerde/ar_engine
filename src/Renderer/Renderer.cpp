@@ -323,7 +323,8 @@ void Renderer::updateUniformBuffers() {
 
     shaderValuesParams.lightDir= glm::vec4(glm::vec3(9, 5, -5), 1.0f); //glm::vec4(glm::vec3(0.0f, 5.0f, -3.0f), 1.0f);camera.viewPos;
     shaderValuesScene.camPos = camera.viewPos;
-    shaderValuesScene.model = glm::mat4(1.0f);
+
+    shaderValuesScene.model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 1.0f, -3.0f));
 
     fragShaderParams.lightPos = camera.viewPos; //glm::vec4(glm::vec3(50, 5, 50), 1.0f); //glm::vec4(glm::vec3(0.0f, 5.0f, -3.0f), 1.0f);
     fragShaderParams.viewPos =  camera.viewPos; //glm::vec4(camera.viewPos, 1.0f);
