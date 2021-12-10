@@ -13,14 +13,14 @@ void Terrain::setup(SetupVars vars) {
 
     xSizeSlider.name = "xSize";
     xSizeSlider.lowRange = 0;
-    xSizeSlider.highRange = 200;
-    xSizeSlider.val = 3;
+    xSizeSlider.highRange = 1000;
+    xSizeSlider.val = 150;
     vars.ui->createIntSlider(&xSizeSlider);
 
     zSizeSlider.name = "zSize";
     zSizeSlider.lowRange = 0;
-    zSizeSlider.highRange = 200;
-    zSizeSlider.val = 3;
+    zSizeSlider.highRange = 1000;
+    zSizeSlider.val = 150;
     vars.ui->createIntSlider(&zSizeSlider);
 
     noise.name = "noise_multiplier";
@@ -28,6 +28,12 @@ void Terrain::setup(SetupVars vars) {
     noise.highRange = 200;
     noise.val = 20;
     vars.ui->createIntSlider(&noise);
+
+    sinMod.name = "height";
+    sinMod.lowRange = 0;
+    sinMod.highRange = 200;
+    sinMod.val = 20;
+    vars.ui->createIntSlider(&sinMod);
 
     generateSquare();
 
@@ -55,8 +61,10 @@ void Terrain::generateSquare() {
             double i = (double) x / ((double) xSizeSlider.val);
             double j = (double) z / ((double) zSizeSlider.val);
 
-            double n = noise.val * pn->noise(i, j, 10);
-            n = n - floor(n);
+            double height = sin(x + z);
+
+            double n = noise.val * pn->noise(i * sinMod.val, j * sinMod.val, 1) ;//+ height * sinMod.val;
+            //n = n - floor(n);
 
             double xPos = (double) x / 1;
             double zPos = (double) z / 1;
@@ -70,6 +78,7 @@ void Terrain::generateSquare() {
 
     // Normals
     int index = 0;
+    int quad = 0;
     for (int z = 0; z < zSizeSlider.val; ++z) {
         for (int x = 0; x < xSizeSlider.val; ++x) {
             glm::vec3 A = vertices[index].pos;
@@ -84,6 +93,7 @@ void Terrain::generateSquare() {
             vertices[index].normal = normal;
             vertices[index + 1].normal = normal;
             vertices[index + 1 + xSizeSlider.val].normal = normal;
+
             index++;
         }
         index++;

@@ -41,6 +41,7 @@ public:
     UISettings::intSlider xSizeSlider {};
     UISettings::intSlider zSizeSlider {};
     UISettings::intSlider noise {};
+    UISettings::intSlider sinMod {};
 
     MyModel getSceneObject() override;
 
