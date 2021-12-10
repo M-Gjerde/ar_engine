@@ -15,10 +15,11 @@ void Renderer::prepare() {
 void Renderer::createSkybox() {
 
     textures.empty.loadFromFile(getAssetsPath() + "textures/empty.ktx", VK_FORMAT_R8G8B8A8_UNORM, vulkanDevice, queue);
-    //std::string environmentFile = getAssetsPath() + "environments/papermill.ktx";
+    std::string environmentFile = getAssetsPath() + "environments/gcanyon_cube.ktx";
+    //std::string environmentFile = getAssetsPath() + "environments/gcanyon_cube.ktx";
     //std::string environmentFile = getAssetsPath() + "environments/cubemap_yokohama_rgba.ktx";
     //std::string environmentFile = getAssetsPath() + "environments/cubemap_space.ktx";
-    std::string environmentFile = getAssetsPath() + "environments/cubemap_space.ktx";
+    //std::string environmentFile = getAssetsPath() + "environments/cubemap_space.ktx";
     models.skybox.loadFromFile(getAssetsPath() + "models/Box/glTF-Embedded/Box.gltf", vulkanDevice, queue);
     textures.environmentCube.loadFromFile(environmentFile, vulkanDevice, queue, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -123,11 +124,7 @@ void Renderer::draw() {
 
     updateUniformBuffers();
 
-    shaderValuesParams.lightDir = glm::vec4(
-            sin(glm::radians(lightSource.rotation.x)) * cos(glm::radians(lightSource.rotation.y)),
-            sin(glm::radians(lightSource.rotation.y)),
-            cos(glm::radians(lightSource.rotation.x)) * cos(glm::radians(lightSource.rotation.y)),
-            0.0f);
+
 
     UniformBufferSet currentUB = uniformBuffers[currentBuffer];
 
@@ -317,6 +314,16 @@ void Renderer::updateUniformBuffers() {
             -camera.position.z * sin(glm::radians(camera.rotation.x)),
             camera.position.z * cos(glm::radians(camera.rotation.y)) * cos(glm::radians(camera.rotation.x))
     );
+
+    shaderValuesParams.lightDir = glm::vec4(
+            sin(glm::radians(lightSource.rotation.x)) * cos(glm::radians(lightSource.rotation.y)),
+            sin(glm::radians(lightSource.rotation.y)),
+            cos(glm::radians(lightSource.rotation.x)) * cos(glm::radians(lightSource.rotation.y)),
+            0.0f);
+
+    shaderValuesParams.lightDir= glm::vec4(glm::vec3(9, 5, -5), 1.0f); //glm::vec4(glm::vec3(0.0f, 5.0f, -3.0f), 1.0f);camera.viewPos;
+    shaderValuesScene.camPos = camera.viewPos;
+    shaderValuesScene.model = glm::mat4(1.0f);
 
     fragShaderParams.lightPos = camera.viewPos; //glm::vec4(glm::vec3(50, 5, 50), 1.0f); //glm::vec4(glm::vec3(0.0f, 5.0f, -3.0f), 1.0f);
     fragShaderParams.viewPos =  camera.viewPos; //glm::vec4(camera.viewPos, 1.0f);

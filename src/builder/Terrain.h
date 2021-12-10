@@ -43,8 +43,6 @@ public:
     UISettings::intSlider noise {};
     UISettings::intSlider sinMod {};
 
-    MyModel getSceneObject() override;
-
     void prepareObject(prepareVars vars) override;
     void updateUniformBufferData(uint32_t index, FragShaderParams params, SimpleUBOMatrix matrix) override;
     void draw(VkCommandBuffer commandBuffer, uint32_t i) override;

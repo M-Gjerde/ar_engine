@@ -21,6 +21,8 @@
 // Engine
 #include "ar_engine/src/builder/Example.h"
 #include <ar_engine/src/builder/Terrain.h>
+#include <ar_engine/src/builder/MyModelExample.h>
+
 #include <ar_engine/src/tools/Macros.h>
 
 #include <ar_engine/src/core/VulkanglTFModel.h>

@@ -10,7 +10,9 @@ void MyModel::destroy(VkDevice device) {
 
 }
 
-void MyModel::loadFromFile(std::string filename, VulkanDevice *device, VkQueue transferQueue, float scale) {
+void MyModel::loadFromFile(std::string filename, float scale) {
+
+
 
 }
 

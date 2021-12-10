@@ -75,7 +75,7 @@ public:
 
     void destroy(VkDevice device);
 
-    void loadFromFile(std::string filename, VulkanDevice *device, VkQueue transferQueue, float scale = 1.0f);
+    void loadFromFile(std::string filename, float scale = 1.0f);
 
     void createDescriptorSetLayout();
 

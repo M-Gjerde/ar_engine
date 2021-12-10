@@ -26,13 +26,13 @@ void Terrain::setup(SetupVars vars) {
     noise.name = "noise_multiplier";
     noise.lowRange = 0;
     noise.highRange = 200;
-    noise.val = 20;
+    noise.val = 3;
     vars.ui->createIntSlider(&noise);
 
     sinMod.name = "height";
     sinMod.lowRange = 0;
     sinMod.highRange = 200;
-    sinMod.val = 20;
+    sinMod.val = 50;
     vars.ui->createIntSlider(&sinMod);
 
     generateSquare();
@@ -64,7 +64,7 @@ void Terrain::generateSquare() {
             double height = sin(x + z);
 
             double n = noise.val * pn->noise(i * sinMod.val, j * sinMod.val, 1) ;//+ height * sinMod.val;
-            //n = n - floor(n);
+            //n = n - floor(n); Wood like structure
 
             double xPos = (double) x / 1;
             double zPos = (double) z / 1;
@@ -131,10 +131,6 @@ void Terrain::update() {
 
 std::string Terrain::getType() {
     return this->type;
-}
-
-MyModel Terrain::getSceneObject() {
-    return *MyModel::self;
 }
 
 int counter = 0;

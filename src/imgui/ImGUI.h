@@ -402,9 +402,15 @@ public:
         }
 
         static int item_current_idx = 0; // Here we store our selection data as an index.
-        if (ImGui::BeginListBox("Scripts")) {
+        ImGui::Spacing();
+        ImGui::Text("Active objects");
+        if (ImGui::BeginListBox("")) {
             for (int n = 0; n < uiSettings.listBoxNames.size(); n++) {
                 const bool is_selected = (uiSettings.selectedListboxIndex == n);
+
+                // Remove Example from list
+                if (uiSettings.listBoxNames[n] == "Example") continue;
+
                 if (ImGui::Selectable(uiSettings.listBoxNames[n].c_str(), is_selected)){
                     uiSettings.selectedListboxIndex = n;
 
