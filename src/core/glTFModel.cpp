@@ -4,6 +4,7 @@
 
 #include <glm/gtc/type_ptr.hpp>
 #include <ar_engine/src/tools/Macros.h>
+#include <ar_engine/src/Renderer/shaderParams.h>
 #include "glTFModel.h"
 
 
@@ -33,7 +34,7 @@ void glTFModel::Model::loadFromFile(std::string filename, VulkanDevice *device, 
         loadNode(nullptr, node, scene.nodes[i], gltfModel, indexBuffer, vertexBuffer, scale);
     }
 
-    loadSkins(gltfModel);
+    //loadSkins(gltfModel);
 
     extensions = gltfModel.extensionsUsed;
 
@@ -143,7 +144,7 @@ void glTFModel::Model::loadSkins(tinygltf::Model &gltfModel) {
     }
 }
 
-void glTFModel::Model::drawNode(Node *node, VkCommandBuffer commandBuffer) {
+void glTFModel::drawNode(Node *node, VkCommandBuffer commandBuffer) {
     printf("Drawing node\n");
     if (node->mesh) {
         for (Primitive *primitive: node->mesh->primitives) {
@@ -155,11 +156,18 @@ void glTFModel::Model::drawNode(Node *node, VkCommandBuffer commandBuffer) {
     }
 }
 
-void glTFModel::Model::draw(VkCommandBuffer commandBuffer) {
-    const VkDeviceSize offsets[1] = {0};
-    vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertices.buffer, offsets);
-    vkCmdBindIndexBuffer(commandBuffer, indices.buffer, 0, VK_INDEX_TYPE_UINT32);
-    for (auto &node: nodes) {
+void glTFModel::draw(VkCommandBuffer commandBuffer, uint32_t i) {
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
+                            &descriptors[i], 0, nullptr);
+
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+
+    VkDeviceSize offsets[1] = {0};
+    vkCmdBindVertexBuffers(commandBuffer, 0, 1, &model.vertices.buffer, offsets);
+    if (model.indices.buffer != VK_NULL_HANDLE) {
+        vkCmdBindIndexBuffer(commandBuffer, model.indices.buffer, 0, VK_INDEX_TYPE_UINT32);
+    }
+    for (auto &node: model.nodes) {
         drawNode(node, commandBuffer);
     }
 }
@@ -232,8 +240,7 @@ void glTFModel::Model::loadNode(glTFModel::Node *parent, const tinygltf::Node &n
     if (node.mesh > -1) {
         const tinygltf::Mesh mesh = model.meshes[node.mesh];
         Mesh *newMesh = new Mesh(device, newNode->matrix);
-        for (size_t j = 0; j < mesh.primitives.size(); j++) {
-            const tinygltf::Primitive &primitive = mesh.primitives[j];
+        for (auto &primitive: mesh.primitives) {
             uint32_t indexStart = static_cast<uint32_t>(indexBuffer.size());
             uint32_t vertexStart = static_cast<uint32_t>(vertexBuffer.size());
             uint32_t indexCount = 0;
@@ -242,23 +249,15 @@ void glTFModel::Model::loadNode(glTFModel::Node *parent, const tinygltf::Node &n
             glm::vec3 posMax{};
             bool hasSkin = false;
             bool hasIndices = primitive.indices > -1;
+
             // Vertices
             {
                 const float *bufferPos = nullptr;
                 const float *bufferNormals = nullptr;
-                const float *bufferTexCoordSet0 = nullptr;
-                const float *bufferTexCoordSet1 = nullptr;
-                const void *bufferJoints = nullptr;
-                const float *bufferWeights = nullptr;
+
 
                 int posByteStride;
                 int normByteStride;
-                int uv0ByteStride;
-                int uv1ByteStride;
-                int jointByteStride;
-                int weightByteStride;
-
-                int jointComponentType;
 
                 // Position attribute is required
                 assert(primitive.attributes.find("POSITION") != primitive.attributes.end());
@@ -287,97 +286,16 @@ void glTFModel::Model::loadNode(glTFModel::Node *parent, const tinygltf::Node &n
                                     TINYGLTF_TYPE_VEC3);
                 }
 
-                if (primitive.attributes.find("TEXCOORD_0") != primitive.attributes.end()) {
-                    const tinygltf::Accessor &uvAccessor = model.accessors[primitive.attributes.find(
-                            "TEXCOORD_0")->second];
-                    const tinygltf::BufferView &uvView = model.bufferViews[uvAccessor.bufferView];
-                    bufferTexCoordSet0 = reinterpret_cast<const float *>(&(model.buffers[uvView.buffer].data[
-                            uvAccessor.byteOffset + uvView.byteOffset]));
-                    uv0ByteStride = uvAccessor.ByteStride(uvView) ? (uvAccessor.ByteStride(uvView) / sizeof(float))
-                                                                  : tinygltf::GetComponentSizeInBytes(
-                                    TINYGLTF_TYPE_VEC2);
-                }
-                if (primitive.attributes.find("TEXCOORD_1") != primitive.attributes.end()) {
-                    const tinygltf::Accessor &uvAccessor = model.accessors[primitive.attributes.find(
-                            "TEXCOORD_1")->second];
-                    const tinygltf::BufferView &uvView = model.bufferViews[uvAccessor.bufferView];
-                    bufferTexCoordSet1 = reinterpret_cast<const float *>(&(model.buffers[uvView.buffer].data[
-                            uvAccessor.byteOffset + uvView.byteOffset]));
-                    uv1ByteStride = uvAccessor.ByteStride(uvView) ? (uvAccessor.ByteStride(uvView) / sizeof(float))
-                                                                  : tinygltf::GetComponentSizeInBytes(
-                                    TINYGLTF_TYPE_VEC2);
-                }
-
-                // Skinning
-                // Joints
-                if (primitive.attributes.find("JOINTS_0") != primitive.attributes.end()) {
-                    const tinygltf::Accessor &jointAccessor = model.accessors[primitive.attributes.find(
-                            "JOINTS_0")->second];
-                    const tinygltf::BufferView &jointView = model.bufferViews[jointAccessor.bufferView];
-                    bufferJoints = &(model.buffers[jointView.buffer].data[jointAccessor.byteOffset +
-                                                                          jointView.byteOffset]);
-                    jointComponentType = jointAccessor.componentType;
-                    jointByteStride = jointAccessor.ByteStride(jointView) ? (jointAccessor.ByteStride(jointView) /
-                                                                             tinygltf::GetComponentSizeInBytes(
-                                                                                     jointComponentType))
-                                                                          : tinygltf::GetComponentSizeInBytes(
-                                    TINYGLTF_TYPE_VEC4);
-                }
-
-                if (primitive.attributes.find("WEIGHTS_0") != primitive.attributes.end()) {
-                    const tinygltf::Accessor &weightAccessor = model.accessors[primitive.attributes.find(
-                            "WEIGHTS_0")->second];
-                    const tinygltf::BufferView &weightView = model.bufferViews[weightAccessor.bufferView];
-                    bufferWeights = reinterpret_cast<const float *>(&(model.buffers[weightView.buffer].data[
-                            weightAccessor.byteOffset + weightView.byteOffset]));
-                    weightByteStride = weightAccessor.ByteStride(weightView) ? (
-                            weightAccessor.ByteStride(weightView) / sizeof(float))
-                                                                             : tinygltf::GetComponentSizeInBytes(
-                                    TINYGLTF_TYPE_VEC4);
-                }
-
-                hasSkin = (bufferJoints && bufferWeights);
-
                 for (size_t v = 0; v < posAccessor.count; v++) {
                     Vertex vert{};
                     vert.pos = glm::vec4(glm::make_vec3(&bufferPos[v * posByteStride]), 1.0f);
                     vert.normal = glm::normalize(glm::vec3(
                             bufferNormals ? glm::make_vec3(&bufferNormals[v * normByteStride]) : glm::vec3(0.0f)));
-                    vert.uv0 = bufferTexCoordSet0 ? glm::make_vec2(&bufferTexCoordSet0[v * uv0ByteStride])
-                                                  : glm::vec3(0.0f);
-                    vert.uv1 = bufferTexCoordSet1 ? glm::make_vec2(&bufferTexCoordSet1[v * uv1ByteStride])
-                                                  : glm::vec3(0.0f);
 
-                    if (hasSkin) {
-                        switch (jointComponentType) {
-                            case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: {
-                                const uint16_t *buf = static_cast<const uint16_t *>(bufferJoints);
-                                vert.joint0 = glm::vec4(glm::make_vec4(&buf[v * jointByteStride]));
-                                break;
-                            }
-                            case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE: {
-                                const uint8_t *buf = static_cast<const uint8_t *>(bufferJoints);
-                                vert.joint0 = glm::vec4(glm::make_vec4(&buf[v * jointByteStride]));
-                                break;
-                            }
-                            default:
-                                // Not supported by spec
-                                std::cerr << "Joint component type " << jointComponentType << " not supported!"
-                                          << std::endl;
-                                break;
-                        }
-                    } else {
-                        vert.joint0 = glm::vec4(0.0f);
-                    }
-                    vert.weight0 = hasSkin ? glm::make_vec4(&bufferWeights[v * weightByteStride]) : glm::vec4(0.0f);
-                    // Fix for all zero weights
-                    if (glm::length(vert.weight0) == 0.0f) {
-                        vert.weight0 = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
-                    }
                     vertexBuffer.push_back(vert);
                 }
             }
-            // Indices
+
             if (hasIndices) {
                 const tinygltf::Accessor &accessor = model.accessors[primitive.indices > -1 ? primitive.indices
                                                                                             : 0];
@@ -422,6 +340,7 @@ void glTFModel::Model::loadNode(glTFModel::Node *parent, const tinygltf::Node &n
 
         newNode->mesh = newMesh;
     }
+
     if (parent) {
         parent->children.push_back(newNode);
     } else {
@@ -435,8 +354,38 @@ glTFModel::glTFModel() {
     printf("glTFModel Constructor\n");
 }
 
+void glTFModel::prepareUniformBuffers(uint32_t count) {
+    uniformBuffers.resize(count);
+
+    for (auto &uniformBuffer: uniformBuffers) {
+
+        device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                             &uniformBuffer.model, sizeof(UBOMatrices));
+
+        device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                             &uniformBuffer.shaderValues, sizeof(ShaderValuesParams));
+
+    }
+
+}
+
+void glTFModel::updateUniformBufferData(uint32_t index, void *params, void *matrix) {
+    UniformBufferSet currentUB = uniformBuffers[index];
+
+    currentUB.model.map();
+    memcpy(currentUB.model.mapped, matrix, sizeof(SimpleUBOMatrix));
+    currentUB.model.unmap();
+
+    currentUB.shaderValues.map();
+    memcpy(currentUB.shaderValues.mapped, params, sizeof(FragShaderParams));
+    currentUB.shaderValues.unmap();
+
+}
+
 glTFModel::Primitive::Primitive(uint32_t _firstIndex, uint32_t indexCount, uint32_t vertexCount) {
-    firstIndex = _firstIndex;
+    this->firstIndex = _firstIndex;
     this->indexCount = indexCount;
     this->vertexCount = vertexCount;
     hasIndices = indexCount > 0;
@@ -482,7 +431,7 @@ void glTFModel::Node::update() {
     }
 }
 
-glm::mat4  glTFModel::Node::getMatrix() {
+glm::mat4 glTFModel::Node::getMatrix() {
     glm::mat4 m = localMatrix();
     Node *p = parent;
     while (p) {
@@ -495,4 +444,243 @@ glm::mat4  glTFModel::Node::getMatrix() {
 glm::mat4 glTFModel::Node::localMatrix() {
     return glm::translate(glm::mat4(1.0f), translation) * glm::mat4(rotation) * glm::scale(glm::mat4(1.0f), scale) *
            matrix;
+}
+
+void glTFModel::createDescriptorSetLayout() {
+    std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
+            {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
+             VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+            //{1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+            //{2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+            //{3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+            //{4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+    };
+    VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI{};
+    descriptorSetLayoutCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    descriptorSetLayoutCI.pBindings = setLayoutBindings.data();
+    descriptorSetLayoutCI.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
+    CHECK_RESULT(
+            vkCreateDescriptorSetLayout(device->logicalDevice, &descriptorSetLayoutCI, nullptr, &descriptorSetLayout));
+}
+
+void glTFModel::createDescriptors(uint32_t count) {
+    descriptors.resize(count);
+
+    /**
+     * Create Descriptor Pool
+     */
+
+    uint32_t uniformDescriptorCount = 2 * count + model.nodes.size();
+    uint32_t imageDescriptorSamplerCount = 3 * count;
+    std::vector<VkDescriptorPoolSize> poolSizes = {
+            {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         uniformDescriptorCount},
+            {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, imageDescriptorSamplerCount}
+    };
+    VkDescriptorPoolCreateInfo poolCreateInfo = Populate::descriptorPoolCreateInfo(poolSizes,
+                                                                                   count + model.nodes.size());
+    CHECK_RESULT(vkCreateDescriptorPool(device->logicalDevice, &poolCreateInfo, nullptr, &descriptorPool));
+
+
+    /**
+     * Create Descriptor Sets
+     */
+    for (auto i = 0; i < descriptors.size(); i++) {
+
+        VkDescriptorSetAllocateInfo descriptorSetAllocInfo{};
+        descriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        descriptorSetAllocInfo.descriptorPool = descriptorPool;
+        descriptorSetAllocInfo.pSetLayouts = &descriptorSetLayout;
+        descriptorSetAllocInfo.descriptorSetCount = 1;
+        CHECK_RESULT(vkAllocateDescriptorSets(device->logicalDevice, &descriptorSetAllocInfo, &descriptors[i]));
+
+        std::array<VkWriteDescriptorSet, 1> writeDescriptorSets{};
+
+        writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        writeDescriptorSets[0].descriptorCount = 1;
+        writeDescriptorSets[0].dstSet = descriptors[i];
+        writeDescriptorSets[0].dstBinding = 0;
+        writeDescriptorSets[0].pBufferInfo = &uniformBuffers[i].model.descriptorBufferInfo;
+
+/*
+        writeDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writeDescriptorSets[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        writeDescriptorSets[1].descriptorCount = 1;
+        writeDescriptorSets[1].dstSet = descriptors[i];
+        writeDescriptorSets[1].dstBinding = 1;
+        writeDescriptorSets[1].pBufferInfo = &uniformBuffers[i].shaderValues.descriptorBufferInfo;
+
+      writeDescriptorSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writeDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        writeDescriptorSets[2].descriptorCount = 1;
+        writeDescriptorSets[2].dstSet = descriptorSets[i].scene;
+        writeDescriptorSets[2].dstBinding = 2;
+        writeDescriptorSets[2].pImageInfo = &textures.irradianceCube.descriptor;
+
+        writeDescriptorSets[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writeDescriptorSets[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        writeDescriptorSets[3].descriptorCount = 1;
+        writeDescriptorSets[3].dstSet = descriptorSets[i].scene;
+        writeDescriptorSets[3].dstBinding = 3;
+        writeDescriptorSets[3].pImageInfo = &textures.prefilteredCube.descriptor;
+
+        writeDescriptorSets[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writeDescriptorSets[4].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        writeDescriptorSets[4].descriptorCount = 1;
+        writeDescriptorSets[4].dstSet = descriptorSets[i].scene;
+        writeDescriptorSets[4].dstBinding = 4;
+        writeDescriptorSets[4].pImageInfo = &textures.lutBrdf.descriptor;*/
+
+        vkUpdateDescriptorSets(device->logicalDevice, static_cast<uint32_t>(writeDescriptorSets.size()),
+                               writeDescriptorSets.data(), 0, NULL);
+    }
+
+
+    // Model node (matrices)
+    {
+        std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
+                {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+        };
+        VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI{};
+        descriptorSetLayoutCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        descriptorSetLayoutCI.pBindings = setLayoutBindings.data();
+        descriptorSetLayoutCI.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
+        CHECK_RESULT(
+                vkCreateDescriptorSetLayout(device->logicalDevice, &descriptorSetLayoutCI, nullptr,
+                                            &descriptorSetLayoutNode));
+
+        // Per-Node descriptor set
+        for (auto &node: model.nodes) {
+            setupNodeDescriptorSet(node);
+        }
+    }
+
+}
+
+void glTFModel::setupNodeDescriptorSet(glTFModel::Node *node) {
+    if (node->mesh) {
+        VkDescriptorSetAllocateInfo descriptorSetAllocInfo{};
+        descriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        descriptorSetAllocInfo.descriptorPool = descriptorPool;
+        descriptorSetAllocInfo.pSetLayouts = &descriptorSetLayoutNode;
+        descriptorSetAllocInfo.descriptorSetCount = 1;
+        CHECK_RESULT(
+                vkAllocateDescriptorSets(device->logicalDevice, &descriptorSetAllocInfo,
+                                         &node->mesh->uniformBuffer.descriptorSet));
+
+        VkWriteDescriptorSet writeDescriptorSet{};
+        writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        writeDescriptorSet.descriptorCount = 1;
+        writeDescriptorSet.dstSet = node->mesh->uniformBuffer.descriptorSet;
+        writeDescriptorSet.dstBinding = 0;
+        writeDescriptorSet.pBufferInfo = &node->mesh->uniformBuffer.descriptor;
+
+        vkUpdateDescriptorSets(device->logicalDevice, 1, &writeDescriptorSet, 0, nullptr);
+    }
+    for (auto &child: node->children) {
+        setupNodeDescriptorSet(child);
+    }
+}
+
+
+void glTFModel::createPipeline(VkRenderPass renderPass, std::vector<VkPipelineShaderStageCreateInfo> shaderStages) {
+
+
+    VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCI = Populate::pipelineInputAssemblyStateCreateInfo(
+            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
+
+    VkPipelineRasterizationStateCreateInfo rasterizationStateCI = Populate::pipelineRasterizationStateCreateInfo(
+            VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, 0);
+    rasterizationStateCI.lineWidth = 1.0f;
+
+    VkPipelineColorBlendAttachmentState blendAttachmentState = Populate::pipelineColorBlendAttachmentState(
+            VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+            VK_FALSE);
+
+    VkPipelineColorBlendStateCreateInfo colorBlendStateCI = Populate::pipelineColorBlendStateCreateInfo(1,
+                                                                                                        &blendAttachmentState);
+
+    VkPipelineDepthStencilStateCreateInfo depthStencilStateCI =
+            Populate::pipelineDepthStencilStateCreateInfo(VK_FALSE,
+                                                          VK_FALSE,
+                                                          VK_COMPARE_OP_LESS_OR_EQUAL);
+    depthStencilStateCI.front = depthStencilStateCI.back;
+    depthStencilStateCI.back.compareOp = VK_COMPARE_OP_ALWAYS;
+
+    VkPipelineViewportStateCreateInfo viewportStateCI{};
+    viewportStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewportStateCI.viewportCount = 1;
+    viewportStateCI.scissorCount = 1;
+
+    VkPipelineMultisampleStateCreateInfo multisampleStateCI{};
+    multisampleStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+
+
+    std::vector<VkDynamicState> dynamicStateEnables = {
+            VK_DYNAMIC_STATE_VIEWPORT,
+            VK_DYNAMIC_STATE_SCISSOR
+    };
+    VkPipelineDynamicStateCreateInfo dynamicStateCI{};
+    dynamicStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamicStateCI.pDynamicStates = dynamicStateEnables.data();
+    dynamicStateCI.dynamicStateCount = static_cast<uint32_t>(dynamicStateEnables.size());
+
+
+    // Pipeline layout
+    const std::vector<VkDescriptorSetLayout> setLayouts = {
+            descriptorSetLayout, descriptorSetLayoutNode
+    };
+    VkPipelineLayoutCreateInfo pipelineLayoutCI{};
+    pipelineLayoutCI.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutCI.setLayoutCount = static_cast<uint32_t>(setLayouts.size());
+    pipelineLayoutCI.pSetLayouts = setLayouts.data();
+    pipelineLayoutCI.pushConstantRangeCount = 0;
+    pipelineLayoutCI.pPushConstantRanges = nullptr;
+    CHECK_RESULT(vkCreatePipelineLayout(device->logicalDevice, &pipelineLayoutCI, nullptr, &pipelineLayout));
+
+
+    // Vertex bindings an attributes
+    VkVertexInputBindingDescription vertexInputBinding = {0, sizeof(glTFModel::Model::Vertex),
+                                                          VK_VERTEX_INPUT_RATE_VERTEX};
+    std::vector<VkVertexInputAttributeDescription> vertexInputAttributes = {
+            {0, 0, VK_FORMAT_R32G32B32_SFLOAT,    0},
+            {1, 0, VK_FORMAT_R32G32B32_SFLOAT,    sizeof(float) * 3},
+            {2, 0, VK_FORMAT_R32G32_SFLOAT,       sizeof(float) * 6},
+            {3, 0, VK_FORMAT_R32G32_SFLOAT,       sizeof(float) * 8},
+            {4, 0, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(float) * 10},
+            {5, 0, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(float) * 14}
+    };
+    VkPipelineVertexInputStateCreateInfo vertexInputStateCI{};
+    vertexInputStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInputStateCI.vertexBindingDescriptionCount = 1;
+    vertexInputStateCI.pVertexBindingDescriptions = &vertexInputBinding;
+    vertexInputStateCI.vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexInputAttributes.size());
+    vertexInputStateCI.pVertexAttributeDescriptions = vertexInputAttributes.data();
+
+    // Pipelines
+    VkGraphicsPipelineCreateInfo pipelineCI{};
+    pipelineCI.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipelineCI.layout = pipelineLayout;
+    pipelineCI.renderPass = renderPass;
+    pipelineCI.pInputAssemblyState = &inputAssemblyStateCI;
+    pipelineCI.pVertexInputState = &vertexInputStateCI;
+    pipelineCI.pRasterizationState = &rasterizationStateCI;
+    pipelineCI.pColorBlendState = &colorBlendStateCI;
+    pipelineCI.pMultisampleState = &multisampleStateCI;
+    pipelineCI.pViewportState = &viewportStateCI;
+    pipelineCI.pDepthStencilState = &depthStencilStateCI;
+    pipelineCI.pDynamicState = &dynamicStateCI;
+    pipelineCI.stageCount = static_cast<uint32_t>(shaderStages.size());
+    pipelineCI.pStages = shaderStages.data();
+    multisampleStateCI.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+
+    CHECK_RESULT(vkCreateGraphicsPipelines(device->logicalDevice, nullptr, 1, &pipelineCI, nullptr, &pipeline));
+
+    for (auto shaderStage: shaderStages) {
+        vkDestroyShaderModule(device->logicalDevice, shaderStage.module, nullptr);
+    }
+
+
 }

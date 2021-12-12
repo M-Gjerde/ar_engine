@@ -18,6 +18,8 @@
 class glTFModel {
 public:
 
+    VulkanDevice* device;
+
     glTFModel();
 
     struct Primitive {
@@ -131,7 +133,36 @@ public:
         Node* nodeFromIndex(uint32_t index);
     } model;
 
+    struct UniformBufferSet {
+        Buffer model;
+        Buffer shaderValues;
+    };
 
+    std::vector<UniformBufferSet> uniformBuffers{};
+    std::vector<VkDescriptorSet> descriptors;
+    VkDescriptorSetLayout descriptorSetLayout{};
+    VkDescriptorSetLayout descriptorSetLayoutNode{};
+
+    VkDescriptorPool descriptorPool{};
+    VkPipeline pipeline{};
+    VkPipelineLayout pipelineLayout{};
+
+    void prepareUniformBuffers(uint32_t count);
+
+
+    void updateUniformBufferData(uint32_t index, void* params, void* matrix);
+
+    void createDescriptorSetLayout();
+
+    void createDescriptors(uint32_t count);
+
+    void setupNodeDescriptorSet(Node *node);
+
+    void createPipeline(VkRenderPass renderPass, std::vector<VkPipelineShaderStageCreateInfo> shaderStages);
+
+
+    void draw(VkCommandBuffer commandBuffer, uint32_t i);
+    void drawNode(Node *node, VkCommandBuffer commandBuffer);
 };
 
 

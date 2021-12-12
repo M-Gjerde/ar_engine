@@ -112,7 +112,7 @@ void MyModel::createDescriptors(uint32_t count) {
     descriptorPoolCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     descriptorPoolCI.poolSizeCount = 1;
     descriptorPoolCI.pPoolSizes = poolSizes.data();
-    descriptorPoolCI.maxSets = 5;
+    descriptorPoolCI.maxSets = count;
     CHECK_RESULT(vkCreateDescriptorPool(device->logicalDevice, &descriptorPoolCI, nullptr, &descriptorPool));
 
 
@@ -277,15 +277,15 @@ void MyModel::prepareUniformBuffers(uint32_t count) {
 
 }
 
-void MyModel::updateUniformBufferData(uint32_t index, FragShaderParams params, SimpleUBOMatrix matrix){
+void MyModel::updateUniformBufferData(uint32_t index, void* params, void* matrix){
     UniformBufferSet currentUB = uniformBuffers[index];
 
     currentUB.object.map();
-    memcpy( currentUB.object.mapped, &matrix, sizeof(SimpleUBOMatrix));
+    memcpy( currentUB.object.mapped, matrix, sizeof(SimpleUBOMatrix));
     currentUB.object.unmap();
 
     currentUB.lightParams.map();
-    memcpy( currentUB.lightParams.mapped, &params, sizeof(FragShaderParams));
+    memcpy( currentUB.lightParams.mapped, params, sizeof(FragShaderParams));
     currentUB.lightParams.unmap();
 
 

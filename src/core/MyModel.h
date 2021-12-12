@@ -85,7 +85,7 @@ public:
 
     void draw(VkCommandBuffer commandBuffer, uint32_t i);
 
-    void updateUniformBufferData(uint32_t index, FragShaderParams params, SimpleUBOMatrix matrix);
+    void updateUniformBufferData(uint32_t index, void* params, void* matrix);
 
     void prepareUniformBuffers(uint32_t count);
 

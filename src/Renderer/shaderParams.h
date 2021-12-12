@@ -21,7 +21,7 @@ struct ShaderValuesParams{
     glm::vec4 lightDir{};
     float exposure = 10.5f;
     float gamma = 2.2f;
-    float prefilteredCubeMipLevels{};
+    float prefilteredCubeMipLevels = 10.0f;
     float scaleIBLAmbient = 1.0f;
     float debugViewInputs = 0;
     float debugViewEquation = 0;

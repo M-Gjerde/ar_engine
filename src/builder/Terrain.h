@@ -35,7 +35,7 @@ public:
 
     /** @brief public string to determine if this script should be attaced to an object,
      * create a new object or do nothing. Types: Render | None | Name of object in object folder **/
-    std::string type = "Render";
+    std::string type = "Terrain";
 
 
     UISettings::intSlider xSizeSlider {};
@@ -44,7 +44,7 @@ public:
     UISettings::intSlider sinMod {};
 
     void prepareObject(prepareVars vars) override;
-    void updateUniformBufferData(uint32_t index, FragShaderParams params, SimpleUBOMatrix matrix) override;
+    void updateUniformBufferData(uint32_t index, void *params, void *matrix) override;
     void draw(VkCommandBuffer commandBuffer, uint32_t i) override;
 };
 

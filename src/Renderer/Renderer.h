@@ -78,11 +78,11 @@ protected:
         glm::vec3 rotation = glm::vec3(75.0f, 40.0f, 0.0f);
     } lightSource;
 
-    UBOMatrices shaderValuesScene{};
-    UBOMatrices shaderValuesSkybox{};
-    SimpleUBOMatrix shaderValuesObject{};
-    FragShaderParams fragShaderParams{};
-    ShaderValuesParams shaderValuesParams{};
+    UBOMatrices *shaderValuesScene{};
+    UBOMatrices *shaderValuesSkybox{};
+    SimpleUBOMatrix *shaderValuesObject{};
+    FragShaderParams *fragShaderParams{};
+    ShaderValuesParams *shaderValuesParams{};
 
     struct Models {
         vkglTF::Model scene;
@@ -90,7 +90,6 @@ protected:
     } models;
 
     struct UniformBufferSet {
-        Buffer object;
         Buffer scene;
         Buffer params;
         Buffer skybox;
@@ -99,17 +98,14 @@ protected:
     std::vector<UniformBufferSet> uniformBuffers{};
 
     VkPipelineLayout pipelineLayout{};
-    VkPipelineLayout pipelineLayout2{};
 
     struct Pipelines {
         VkPipeline skybox;
         VkPipeline pbr;
         VkPipeline pbrAlphaBlend;
-        VkPipeline object;
     } pipelines{};
 
     struct DescriptorSetLayouts {
-        VkDescriptorSetLayout object;
         VkDescriptorSetLayout scene;
         VkDescriptorSetLayout material;
         VkDescriptorSetLayout node;
@@ -118,7 +114,6 @@ protected:
     struct DescriptorSets {
         VkDescriptorSet scene;
         VkDescriptorSet skybox;
-        VkDescriptorSet object;
         VkDescriptorSet lightParams;
 
     };

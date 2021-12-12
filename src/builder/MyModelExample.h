@@ -41,11 +41,11 @@ public:
 
     /** @brief public string to determine if this script should be attaced to an object,
     * create a new object or do nothing. Types: Generator | None | Name of object in object folder **/
-    std::string type = "PBR";
+    std::string type = "Render";
 
     void prepareObject(prepareVars vars) override;
 
-    void updateUniformBufferData(uint32_t index, FragShaderParams params, SimpleUBOMatrix matrix) override;
+    void updateUniformBufferData(uint32_t index, void *params, void *matrix) override;
 
     void draw(VkCommandBuffer commandBuffer, uint32_t i) override;
 };

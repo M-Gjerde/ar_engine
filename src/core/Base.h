@@ -18,6 +18,7 @@ public:
     struct prepareVars {
         uint32_t UBCount = 0;
         std::vector<VkPipelineShaderStageCreateInfo> *shaders{};
+        std::vector<VkPipelineShaderStageCreateInfo> *shaders2{};
         VkRenderPass *renderPass{};
     };
     virtual ~Base() = default;
@@ -29,7 +30,7 @@ public:
 
     /**@brief Render Commands **/
     virtual void prepareObject(prepareVars vars){};
-    virtual void updateUniformBufferData(uint32_t index, FragShaderParams params, SimpleUBOMatrix matrix){};
+    virtual void updateUniformBufferData(uint32_t index, void *params, void *matrix){};
     virtual void draw(VkCommandBuffer commandBuffer, uint32_t i){};
     std::string type = "None";
 };

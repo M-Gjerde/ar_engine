@@ -6,11 +6,12 @@
 
 void MyModelExample::setup(Base::SetupVars vars) {
     printf("MyModelExample setup\n");
-    //this->device = vars.device;
+    this->device = vars.device;
 
     std::string fileName;
     //loadFromFile(fileName);
-    model.loadFromFile(Utils::getAssetsPath() + "models/Box/glTF-Embedded/Box.gltf", vars.device, vars.device->transferQueue, 1.0f);
+    model.loadFromFile(Utils::getAssetsPath() + "models/DamagedHelmet/glTF-Embedded/DamagedHelmet.gltf", vars.device,
+                       vars.device->transferQueue, 1.0f);
 
 }
 
@@ -23,21 +24,21 @@ void MyModelExample::onUIUpdate(UISettings uiSettings) {
 }
 
 void MyModelExample::prepareObject(prepareVars vars) {
-/*    prepareUniformBuffers(vars.UBCount);
+    prepareUniformBuffers(vars.UBCount);
     createDescriptorSetLayout();
     createDescriptors(vars.UBCount);
-    createPipeline(*vars.renderPass, *vars.shaders);*/
+    createPipeline(*vars.renderPass, *vars.shaders);
+
 }
 
-void MyModelExample::updateUniformBufferData(uint32_t index, FragShaderParams params, SimpleUBOMatrix matrix) {
-/*
-    MyModel::updateUniformBufferData(index, params, matrix);
-*/
+void MyModelExample::updateUniformBufferData(uint32_t index, void *params, void *matrix) {
+    glTFModel::updateUniformBufferData(index, params, matrix);
+
 }
 
 void MyModelExample::draw(VkCommandBuffer commandBuffer, uint32_t i) {
     printf("Draw cmd %s\n", GetFactoryName().c_str());
-    model.draw(commandBuffer);
+    glTFModel::draw(commandBuffer, i);
 
 }
 

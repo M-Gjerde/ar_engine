@@ -55,18 +55,25 @@ void Renderer::prepareRenderer() {
     setupDescriptors();
     preparePipelines();
 
-    /// - TERRAIN Prepare
+    // TODO Smarter shader passing to scripts
+    /// - MYExampleObject Prepare
     std::vector<VkPipelineShaderStageCreateInfo> shaders;
-    shaders.emplace_back(loadShader("triangle.vert.spv", VK_SHADER_STAGE_VERTEX_BIT));
-    shaders.emplace_back(loadShader("triangle.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT));
+    shaders.emplace_back(loadShader("gltfLoading/mesh.vert.spv", VK_SHADER_STAGE_VERTEX_BIT));
+    shaders.emplace_back(loadShader("gltfLoading/mesh.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT));
+
+    /// - TERRAIN Prepare
+    std::vector<VkPipelineShaderStageCreateInfo> shaders2;
+    shaders2.emplace_back(loadShader("triangle.vert.spv", VK_SHADER_STAGE_VERTEX_BIT));
+    shaders2.emplace_back(loadShader("triangle.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT));
 
     for (auto &script: scripts) {
         Base::prepareVars vars;
         vars.shaders = &shaders;
+        vars.shaders2 = &shaders2;
         vars.renderPass = &renderPass;
         vars.UBCount = swapchain.imageCount;
 
-        if (script->getType() == "Render"){
+        if (script->getType() != "None"){
             script->prepareObject(vars);
         }
 
@@ -135,9 +142,9 @@ void Renderer::draw() {
     //currentUB.lightParams.map();
     //memcpy(currentUB.lightParams.mapped, &fragShaderParams, sizeof(FragShaderParams));
     //memcpy(currentUB.object.mapped, &shaderValuesObject, sizeof(SimpleUBOMatrix));
-    memcpy(currentUB.scene.mapped, &shaderValuesScene, sizeof(UBOMatrices));
-    memcpy(currentUB.params.mapped, &shaderValuesParams, sizeof(ShaderValuesParams));
-    memcpy(currentUB.skybox.mapped, &shaderValuesSkybox, sizeof(UBOMatrices));
+    memcpy(currentUB.scene.mapped, shaderValuesScene, sizeof(UBOMatrices));
+    memcpy(currentUB.params.mapped, shaderValuesParams, sizeof(ShaderValuesParams));
+    memcpy(currentUB.skybox.mapped, shaderValuesSkybox, sizeof(UBOMatrices));
     //currentUB.lightParams.unmap();
     //currentUB.object.unmap();
     currentUB.skybox.unmap();
@@ -148,8 +155,12 @@ void Renderer::draw() {
 
 
     for (auto &script: scripts) {
-        if (script->getType() == "Render"){
+        if (script->getType() == "Terrain"){
             script->updateUniformBufferData(currentBuffer, fragShaderParams, shaderValuesObject);
+        }
+
+        if (script->getType() == "Render"){
+            script->updateUniformBufferData(currentBuffer, shaderValuesParams, shaderValuesObject);
         }
     }
 
@@ -228,9 +239,13 @@ void Renderer::buildCommandBuffers() {
 
 
         for (auto &script: scripts) {
-            printf("Render: %s\n", script->getType().c_str());
-            if (script->getType() == "Render")
+            if (script->getType() == "Render"){
                 script->draw(drawCmdBuffers[i], i);
+            }
+
+            if (script->getType() == "Terrain"){
+                script->draw(drawCmdBuffers[i], i);
+            }
         }
 
         vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
@@ -278,15 +293,15 @@ void Renderer::loadAssets() {
 
 void Renderer::updateUniformBuffers() {
     // Scene
-    shaderValuesScene.projection = camera.matrices.perspective;
-    shaderValuesScene.view = camera.matrices.view;
+    shaderValuesScene->projection = camera.matrices.perspective;
+    shaderValuesScene->view = camera.matrices.view;
 
-    shaderValuesObject.projection = camera.matrices.perspective;
-    shaderValuesObject.view = camera.matrices.view;
+    shaderValuesObject->projection = camera.matrices.perspective;
+    shaderValuesObject->view = camera.matrices.view;
 
 
-    fragShaderParams.objectColor = glm::vec4(0.25f, 0.25f, 0.25f, 1.0f);
-    fragShaderParams.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    fragShaderParams->objectColor = glm::vec4(0.25f, 0.25f, 0.25f, 1.0f);
+    fragShaderParams->lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
 
 
@@ -297,43 +312,43 @@ void Renderer::updateUniformBuffers() {
     glm::vec3 translate = -glm::vec3(models.scene.aabb[3][0], models.scene.aabb[3][1], models.scene.aabb[3][2]);
     translate += -0.5f * glm::vec3(models.scene.aabb[0][0], models.scene.aabb[1][1], models.scene.aabb[2][2]);
 
-    shaderValuesScene.model = glm::mat4(1.0f);
-    shaderValuesScene.model[0][0] = scale;
-    shaderValuesScene.model[1][1] = scale;
-    shaderValuesScene.model[2][2] = scale;
-    shaderValuesScene.model = glm::translate(shaderValuesScene.model, translate);
-    shaderValuesScene.model = glm::mat4(1.0f);
+    shaderValuesScene->model = glm::mat4(1.0f);
+    shaderValuesScene->model[0][0] = scale;
+    shaderValuesScene->model[1][1] = scale;
+    shaderValuesScene->model[2][2] = scale;
+    shaderValuesScene->model = glm::translate(shaderValuesScene->model, translate);
+    shaderValuesScene->model = glm::mat4(1.0f);
 
     translate = glm::vec3(0.0f, 1.0f, -3.0f);
-    shaderValuesScene.model = glm::translate(shaderValuesScene.model, translate);
+    shaderValuesScene->model = glm::translate(shaderValuesScene->model, translate);
 
     translate = glm::vec3(0.0f, 0.0f, -5.0f);
-    shaderValuesObject.model = glm::mat4(1.0f);
+    shaderValuesObject->model = glm::mat4(1.0f);
 
-    shaderValuesScene.camPos = glm::vec3(
+    shaderValuesScene->camPos = glm::vec3(
             -camera.position.z * sin(glm::radians(camera.rotation.y)) * cos(glm::radians(camera.rotation.x)),
             -camera.position.z * sin(glm::radians(camera.rotation.x)),
             camera.position.z * cos(glm::radians(camera.rotation.y)) * cos(glm::radians(camera.rotation.x))
     );
 
-    shaderValuesParams.lightDir = glm::vec4(
+    shaderValuesParams->lightDir = glm::vec4(
             sin(glm::radians(lightSource.rotation.x)) * cos(glm::radians(lightSource.rotation.y)),
             sin(glm::radians(lightSource.rotation.y)),
             cos(glm::radians(lightSource.rotation.x)) * cos(glm::radians(lightSource.rotation.y)),
             0.0f);
 
-    shaderValuesParams.lightDir= glm::vec4(glm::vec3(9, 5, -5), 1.0f); //glm::vec4(glm::vec3(0.0f, 5.0f, -3.0f), 1.0f);camera.viewPos;
-    shaderValuesScene.camPos = camera.viewPos;
+    shaderValuesParams->lightDir= glm::vec4(glm::vec3(9, 5, -5), 1.0f); //glm::vec4(glm::vec3(0.0f, 5.0f, -3.0f), 1.0f);camera.viewPos;
+    shaderValuesScene->camPos = camera.viewPos;
 
-    shaderValuesScene.model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 1.0f, -3.0f));
+    shaderValuesScene->model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 1.0f, -3.0f));
 
-    fragShaderParams.lightPos = camera.viewPos; //glm::vec4(glm::vec3(50, 5, 50), 1.0f); //glm::vec4(glm::vec3(0.0f, 5.0f, -3.0f), 1.0f);
-    fragShaderParams.viewPos =  camera.viewPos; //glm::vec4(camera.viewPos, 1.0f);
+    fragShaderParams->lightPos = camera.viewPos; //glm::vec4(glm::vec3(50, 5, 50), 1.0f); //glm::vec4(glm::vec3(0.0f, 5.0f, -3.0f), 1.0f);
+    fragShaderParams->viewPos =  camera.viewPos; //glm::vec4(camera.viewPos, 1.0f);
 
     // Skybox
-    shaderValuesSkybox.projection = camera.matrices.perspective;
-    shaderValuesSkybox.view = camera.matrices.view;
-    shaderValuesSkybox.model = glm::mat4(glm::mat3(camera.matrices.view));
+    shaderValuesSkybox->projection = camera.matrices.perspective;
+    shaderValuesSkybox->view = camera.matrices.view;
+    shaderValuesSkybox->model = glm::mat4(glm::mat3(camera.matrices.view));
 }
 
 void Renderer::renderNode(vkglTF::Node *node, uint32_t cbIndex, vkglTF::Material::AlphaMode alphaMode) {
@@ -478,12 +493,6 @@ void Renderer::preparePipelines() {
     pipelineLayoutCI.pPushConstantRanges = &pushConstantRange;
     CHECK_RESULT(vkCreatePipelineLayout(device, &pipelineLayoutCI, nullptr, &pipelineLayout));
 
-    pipelineLayoutCI.pushConstantRangeCount = 0;
-    pipelineLayoutCI.pPushConstantRanges = nullptr;
-    pipelineLayoutCI.setLayoutCount = 1;
-    pipelineLayoutCI.pSetLayouts = &descriptorSetLayouts.object;
-
-    CHECK_RESULT(vkCreatePipelineLayout(device, &pipelineLayoutCI, nullptr, &pipelineLayout2));
 
     // Vertex bindings an attributes
     VkVertexInputBindingDescription vertexInputBinding = {0, sizeof(vkglTF::Model::Vertex),
@@ -574,28 +583,25 @@ void Renderer::prepareUniformBuffers() {
 
         vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                   &uniformBuffer.scene, sizeof(shaderValuesScene));
+                                   &uniformBuffer.scene, sizeof(UBOMatrices));
 
         vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                   &uniformBuffer.lightParams, sizeof(fragShaderParams));
-
-        vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                   &uniformBuffer.object, sizeof(shaderValuesObject));
-
-        vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                   &uniformBuffer.skybox, sizeof(shaderValuesSkybox));
+                                   &uniformBuffer.skybox, sizeof(UBOMatrices));
 
 
         vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                   &uniformBuffer.params, sizeof(shaderValuesParams));
+                                   &uniformBuffer.params, sizeof(ShaderValuesParams));
 
 
     }
-
+    // TODO REMEMBER TO CLEANUP
+    shaderValuesParams = new ShaderValuesParams();
+    shaderValuesScene = new UBOMatrices();
+    shaderValuesObject = new SimpleUBOMatrix();
+    shaderValuesSkybox = new UBOMatrices();
+    fragShaderParams = new FragShaderParams();
 
     updateUniformBuffers();
 }
@@ -642,38 +648,6 @@ void Renderer::setupDescriptors() {
     */
 
     // My cube
-    std::vector<VkDescriptorSetLayoutBinding> bindings = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT,
-                                                                  nullptr},
-                                                          {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT,
-                                                                  nullptr},};
-    VkDescriptorSetLayoutCreateInfo layoutCreateInfo = Populate::descriptorSetLayoutCreateInfo(bindings.data(),
-                                                                                               bindings.size());
-    CHECK_RESULT(vkCreateDescriptorSetLayout(device, &layoutCreateInfo, nullptr, &descriptorSetLayouts.object));
-
-    for (auto i = 0; i < uniformBuffers.size(); i++) {
-        VkDescriptorSetAllocateInfo descriptorSetAllocInfo = Populate::descriptorSetAllocateInfo(descriptorPool,
-                                                                                                 &descriptorSetLayouts.object,
-                                                                                                 1);
-
-        CHECK_RESULT(vkAllocateDescriptorSets(device, &descriptorSetAllocInfo, &descriptorSets[i].object));
-
-        std::vector<VkWriteDescriptorSet> writeDescriptorSet = {{Populate::writeDescriptorSet(descriptorSets[i].object,
-                                                                                              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                                                                              0,
-                                                                                              &uniformBuffers[i].object.descriptorBufferInfo,
-                                                                                              1)},
-                                                                {
-                                                                 Populate::writeDescriptorSet(descriptorSets[i].object,
-                                                                                              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                                                                              1,
-                                                                                              &uniformBuffers[i].lightParams.descriptorBufferInfo,
-                                                                                              1)
-                                                                }
-        };
-
-        vkUpdateDescriptorSets(device, 2, writeDescriptorSet.data(), 0,
-                               nullptr);
-    }
 
 
 
@@ -1725,7 +1699,7 @@ void Renderer::generateCubemaps() {
                 break;
             case PREFILTEREDENV:
                 textures.prefilteredCube = cubemap;
-                shaderValuesParams.prefilteredCubeMipLevels = static_cast<float>(numMips);
+                //shaderValuesParams->prefilteredCubeMipLevels = static_cast<float>(numMips);
                 break;
         };
 

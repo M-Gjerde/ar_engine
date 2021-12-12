@@ -148,10 +148,10 @@ void Terrain::prepareObject(prepareVars vars) {
     prepareUniformBuffers(vars.UBCount);
     createDescriptorSetLayout();
     createDescriptors(vars.UBCount);
-    createPipeline(*vars.renderPass, *vars.shaders);
+    createPipeline(*vars.renderPass, *vars.shaders2);
 }
 
-void Terrain::updateUniformBufferData(uint32_t index, FragShaderParams params, SimpleUBOMatrix matrix) {
+void Terrain::updateUniformBufferData(uint32_t index, void *params, void *matrix) {
     MyModel::updateUniformBufferData(index, params, matrix);
 }
 
