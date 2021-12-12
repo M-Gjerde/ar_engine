@@ -18,15 +18,17 @@
 class glTFModel {
 public:
 
+    glTFModel();
 
     struct Primitive {
-        uint32_t firstIndex;
-        uint32_t indexCount;
-        uint32_t vertexCount;
-        bool hasIndices;
+        uint32_t firstIndex{};
+        uint32_t indexCount{};
+        uint32_t vertexCount{};
+        bool hasIndices{};
         Primitive(uint32_t firstIndex, uint32_t indexCount, uint32_t vertexCount);
         void setBoundingBox(glm::vec3 min, glm::vec3 max);
     };
+
 
 
     struct Mesh {
@@ -38,7 +40,7 @@ public:
             VkDescriptorBufferInfo descriptor;
             VkDescriptorSet descriptorSet;
             void *mapped;
-        } uniformBuffer;
+        } uniformBuffer{};
         struct UniformBlock {
             glm::mat4 matrix;
             glm::mat4 jointMatrix[MAX_NUM_JOINTS]{};
@@ -66,10 +68,21 @@ public:
         ~Node();
     };
 
+    struct Skin {
+        std::string name;
+        Node *skeletonRoot = nullptr;
+        std::vector<glm::mat4> inverseBindMatrices;
+        std::vector<Node*> joints;
+    };
+
+
+
 
     struct Model {
 
         VulkanDevice *device;
+        std::vector<Skin*> skins;
+        std::vector<std::string> extensions;
 
         struct Vertex {
             glm::vec3 pos;
@@ -108,7 +121,7 @@ public:
         void loadTextureSamplers(tinygltf::Model& gltfModel);
         void loadMaterials(tinygltf::Model& gltfModel);
         void loadAnimations(tinygltf::Model& gltfModel);
-        void loadFromFile(std::string filename, VulkanDevice* device, VkQueue transferQueue, float scale = 1.0f);
+        void loadFromFile(std::string filename, VulkanDevice *device, VkQueue transferQueue, float scale);
         void drawNode(Node* node, VkCommandBuffer commandBuffer);
         void draw(VkCommandBuffer commandBuffer);
         void calculateBoundingBox(Node* node, Node* parent);
@@ -116,7 +129,7 @@ public:
         void updateAnimation(uint32_t index, float time);
         Node* findNode(Node* parent, uint32_t index);
         Node* nodeFromIndex(uint32_t index);
-    };
+    } model;
 
 
 };

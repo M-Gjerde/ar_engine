@@ -368,23 +368,13 @@ void VulkanRenderer::createSynchronizationPrimitives() {
     }
 }
 
-std::string VulkanRenderer::getShadersPath() {
-    return "../shaders/";
-}
 
-std::string VulkanRenderer::getAssetsPath() {
-    return "../Assets/";
-}
-
-std::string VulkanRenderer::getScriptsPath() {
-    return "../src/builder/";
-}
 
 VkPipelineShaderStageCreateInfo VulkanRenderer::loadShader(const std::string& fileName, VkShaderStageFlagBits stage) {
     VkPipelineShaderStageCreateInfo shaderStage = {};
     shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     shaderStage.stage = stage;
-    shaderStage.module = Utils::loadShader( (getShadersPath() + fileName).c_str(), device);
+    shaderStage.module = Utils::loadShader( (Utils::getShadersPath() + fileName).c_str(), device);
     shaderStage.pName = "main";
     assert(shaderStage.module != VK_NULL_HANDLE);
     shaderModules.push_back(shaderStage.module);
@@ -418,7 +408,7 @@ void VulkanRenderer::prepare() {
             loadShader("imgui/ui.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
             loadShader("imgui/ui.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT),
     };
-    UIOverlay->initResources(renderPass, queue, getShadersPath());
+    UIOverlay->initResources(renderPass, queue, Utils::getShadersPath());
 
 }
 

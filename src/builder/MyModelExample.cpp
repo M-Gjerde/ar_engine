@@ -10,6 +10,7 @@ void MyModelExample::setup(Base::SetupVars vars) {
 
     std::string fileName;
     //loadFromFile(fileName);
+    model.loadFromFile(Utils::getAssetsPath() + "models/Box/glTF-Embedded/Box.gltf", vars.device, vars.device->transferQueue, 1.0f);
 
 }
 
@@ -35,7 +36,11 @@ void MyModelExample::updateUniformBufferData(uint32_t index, FragShaderParams pa
 }
 
 void MyModelExample::draw(VkCommandBuffer commandBuffer, uint32_t i) {
-/*
-    MyModel::draw(commandBuffer, i);
-*/
+    printf("Draw cmd %s\n", GetFactoryName().c_str());
+    model.draw(commandBuffer);
+
+}
+
+std::string MyModelExample::getType() {
+    return type;
 }

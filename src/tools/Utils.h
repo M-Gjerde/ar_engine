@@ -15,6 +15,18 @@
 
 namespace Utils {
 
+    static std::string getShadersPath() {
+        return "../shaders/";
+    }
+
+    static std::string getAssetsPath() {
+        return "../Assets/";
+    }
+
+    static std::string getScriptsPath() {
+        return "../src/builder/";
+    }
+
     inline VkFormat
     findSupportedFormat(VkPhysicalDevice physicalDevice, const std::vector<VkFormat> &candidates, VkImageTiling tiling,
                         VkFormatFeatureFlags features) {

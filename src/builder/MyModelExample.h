@@ -9,9 +9,10 @@
 #include <ar_engine/src/core/Base.h>
 #include <memory>
 #include <ar_engine/src/core/ScriptBuilder.h>
-#include <ar_engine/src/core/VulkanglTFModel.h>
+#include <ar_engine/src/core/glTFModel.h>
 
-class MyModelExample : public Base, public RegisteredInFactory<MyModelExample> {
+
+class MyModelExample : public Base, public RegisteredInFactory<MyModelExample>, glTFModel {
 
 public:
     /** @brief Constructor. Just run s_bRegistered variable such that the class is
@@ -35,9 +36,12 @@ public:
     /** @brief update function called once per frame **/
     void onUIUpdate(UISettings uiSettings) override;
 
+    /** @brief Get the type of script. This will determine how it interacts with a gameobject **/
+    std::string getType() override;
+
     /** @brief public string to determine if this script should be attaced to an object,
     * create a new object or do nothing. Types: Generator | None | Name of object in object folder **/
-    std::string type = "None";
+    std::string type = "PBR";
 
     void prepareObject(prepareVars vars) override;
 

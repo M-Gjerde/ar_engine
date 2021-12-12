@@ -14,13 +14,13 @@ void Renderer::prepare() {
 
 void Renderer::createSkybox() {
 
-    textures.empty.loadFromFile(getAssetsPath() + "textures/empty.ktx", VK_FORMAT_R8G8B8A8_UNORM, vulkanDevice, queue);
-    std::string environmentFile = getAssetsPath() + "environments/gcanyon_cube.ktx";
-    //std::string environmentFile = getAssetsPath() + "environments/gcanyon_cube.ktx";
+    textures.empty.loadFromFile(Utils::getAssetsPath() + "textures/empty.ktx", VK_FORMAT_R8G8B8A8_UNORM, vulkanDevice, queue);
+    std::string environmentFile = Utils::getAssetsPath() + "environments/gcanyon_cube.ktx";
+    //std::string environmentFile = Utils::getAssetsPath() + "environments/gcanyon_cube.ktx";
     //std::string environmentFile = getAssetsPath() + "environments/cubemap_yokohama_rgba.ktx";
     //std::string environmentFile = getAssetsPath() + "environments/cubemap_space.ktx";
     //std::string environmentFile = getAssetsPath() + "environments/cubemap_space.ktx";
-    models.skybox.loadFromFile(getAssetsPath() + "models/Box/glTF-Embedded/Box.gltf", vulkanDevice, queue);
+    models.skybox.loadFromFile(Utils::getAssetsPath() + "models/Box/glTF-Embedded/Box.gltf", vulkanDevice, queue);
     textures.environmentCube.loadFromFile(environmentFile, vulkanDevice, queue, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
@@ -78,7 +78,7 @@ void Renderer::generateScriptClasses() {
 
     std::vector<std::string> classNames;
 
-    std::string path = getScriptsPath();
+    std::string path = Utils::getScriptsPath();
     for (const auto &entry: std::filesystem::directory_iterator(path)) {
         std::string file = entry.path().generic_string();
 
@@ -228,6 +228,7 @@ void Renderer::buildCommandBuffers() {
 
 
         for (auto &script: scripts) {
+            printf("Render: %s\n", script->getType().c_str());
             if (script->getType() == "Render")
                 script->draw(drawCmdBuffers[i], i);
         }
@@ -269,7 +270,7 @@ void Renderer::buildCommandBuffers() {
 }
 
 void Renderer::loadAssets() {
-    std::string sceneFile = getAssetsPath() + "models/DamagedHelmet/glTF-Embedded/DamagedHelmet.gltf";
+    std::string sceneFile = Utils::getAssetsPath() + "models/DamagedHelmet/glTF-Embedded/DamagedHelmet.gltf";
     std::cout << "Loading scene from " << sceneFile << std::endl;
     models.scene.loadFromFile(sceneFile, vulkanDevice, queue);
 
