@@ -145,7 +145,6 @@ void glTFModel::Model::loadSkins(tinygltf::Model &gltfModel) {
 }
 
 void glTFModel::drawNode(Node *node, VkCommandBuffer commandBuffer) {
-    printf("Drawing node\n");
     if (node->mesh) {
         for (Primitive *primitive: node->mesh->primitives) {
             vkCmdDrawIndexed(commandBuffer, primitive->indexCount, 1, primitive->firstIndex, 0, 0);

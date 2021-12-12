@@ -37,7 +37,6 @@ void MyModelExample::updateUniformBufferData(uint32_t index, void *params, void 
 }
 
 void MyModelExample::draw(VkCommandBuffer commandBuffer, uint32_t i) {
-    printf("Draw cmd %s\n", GetFactoryName().c_str());
     glTFModel::draw(commandBuffer, i);
 
 }
