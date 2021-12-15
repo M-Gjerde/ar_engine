@@ -15,10 +15,11 @@ void Renderer::prepare() {
 void Renderer::createSkybox() {
 
     textures.empty.loadFromFile(Utils::getAssetsPath() + "textures/empty.ktx", VK_FORMAT_R8G8B8A8_UNORM, vulkanDevice, queue);
-    std::string environmentFile = Utils::getAssetsPath() + "environments/gcanyon_cube.ktx";
+    //std::string environmentFile = Utils::getAssetsPath() + "environments/gcanyon_cube.ktx";
     //std::string environmentFile = Utils::getAssetsPath() + "environments/gcanyon_cube.ktx";
     //std::string environmentFile = getAssetsPath() + "environments/cubemap_yokohama_rgba.ktx";
-    //std::string environmentFile = getAssetsPath() + "environments/cubemap_space.ktx";
+    //std::string environmentFile = Utils::getAssetsPath() + "environments/cubemap_space.ktx";
+    std::string environmentFile = Utils::getAssetsPath() + "environments/cubemap_vulkan.ktx";
     //std::string environmentFile = getAssetsPath() + "environments/cubemap_space.ktx";
     models.skybox.loadFromFile(Utils::getAssetsPath() + "models/Box/glTF-Embedded/Box.gltf", vulkanDevice, queue);
     textures.environmentCube.loadFromFile(environmentFile, vulkanDevice, queue, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
@@ -126,13 +127,8 @@ void Renderer::generateScriptClasses() {
 
 void Renderer::draw() {
     VulkanRenderer::prepareFrame();
-
     buildCommandBuffers();
-
     updateUniformBuffers();
-
-
-
     UniformBufferSet currentUB = uniformBuffers[currentBuffer];
 
     currentUB.scene.map();
@@ -151,20 +147,18 @@ void Renderer::draw() {
     currentUB.scene.unmap();
     currentUB.params.unmap();
 
-
-
-
     for (auto &script: scripts) {
         if (script->getType() == "Terrain"){
             script->updateUniformBufferData(currentBuffer, fragShaderParams, shaderValuesObject);
         }
-
+    }
+    for (auto &script: scripts) {
         if (script->getType() == "Render"){
+            shaderValuesObject->model = glm::rotate(glm::mat4(1.0f), glm::radians(150.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+            shaderValuesObject->model = glm::rotate(shaderValuesObject->model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
             script->updateUniformBufferData(currentBuffer, shaderValuesParams, shaderValuesObject);
         }
     }
-
-
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &drawCmdBuffers[currentBuffer];
 
@@ -239,15 +233,17 @@ void Renderer::buildCommandBuffers() {
 
 
         for (auto &script: scripts) {
-            if (script->getType() == "Render"){
-                script->draw(drawCmdBuffers[i], i);
-            }
-
             if (script->getType() == "Terrain"){
                 script->draw(drawCmdBuffers[i], i);
             }
         }
 
+        for (auto &script: scripts) {
+            if (script->getType() == "Render"){
+                script->draw(drawCmdBuffers[i], i);
+            }
+
+        }
         vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
                                 &descriptorSets[i].scene, 0, nullptr);
 

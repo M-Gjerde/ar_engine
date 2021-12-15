@@ -14,10 +14,10 @@ struct FragShaderParams {
     glm::vec4 lightColor;
     glm::vec4 lightPos;
     glm::vec4 viewPos;
-} ;
+};
 
 
-struct ShaderValuesParams{
+struct ShaderValuesParams {
     glm::vec4 lightDir{};
     float exposure = 10.5f;
     float gamma = 2.2f;
@@ -25,7 +25,7 @@ struct ShaderValuesParams{
     float scaleIBLAmbient = 1.0f;
     float debugViewInputs = 0;
     float debugViewEquation = 0;
-} ;
+};
 
 struct UBOMatrices {
     glm::mat4 projection;
@@ -36,8 +36,8 @@ struct UBOMatrices {
 
 struct SimpleUBOMatrix {
     glm::mat4 projection;
-    glm::mat4 model;
     glm::mat4 view;
-} ;
+    glm::mat4 model;
+};
 
 #endif //AR_ENGINE_SHADERPARAMS_H

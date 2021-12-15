@@ -172,7 +172,7 @@ void MyModel::createPipeline(VkRenderPass pT, std::vector<VkPipelineShaderStageC
     VkPipelineRasterizationStateCreateInfo rasterizationStateCI{};
     rasterizationStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterizationStateCI.polygonMode = VK_POLYGON_MODE_FILL;
-    rasterizationStateCI.cullMode = VK_CULL_MODE_NONE;
+    rasterizationStateCI.cullMode = VK_CULL_MODE_FRONT_BIT;
     rasterizationStateCI.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizationStateCI.lineWidth = 1.0f;
 
@@ -188,11 +188,11 @@ void MyModel::createPipeline(VkRenderPass pT, std::vector<VkPipelineShaderStageC
 
     VkPipelineDepthStencilStateCreateInfo depthStencilStateCI{};
     depthStencilStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depthStencilStateCI.depthTestEnable = VK_FALSE;
-    depthStencilStateCI.depthWriteEnable = VK_FALSE;
-    depthStencilStateCI.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
-    depthStencilStateCI.front = depthStencilStateCI.back;
-    depthStencilStateCI.back.compareOp = VK_COMPARE_OP_ALWAYS;
+    depthStencilStateCI.depthTestEnable = VK_TRUE;
+    depthStencilStateCI.depthWriteEnable = VK_TRUE;
+    depthStencilStateCI.depthCompareOp = VK_COMPARE_OP_LESS;
+    depthStencilStateCI.depthBoundsTestEnable = VK_FALSE;
+    depthStencilStateCI.stencilTestEnable = VK_FALSE;
 
     VkPipelineViewportStateCreateInfo viewportStateCI{};
     viewportStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -246,10 +246,7 @@ void MyModel::createPipeline(VkRenderPass pT, std::vector<VkPipelineShaderStageC
     pipelineCI.pStages = shaderStages.data();
     multisampleStateCI.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-
     pipelineCI.layout = pipelineLayout;
-    rasterizationStateCI.cullMode = VK_CULL_MODE_FRONT_BIT;
-    rasterizationStateCI.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 
     CHECK_RESULT(vkCreateGraphicsPipelines(device->logicalDevice, nullptr, 1, &pipelineCI, nullptr, &pipeline));
 

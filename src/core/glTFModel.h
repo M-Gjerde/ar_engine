@@ -43,15 +43,8 @@ public:
             VkDescriptorSet descriptorSet;
             void *mapped;
         } uniformBuffer{};
-        struct UniformBlock {
-            glm::mat4 matrix;
-            glm::mat4 jointMatrix[MAX_NUM_JOINTS]{};
-            float jointcount{ 0 };
-        } uniformBlock;
-        Mesh(VulkanDevice* device, glm::mat4 matrix);
-        ~Mesh();
-        void setBoundingBox(glm::vec3 min, glm::vec3 max);
-    };
+
+    } mesh;
 
     struct Node {
         Node *parent;
@@ -78,13 +71,12 @@ public:
     };
 
 
-
-
     struct Model {
 
         VulkanDevice *device;
         std::vector<Skin*> skins;
         std::vector<std::string> extensions;
+        std::vector<Primitive> primitives;
 
         struct Vertex {
             glm::vec3 pos;
@@ -122,13 +114,7 @@ public:
         VkFilter getVkFilterMode(int32_t filterMode);
         void loadTextureSamplers(tinygltf::Model& gltfModel);
         void loadMaterials(tinygltf::Model& gltfModel);
-        void loadAnimations(tinygltf::Model& gltfModel);
         void loadFromFile(std::string filename, VulkanDevice *device, VkQueue transferQueue, float scale);
-        void drawNode(Node* node, VkCommandBuffer commandBuffer);
-        void draw(VkCommandBuffer commandBuffer);
-        void calculateBoundingBox(Node* node, Node* parent);
-        void getSceneDimensions();
-        void updateAnimation(uint32_t index, float time);
         Node* findNode(Node* parent, uint32_t index);
         Node* nodeFromIndex(uint32_t index);
     } model;
@@ -137,6 +123,7 @@ public:
         Buffer model;
         Buffer shaderValues;
     };
+
 
     std::vector<UniformBufferSet> uniformBuffers{};
     std::vector<VkDescriptorSet> descriptors;

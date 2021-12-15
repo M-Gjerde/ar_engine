@@ -34,8 +34,6 @@ void glTFModel::Model::loadFromFile(std::string filename, VulkanDevice *device, 
         loadNode(nullptr, node, scene.nodes[i], gltfModel, indexBuffer, vertexBuffer, scale);
     }
 
-    //loadSkins(gltfModel);
-
     extensions = gltfModel.extensionsUsed;
 
     size_t vertexBufferSize = vertexBuffer.size() * sizeof(Vertex);
@@ -112,44 +110,11 @@ void glTFModel::Model::loadFromFile(std::string filename, VulkanDevice *device, 
 
 }
 
-void glTFModel::Model::loadSkins(tinygltf::Model &gltfModel) {
-    for (tinygltf::Skin &source: gltfModel.skins) {
-        Skin *newSkin = new Skin{};
-        newSkin->name = source.name;
-
-        // Find skeleton root node
-        if (source.skeleton > -1) {
-            newSkin->skeletonRoot = nodeFromIndex(source.skeleton);
-        }
-
-        // Find joint nodes
-        for (int jointIndex: source.joints) {
-            Node *node = nodeFromIndex(jointIndex);
-            if (node) {
-                newSkin->joints.push_back(nodeFromIndex(jointIndex));
-            }
-        }
-
-        // Get inverse bind matrices from buffer
-        if (source.inverseBindMatrices > -1) {
-            const tinygltf::Accessor &accessor = gltfModel.accessors[source.inverseBindMatrices];
-            const tinygltf::BufferView &bufferView = gltfModel.bufferViews[accessor.bufferView];
-            const tinygltf::Buffer &buffer = gltfModel.buffers[bufferView.buffer];
-            newSkin->inverseBindMatrices.resize(accessor.count);
-            memcpy(newSkin->inverseBindMatrices.data(), &buffer.data[accessor.byteOffset + bufferView.byteOffset],
-                   accessor.count * sizeof(glm::mat4));
-        }
-
-        skins.push_back(newSkin);
-    }
-}
-
 void glTFModel::drawNode(Node *node, VkCommandBuffer commandBuffer) {
-    if (node->mesh) {
-        for (Primitive *primitive: node->mesh->primitives) {
-            vkCmdDrawIndexed(commandBuffer, primitive->indexCount, 1, primitive->firstIndex, 0, 0);
-        }
+    for (Primitive primitive: model.primitives) {
+        vkCmdDrawIndexed(commandBuffer, primitive.indexCount, 1, primitive.firstIndex, 0, 0);
     }
+
     for (auto &child: node->children) {
         drawNode(child, commandBuffer);
     }
@@ -171,36 +136,12 @@ void glTFModel::draw(VkCommandBuffer commandBuffer, uint32_t i) {
     }
 }
 
-glTFModel::Node *glTFModel::Model::findNode(Node *parent, uint32_t index) {
-    Node *nodeFound = nullptr;
-    if (parent->index == index) {
-        return parent;
-    }
-    for (auto &child: parent->children) {
-        nodeFound = findNode(child, index);
-        if (nodeFound) {
-            break;
-        }
-    }
-    return nodeFound;
-}
-
-glTFModel::Node *glTFModel::Model::nodeFromIndex(uint32_t index) {
-    Node *nodeFound = nullptr;
-    for (auto &node: nodes) {
-        nodeFound = findNode(node, index);
-        if (nodeFound) {
-            break;
-        }
-    }
-    return nodeFound;
-}
 
 void glTFModel::Model::loadNode(glTFModel::Node *parent, const tinygltf::Node &node, uint32_t nodeIndex,
                                 const tinygltf::Model &model, std::vector<uint32_t> &indexBuffer,
                                 std::vector<Vertex> &vertexBuffer, float globalscale) {
 
-    glTFModel::Node *newNode = new Node{};
+    auto *newNode = new Node{};
     newNode->index = nodeIndex;
     newNode->parent = parent;
     newNode->name = node.name;
@@ -208,7 +149,7 @@ void glTFModel::Model::loadNode(glTFModel::Node *parent, const tinygltf::Node &n
     newNode->matrix = glm::mat4(1.0f);
 
     // Generate local node matrix
-    glm::vec3 translation = glm::vec3(0.0f);
+    auto translation = glm::vec3(0.0f);
     if (node.translation.size() == 3) {
         translation = glm::make_vec3(node.translation.data());
         newNode->translation = translation;
@@ -238,7 +179,6 @@ void glTFModel::Model::loadNode(glTFModel::Node *parent, const tinygltf::Node &n
     // Node contains mesh data
     if (node.mesh > -1) {
         const tinygltf::Mesh mesh = model.meshes[node.mesh];
-        Mesh *newMesh = new Mesh(device, newNode->matrix);
         for (auto &primitive: mesh.primitives) {
             uint32_t indexStart = static_cast<uint32_t>(indexBuffer.size());
             uint32_t vertexStart = static_cast<uint32_t>(vertexBuffer.size());
@@ -332,12 +272,9 @@ void glTFModel::Model::loadNode(glTFModel::Node *parent, const tinygltf::Node &n
                         return;
                 }
             }
-            Primitive *newPrimitive = new Primitive(indexStart, indexCount, vertexCount);
-            newPrimitive->setBoundingBox(posMin, posMax);
-            newMesh->primitives.push_back(newPrimitive);
+            Primitive newPrimitive(indexStart, indexCount, vertexCount);
+            primitives.push_back(newPrimitive);
         }
-
-        newNode->mesh = newMesh;
     }
 
     if (parent) {
@@ -393,56 +330,6 @@ glTFModel::Primitive::Primitive(uint32_t _firstIndex, uint32_t indexCount, uint3
 
 void glTFModel::Primitive::setBoundingBox(glm::vec3 min, glm::vec3 max) {
 
-}
-
-glTFModel::Mesh::Mesh(VulkanDevice *device, glm::mat4 matrix) {
-    this->device = device;
-    this->uniformBlock.matrix = matrix;
-    CHECK_RESULT(device->createBuffer(
-            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            sizeof(uniformBlock),
-            &uniformBuffer.buffer,
-            &uniformBuffer.memory,
-            &uniformBlock));
-    CHECK_RESULT(vkMapMemory(device->logicalDevice, uniformBuffer.memory, 0, sizeof(uniformBlock), 0,
-                             &uniformBuffer.mapped));
-    uniformBuffer.descriptor = {uniformBuffer.buffer, 0, sizeof(uniformBlock)};
-
-}
-
-glTFModel::Mesh::~Mesh() {
-    vkDestroyBuffer(device->logicalDevice, uniformBuffer.buffer, nullptr);
-    vkFreeMemory(device->logicalDevice, uniformBuffer.memory, nullptr);
-    for (Primitive *p: primitives)
-        delete p;
-}
-
-void glTFModel::Node::update() {
-    if (mesh) {
-        glm::mat4 m = getMatrix();
-        memcpy(mesh->uniformBuffer.mapped, &m, sizeof(glm::mat4));
-
-    }
-
-    for (auto &child: children) {
-        child->update();
-    }
-}
-
-glm::mat4 glTFModel::Node::getMatrix() {
-    glm::mat4 m = localMatrix();
-    Node *p = parent;
-    while (p) {
-        m = p->localMatrix() * m;
-        p = p->parent;
-    }
-    return m;
-}
-
-glm::mat4 glTFModel::Node::localMatrix() {
-    return glm::translate(glm::mat4(1.0f), translation) * glm::mat4(rotation) * glm::scale(glm::mat4(1.0f), scale) *
-           matrix;
 }
 
 void glTFModel::createDescriptorSetLayout() {
@@ -590,7 +477,7 @@ void glTFModel::createPipeline(VkRenderPass renderPass, std::vector<VkPipelineSh
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
 
     VkPipelineRasterizationStateCreateInfo rasterizationStateCI = Populate::pipelineRasterizationStateCreateInfo(
-            VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, 0);
+            VK_POLYGON_MODE_FILL, VK_CULL_MODE_FRONT_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, 0);
     rasterizationStateCI.lineWidth = 1.0f;
 
     VkPipelineColorBlendAttachmentState blendAttachmentState = Populate::pipelineColorBlendAttachmentState(
@@ -601,11 +488,12 @@ void glTFModel::createPipeline(VkRenderPass renderPass, std::vector<VkPipelineSh
                                                                                                         &blendAttachmentState);
 
     VkPipelineDepthStencilStateCreateInfo depthStencilStateCI =
-            Populate::pipelineDepthStencilStateCreateInfo(VK_FALSE,
-                                                          VK_FALSE,
-                                                          VK_COMPARE_OP_LESS_OR_EQUAL);
-    depthStencilStateCI.front = depthStencilStateCI.back;
-    depthStencilStateCI.back.compareOp = VK_COMPARE_OP_ALWAYS;
+            Populate::pipelineDepthStencilStateCreateInfo(VK_TRUE,
+                                                          VK_TRUE,
+                                                          VK_COMPARE_OP_LESS);
+    depthStencilStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencilStateCI.depthBoundsTestEnable = VK_FALSE;
+    depthStencilStateCI.stencilTestEnable = VK_FALSE;
 
     VkPipelineViewportStateCreateInfo viewportStateCI{};
     viewportStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;

@@ -10,7 +10,6 @@ layout (set = 0, binding = 0) uniform UBOScene
     mat4 projection;
     mat4 view;
     mat4 model;
-    vec4 lightPos;
 } uboScene;
 
 layout (location = 0) out vec3 outNormal;

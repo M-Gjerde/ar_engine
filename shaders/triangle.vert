@@ -7,8 +7,8 @@ layout (location = 2) in vec2 inUV;
 layout (binding = 0) uniform UBO
 {
 	mat4 projectionMatrix;
-	mat4 modelMatrix;
 	mat4 viewMatrix;
+	mat4 modelMatrix;
 } ubo;
 
 layout(location = 0) out vec3 outNormal;
