@@ -30,7 +30,7 @@ public:
 
     /**@brief Render Commands **/
     virtual void prepareObject(prepareVars vars){};
-    virtual void updateUniformBufferData(uint32_t index, void *params, void *matrix){};
+    virtual void updateUniformBufferData(uint32_t index, void *params, void *matrix) {};
     virtual void draw(VkCommandBuffer commandBuffer, uint32_t i){};
     std::string type = "None";
 };

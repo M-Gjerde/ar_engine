@@ -49,6 +49,9 @@ public:
         intSliders.emplace_back(slider);
     }
 
+    std::vector<std::string> dropDownItems;
+    const char* selectedDropDown = "Select texture map";
+
 };
 
 

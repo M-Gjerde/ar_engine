@@ -11,6 +11,7 @@
 #include "VulkanDevice.h"
 #include "glm/glm.hpp"
 #include "tiny_gltf.h"
+#include "Texture.h"
 
 // Changing this value here also requires changing it in the vertex shader
 #define MAX_NUM_JOINTS 128u
@@ -70,6 +71,35 @@ public:
         std::vector<Node*> joints;
     };
 
+    struct Material {
+        enum AlphaMode{ ALPHAMODE_OPAQUE, ALPHAMODE_MASK, ALPHAMODE_BLEND };
+        AlphaMode alphaMode = ALPHAMODE_OPAQUE;
+        float alphaCutoff = 1.0f;
+        float metallicFactor = 1.0f;
+        float roughnessFactor = 1.0f;
+        glm::vec4 baseColorFactor = glm::vec4(1.0f);
+        glm::vec4 emissiveFactor = glm::vec4(1.0f);
+        Texture2D *baseColorTexture;
+        Texture2D *normalTexture;
+        struct TexCoordSets {
+            uint8_t baseColor = 0;
+            uint8_t metallicRoughness = 0;
+            uint8_t specularGlossiness = 0;
+            uint8_t normal = 0;
+            uint8_t occlusion = 0;
+            uint8_t emissive = 0;
+        } texCoordSets;
+        struct PbrWorkflows {
+            bool metallicRoughness = true;
+            bool specularGlossiness = false;
+        } pbrWorkflows;
+        VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
+    };
+
+    struct TextureIndices{
+        uint32_t baseColor;
+        uint32_t normalMap;
+    } ;
 
     struct Model {
 
@@ -77,6 +107,10 @@ public:
         std::vector<Skin*> skins;
         std::vector<std::string> extensions;
         std::vector<Primitive> primitives;
+        std::vector<Texture2D> textures;
+        std::vector<Material> materials;
+        std::vector<Texture::TextureSampler> textureSamplers;
+        TextureIndices textureIndices;
 
         struct Vertex {
             glm::vec3 pos;
@@ -122,6 +156,7 @@ public:
     struct UniformBufferSet {
         Buffer model;
         Buffer shaderValues;
+        Buffer selection;
     };
 
 
@@ -137,7 +172,7 @@ public:
     void prepareUniformBuffers(uint32_t count);
 
 
-    void updateUniformBufferData(uint32_t index, void* params, void* matrix);
+    void updateUniformBufferData(uint32_t index, void *params, void *matrix, void *selection);
 
     void createDescriptorSetLayout();
 

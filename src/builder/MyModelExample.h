@@ -43,6 +43,8 @@ public:
     * create a new object or do nothing. Types: Generator | None | Name of object in object folder **/
     std::string type = "Render";
 
+    void *selection = (void *) "0";
+
     void prepareObject(prepareVars vars) override;
 
     void updateUniformBufferData(uint32_t index, void *params, void *matrix) override;

@@ -14,7 +14,6 @@
 #include "UISettings.h"
 
 
-
 class ImGUI {
 private:
     // Vulkan resources for rendering the UI
@@ -163,7 +162,8 @@ public:
 
         // Copy
         // Copy staging buffer to image
-        Utils::copyBufferToImage(copyCmd, stagingBuffer.buffer, fontImage, texWidth, texHeight, VK_IMAGE_ASPECT_COLOR_BIT);
+        Utils::copyBufferToImage(copyCmd, stagingBuffer.buffer, fontImage, texWidth, texHeight,
+                                 VK_IMAGE_ASPECT_COLOR_BIT);
 
         // Prepare image for shader read
         // Prepare for shader read
@@ -393,8 +393,8 @@ public:
         updated |= ImGui::Checkbox("Toggle grid size", &uiSettings.toggleGridSize);
         updated |= ImGui::SliderFloat("Movement speed", &uiSettings.movementSpeed, 0.05f, 10.0f);
 
-        if (!uiSettings.intSliders.empty()){
-            for (const auto& slider : uiSettings.intSliders){
+        if (!uiSettings.intSliders.empty()) {
+            for (const auto &slider: uiSettings.intSliders) {
                 updated |= ImGui::SliderInt(slider->name.c_str(), &slider->val, slider->lowRange, slider->highRange);
 
             }
@@ -411,7 +411,7 @@ public:
                 // Remove Example from list
                 if (uiSettings.listBoxNames[n] == "Example") continue;
 
-                if (ImGui::Selectable(uiSettings.listBoxNames[n].c_str(), is_selected)){
+                if (ImGui::Selectable(uiSettings.listBoxNames[n].c_str(), is_selected)) {
                     uiSettings.selectedListboxIndex = n;
 
                 }
@@ -422,6 +422,22 @@ public:
 
             }
             ImGui::EndListBox();
+        }
+
+        if (ImGui::BeginCombo("##combo",
+                              uiSettings.selectedDropDown)) // The second parameter is the label previewed before opening the combo.
+        {
+            for (int n = 0; n < uiSettings.dropDownItems.size(); n++) {
+                bool is_selected = (uiSettings.selectedDropDown ==
+                                    uiSettings.dropDownItems[n]); // You can store your selection however you want, outside or inside your objects
+                if (ImGui::Selectable(uiSettings.dropDownItems[n].c_str(), is_selected)) {
+                    uiSettings.selectedDropDown = uiSettings.dropDownItems[n].c_str();
+                    updated |= true;
+                }
+                if (is_selected)
+                    ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
+            }
+            ImGui::EndCombo();
         }
 
         active = ImGui::IsAnyItemHovered() || ImGui::IsAnyItemFocused() || ImGui::IsAnyItemActive();

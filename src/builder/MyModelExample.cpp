@@ -13,6 +13,10 @@ void MyModelExample::setup(Base::SetupVars vars) {
     model.loadFromFile(Utils::getAssetsPath() + "models/DamagedHelmet/glTF-Embedded/DamagedHelmet.gltf", vars.device,
                        vars.device->transferQueue, 1.0f);
 
+
+    vars.ui->dropDownItems.emplace_back("Albedo");
+    vars.ui->dropDownItems.emplace_back("Normal");
+
 }
 
 void MyModelExample::update() {
@@ -21,6 +25,15 @@ void MyModelExample::update() {
 
 void MyModelExample::onUIUpdate(UISettings uiSettings) {
 
+    if (uiSettings.selectedDropDown == NULL)
+        return;
+
+    if (strcmp(uiSettings.selectedDropDown, "Albedo") == 0){
+        selection = (void *) "0";
+    }
+    if (strcmp(uiSettings.selectedDropDown, "Normal") == 0){
+        selection = (void *) "1";
+    }
 }
 
 void MyModelExample::prepareObject(prepareVars vars) {
@@ -32,7 +45,7 @@ void MyModelExample::prepareObject(prepareVars vars) {
 }
 
 void MyModelExample::updateUniformBufferData(uint32_t index, void *params, void *matrix) {
-    glTFModel::updateUniformBufferData(index, params, matrix);
+    glTFModel::updateUniformBufferData(index, params, matrix, selection);
 
 }
 

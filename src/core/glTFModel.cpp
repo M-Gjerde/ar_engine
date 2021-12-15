@@ -34,6 +34,9 @@ void glTFModel::Model::loadFromFile(std::string filename, VulkanDevice *device, 
         loadNode(nullptr, node, scene.nodes[i], gltfModel, indexBuffer, vertexBuffer, scale);
     }
 
+    loadTextureSamplers(gltfModel);
+    loadTextures(gltfModel, device, transferQueue);
+    loadMaterials(gltfModel);
     extensions = gltfModel.extensionsUsed;
 
     size_t vertexBufferSize = vertexBuffer.size() * sizeof(Vertex);
@@ -193,11 +196,13 @@ void glTFModel::Model::loadNode(glTFModel::Node *parent, const tinygltf::Node &n
             {
                 const float *bufferPos = nullptr;
                 const float *bufferNormals = nullptr;
-
+                const float *bufferTexCoordSet0 = nullptr;
+                const float *bufferTexCoordSet1 = nullptr;
 
                 int posByteStride;
                 int normByteStride;
-
+                int uv0ByteStride;
+                int uv1ByteStride;
                 // Position attribute is required
                 assert(primitive.attributes.find("POSITION") != primitive.attributes.end());
 
@@ -225,12 +230,36 @@ void glTFModel::Model::loadNode(glTFModel::Node *parent, const tinygltf::Node &n
                                     TINYGLTF_TYPE_VEC3);
                 }
 
+                if (primitive.attributes.find("TEXCOORD_0") != primitive.attributes.end()) {
+                    const tinygltf::Accessor &uvAccessor = model.accessors[primitive.attributes.find(
+                            "TEXCOORD_0")->second];
+                    const tinygltf::BufferView &uvView = model.bufferViews[uvAccessor.bufferView];
+                    bufferTexCoordSet0 = reinterpret_cast<const float *>(&(model.buffers[uvView.buffer].data[
+                            uvAccessor.byteOffset + uvView.byteOffset]));
+                    uv0ByteStride = uvAccessor.ByteStride(uvView) ? (uvAccessor.ByteStride(uvView) / sizeof(float))
+                                                                  : tinygltf::GetComponentSizeInBytes(
+                                    TINYGLTF_TYPE_VEC2);
+                }
+                if (primitive.attributes.find("TEXCOORD_1") != primitive.attributes.end()) {
+                    const tinygltf::Accessor &uvAccessor = model.accessors[primitive.attributes.find(
+                            "TEXCOORD_1")->second];
+                    const tinygltf::BufferView &uvView = model.bufferViews[uvAccessor.bufferView];
+                    bufferTexCoordSet1 = reinterpret_cast<const float *>(&(model.buffers[uvView.buffer].data[
+                            uvAccessor.byteOffset + uvView.byteOffset]));
+                    uv1ByteStride = uvAccessor.ByteStride(uvView) ? (uvAccessor.ByteStride(uvView) / sizeof(float))
+                                                                  : tinygltf::GetComponentSizeInBytes(
+                                    TINYGLTF_TYPE_VEC2);
+                }
+
                 for (size_t v = 0; v < posAccessor.count; v++) {
                     Vertex vert{};
                     vert.pos = glm::vec4(glm::make_vec3(&bufferPos[v * posByteStride]), 1.0f);
                     vert.normal = glm::normalize(glm::vec3(
                             bufferNormals ? glm::make_vec3(&bufferNormals[v * normByteStride]) : glm::vec3(0.0f)));
-
+                    vert.uv0 = bufferTexCoordSet0 ? glm::make_vec2(&bufferTexCoordSet0[v * uv0ByteStride])
+                                                  : glm::vec3(0.0f);
+                    vert.uv1 = bufferTexCoordSet1 ? glm::make_vec2(&bufferTexCoordSet1[v * uv1ByteStride])
+                                                  : glm::vec3(0.0f);
                     vertexBuffer.push_back(vert);
                 }
             }
@@ -286,6 +315,95 @@ void glTFModel::Model::loadNode(glTFModel::Node *parent, const tinygltf::Node &n
 
 }
 
+void glTFModel::Model::loadTextureSamplers(tinygltf::Model &gltfModel) {
+    for (const tinygltf::Sampler &smpl: gltfModel.samplers) {
+        Texture::TextureSampler sampler{};
+        sampler.minFilter = getVkFilterMode(smpl.minFilter);
+        sampler.magFilter = getVkFilterMode(smpl.magFilter);
+        sampler.addressModeU = getVkWrapMode(smpl.wrapS);
+        sampler.addressModeV = getVkWrapMode(smpl.wrapT);
+        sampler.addressModeW = sampler.addressModeV;
+        textureSamplers.push_back(sampler);
+    }
+}
+
+void glTFModel::Model::loadTextures(tinygltf::Model &gltfModel, VulkanDevice *device, VkQueue transferQueue) {
+    for (tinygltf::Texture &tex: gltfModel.textures) {
+        tinygltf::Image image = gltfModel.images[tex.source];
+        Texture::TextureSampler sampler{};
+        if (tex.sampler == -1) {
+            // No sampler specified, use a default one
+            sampler.magFilter = VK_FILTER_LINEAR;
+            sampler.minFilter = VK_FILTER_LINEAR;
+            sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+            sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+            sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        } else {
+            sampler = textureSamplers[tex.sampler];
+        }
+        Texture2D texture2D;
+        texture2D.fromglTfImage(image, sampler, device, transferQueue);
+        textures.push_back(texture2D);
+    }
+
+
+}
+
+void glTFModel::Model::loadMaterials(tinygltf::Model &gltfModel) {
+    for (tinygltf::Material &mat: gltfModel.materials) {
+        glTFModel::Material material{};
+        if (mat.values.find("baseColorTexture") != mat.values.end()) {
+            material.baseColorTexture = &textures[mat.additionalValues["baseColorTexture"].TextureIndex()];
+            material.texCoordSets.baseColor = mat.values["baseColorTexture"].TextureTexCoord();
+            textureIndices.baseColor = 0;
+
+        }
+        if (mat.values.find("baseColorFactor") != mat.values.end()) {
+            material.baseColorFactor = glm::make_vec4(mat.values["baseColorFactor"].ColorFactor().data());
+        }
+
+        if (mat.additionalValues.find("normalTexture") != mat.additionalValues.end()) {
+            textureIndices.normalMap = mat.additionalValues["normalTexture"].TextureIndex();
+            material.normalTexture = &textures[mat.additionalValues["normalTexture"].TextureIndex()];
+            material.texCoordSets.normal = mat.additionalValues["normalTexture"].TextureTexCoord();
+        }
+
+        materials.push_back(material);
+    }
+}
+
+VkSamplerAddressMode glTFModel::Model::getVkWrapMode(int32_t wrapMode) {
+    switch (wrapMode) {
+        case 10497:
+            return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        case 33071:
+            return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        case 33648:
+            return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+    }
+}
+
+VkFilter glTFModel::Model::getVkFilterMode(int32_t filterMode) {
+    switch (filterMode) {
+        case 9728:
+            return VK_FILTER_NEAREST;
+        case 9729:
+            return VK_FILTER_LINEAR;
+        case 9984:
+            return VK_FILTER_NEAREST;
+        case 9985:
+            return VK_FILTER_NEAREST;
+        case 9986:
+            return VK_FILTER_LINEAR;
+        case 9987:
+            return VK_FILTER_LINEAR;
+        default:
+            std::cerr << "Sampler filter defaulted to VK_FILTER_LINEAR" << std::endl;
+            return VK_FILTER_LINEAR;
+    }
+}
+
+
 glTFModel::glTFModel() {
     printf("glTFModel Constructor\n");
 }
@@ -303,11 +421,15 @@ void glTFModel::prepareUniformBuffers(uint32_t count) {
                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                              &uniformBuffer.shaderValues, sizeof(ShaderValuesParams));
 
+        device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                             &uniformBuffer.selection, sizeof(float));
+
     }
 
 }
 
-void glTFModel::updateUniformBufferData(uint32_t index, void *params, void *matrix) {
+void glTFModel::updateUniformBufferData(uint32_t index, void *params, void *matrix, void *selection) {
     UniformBufferSet currentUB = uniformBuffers[index];
 
     currentUB.model.map();
@@ -317,6 +439,13 @@ void glTFModel::updateUniformBufferData(uint32_t index, void *params, void *matr
     currentUB.shaderValues.map();
     memcpy(currentUB.shaderValues.mapped, params, sizeof(FragShaderParams));
     currentUB.shaderValues.unmap();
+
+    currentUB.selection.map();
+
+    char* val = static_cast<char *>(selection);
+    float f = (float) atoi(val);
+    memcpy(currentUB.selection.mapped, &f, sizeof(float));
+    currentUB.selection.unmap();
 
 }
 
@@ -334,12 +463,11 @@ void glTFModel::Primitive::setBoundingBox(glm::vec3 min, glm::vec3 max) {
 
 void glTFModel::createDescriptorSetLayout() {
     std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
-            {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1,
-             VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+            {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1, VK_SHADER_STAGE_VERTEX_BIT,   nullptr},
             //{1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-            //{2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-            //{3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-            //{4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+            {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+            {2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+            {3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
     };
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI{};
     descriptorSetLayoutCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -356,11 +484,12 @@ void glTFModel::createDescriptors(uint32_t count) {
      * Create Descriptor Pool
      */
 
-    uint32_t uniformDescriptorCount = 2 * count + model.nodes.size();
-    uint32_t imageDescriptorSamplerCount = 3 * count;
+    uint32_t uniformDescriptorCount = 3 * count + model.nodes.size();
+    uint32_t imageDescriptorSamplerCount = 3 * count * 3;
     std::vector<VkDescriptorPoolSize> poolSizes = {
             {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         uniformDescriptorCount},
-            {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, imageDescriptorSamplerCount}
+            {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, imageDescriptorSamplerCount},
+
     };
     VkDescriptorPoolCreateInfo poolCreateInfo = Populate::descriptorPoolCreateInfo(poolSizes,
                                                                                    count + model.nodes.size());
@@ -379,7 +508,7 @@ void glTFModel::createDescriptors(uint32_t count) {
         descriptorSetAllocInfo.descriptorSetCount = 1;
         CHECK_RESULT(vkAllocateDescriptorSets(device->logicalDevice, &descriptorSetAllocInfo, &descriptors[i]));
 
-        std::array<VkWriteDescriptorSet, 1> writeDescriptorSets{};
+        std::array<VkWriteDescriptorSet, 4> writeDescriptorSets{};
 
         writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -394,28 +523,28 @@ void glTFModel::createDescriptors(uint32_t count) {
         writeDescriptorSets[1].descriptorCount = 1;
         writeDescriptorSets[1].dstSet = descriptors[i];
         writeDescriptorSets[1].dstBinding = 1;
-        writeDescriptorSets[1].pBufferInfo = &uniformBuffers[i].shaderValues.descriptorBufferInfo;
+        writeDescriptorSets[1].pBufferInfo = &uniformBuffers[i].shaderValues.descriptorBufferInfo;*/
 
-      writeDescriptorSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writeDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writeDescriptorSets[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        writeDescriptorSets[1].descriptorCount = 1;
+        writeDescriptorSets[1].dstSet = descriptors[i];
+        writeDescriptorSets[1].dstBinding = 1;
+        writeDescriptorSets[1].pImageInfo = &model.textures[model.textureIndices.baseColor].descriptor;
+
+        writeDescriptorSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         writeDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         writeDescriptorSets[2].descriptorCount = 1;
-        writeDescriptorSets[2].dstSet = descriptorSets[i].scene;
+        writeDescriptorSets[2].dstSet = descriptors[i];
         writeDescriptorSets[2].dstBinding = 2;
-        writeDescriptorSets[2].pImageInfo = &textures.irradianceCube.descriptor;
+        writeDescriptorSets[2].pImageInfo = &model.textures[model.textureIndices.normalMap].descriptor;
 
         writeDescriptorSets[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        writeDescriptorSets[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        writeDescriptorSets[3].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         writeDescriptorSets[3].descriptorCount = 1;
-        writeDescriptorSets[3].dstSet = descriptorSets[i].scene;
+        writeDescriptorSets[3].dstSet = descriptors[i];
         writeDescriptorSets[3].dstBinding = 3;
-        writeDescriptorSets[3].pImageInfo = &textures.prefilteredCube.descriptor;
-
-        writeDescriptorSets[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        writeDescriptorSets[4].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        writeDescriptorSets[4].descriptorCount = 1;
-        writeDescriptorSets[4].dstSet = descriptorSets[i].scene;
-        writeDescriptorSets[4].dstBinding = 4;
-        writeDescriptorSets[4].pImageInfo = &textures.lutBrdf.descriptor;*/
+        writeDescriptorSets[3].pBufferInfo = &uniformBuffers[i].selection.descriptorBufferInfo;
 
         vkUpdateDescriptorSets(device->logicalDevice, static_cast<uint32_t>(writeDescriptorSets.size()),
                                writeDescriptorSets.data(), 0, NULL);

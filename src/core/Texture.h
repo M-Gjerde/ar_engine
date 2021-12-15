@@ -27,6 +27,7 @@
 
 #include "Buffer.h"
 #include "VulkanDevice.h"
+#include "tiny_gltf.h"
 
 
 class Texture {
@@ -42,11 +43,20 @@ public:
     VkDescriptorImageInfo descriptor;
     VkSampler sampler;
 
-    void updateDescriptor();
+    struct TextureSampler {
+        VkFilter magFilter;
+        VkFilter minFilter;
+        VkSamplerAddressMode addressModeU;
+        VkSamplerAddressMode addressModeV;
+        VkSamplerAddressMode addressModeW;
+    };
 
+    void updateDescriptor();
     void destroy();
 
     ktxResult loadKTXFile(std::string filename, ktxTexture **target);
+    // Load a texture from a glTF image (stored as vector of chars loaded via stb_image) and generate a full mip chaing for it
+
 };
 
 class Texture2D : public Texture {
@@ -71,6 +81,9 @@ public:
             VkFilter filter = VK_FILTER_LINEAR,
             VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
             VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    void fromglTfImage(tinygltf::Image& gltfimage, TextureSampler textureSampler, VulkanDevice* device, VkQueue copyQueue);
+
 };
 
 class Texture2DArray : public Texture {
