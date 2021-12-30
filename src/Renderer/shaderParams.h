@@ -29,9 +29,9 @@ struct ShaderValuesParams {
 
 struct UBOMatrices {
     glm::mat4 projection;
-    glm::mat4 model;
     glm::mat4 view;
-    glm::vec3 camPos;
+    glm::mat4 model;
+
 };
 
 struct SimpleUBOMatrix {

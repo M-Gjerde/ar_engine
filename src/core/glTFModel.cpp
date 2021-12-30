@@ -415,7 +415,7 @@ void glTFModel::prepareUniformBuffers(uint32_t count) {
 
         device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                             &uniformBuffer.model, sizeof(UBOMatrices));
+                             &uniformBuffer.model, sizeof(SimpleUBOMatrix));
 
         device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -664,8 +664,6 @@ void glTFModel::createPipeline(VkRenderPass renderPass, std::vector<VkPipelineSh
             {1, 0, VK_FORMAT_R32G32B32_SFLOAT,    sizeof(float) * 3},
             {2, 0, VK_FORMAT_R32G32_SFLOAT,       sizeof(float) * 6},
             {3, 0, VK_FORMAT_R32G32_SFLOAT,       sizeof(float) * 8},
-            {4, 0, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(float) * 10},
-            {5, 0, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(float) * 14}
     };
     VkPipelineVertexInputStateCreateInfo vertexInputStateCI{};
     vertexInputStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

@@ -14,9 +14,9 @@ void MyModelExample::setup(Base::SetupVars vars) {
                        vars.device->transferQueue, 1.0f);
 
 
+    vars.ui->dropDownItems.emplace_back("Grayscale");
     vars.ui->dropDownItems.emplace_back("Albedo");
-    vars.ui->dropDownItems.emplace_back("Normal");
-
+    vars.ui->dropDownItems.emplace_back("Albedo + Normal");
 }
 
 void MyModelExample::update() {
@@ -28,12 +28,17 @@ void MyModelExample::onUIUpdate(UISettings uiSettings) {
     if (uiSettings.selectedDropDown == NULL)
         return;
 
-    if (strcmp(uiSettings.selectedDropDown, "Albedo") == 0){
+    if (strcmp(uiSettings.selectedDropDown, "Grayscale") == 0){
         selection = (void *) "0";
     }
-    if (strcmp(uiSettings.selectedDropDown, "Normal") == 0){
+    if (strcmp(uiSettings.selectedDropDown, "Albedo") == 0){
         selection = (void *) "1";
     }
+    if (strcmp(uiSettings.selectedDropDown, "Albedo + Normal") == 0){
+        selection = (void *) "2";
+    }
+
+    printf("Selection %s\n", (char *) selection);
 }
 
 void MyModelExample::prepareObject(prepareVars vars) {
