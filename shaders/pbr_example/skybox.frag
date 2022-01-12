@@ -1,7 +1,7 @@
 #version 450
 #define PI 3.1415926535897932384626433832795
 
-layout (binding = 2) uniform samplerCube samplerEnv;
+layout (binding = 1) uniform samplerCube samplerEnv;
 
 layout (set = 0, location = 0) in vec3 inUVW;
 

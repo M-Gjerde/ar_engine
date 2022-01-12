@@ -377,7 +377,7 @@ VkPipelineShaderStageCreateInfo VulkanRenderer::loadShader(const std::string& fi
     shaderStage.module = Utils::loadShader( (Utils::getShadersPath() + fileName).c_str(), device);
     shaderStage.pName = "main";
     assert(shaderStage.module != VK_NULL_HANDLE);
-    shaderModules.push_back(shaderStage.module);
+    // TODO CLEANUP SHADERMODULES WHEN UNUSED
     return shaderStage;
 }
 

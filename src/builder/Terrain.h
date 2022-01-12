@@ -43,7 +43,7 @@ public:
     UISettings::intSlider noise {};
     UISettings::intSlider sinMod {};
 
-    void prepareObject(prepareVars vars) override;
+    void prepareObject() override;
     void updateUniformBufferData(uint32_t index, void *params, void *matrix) override;
     void draw(VkCommandBuffer commandBuffer, uint32_t i) override;
 };

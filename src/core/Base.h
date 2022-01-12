@@ -13,14 +13,11 @@ public:
     struct SetupVars {
         VulkanDevice* device{};
         UISettings* ui{};
-    };
-
-    struct prepareVars {
         uint32_t UBCount = 0;
-        std::vector<VkPipelineShaderStageCreateInfo> *shaders{};
-        std::vector<VkPipelineShaderStageCreateInfo> *shaders2{};
         VkRenderPass *renderPass{};
-    };
+
+    } b;
+
     virtual ~Base() = default;
 
     virtual void update() = 0;
@@ -29,9 +26,21 @@ public:
     virtual std::string getType() {return type;}
 
     /**@brief Render Commands **/
-    virtual void prepareObject(prepareVars vars){};
+    virtual void prepareObject(){};
     virtual void updateUniformBufferData(uint32_t index, void *params, void *matrix) {};
     virtual void draw(VkCommandBuffer commandBuffer, uint32_t i){};
+
+    [[nodiscard]] VkPipelineShaderStageCreateInfo loadShader(const std::string& fileName, VkShaderStageFlagBits stage) const {
+        VkPipelineShaderStageCreateInfo shaderStage = {};
+        shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        shaderStage.stage = stage;
+        shaderStage.module = Utils::loadShader( (Utils::getShadersPath() + fileName).c_str(), b.device->logicalDevice);
+        shaderStage.pName = "main";
+        assert(shaderStage.module != VK_NULL_HANDLE);
+        // TODO CLEANUP SHADERMODULES WHEN UNUSED
+        return shaderStage;
+    }
+
     std::string type = "None";
 };
 

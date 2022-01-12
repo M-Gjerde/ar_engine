@@ -56,26 +56,10 @@ void Renderer::prepareRenderer() {
     setupDescriptors();
     preparePipelines();
 
-    // TODO Smarter shader passing to scripts
-    /// - MYExampleObject Prepare
-    std::vector<VkPipelineShaderStageCreateInfo> shaders;
-    shaders.emplace_back(loadShader("gltfLoading/mesh.vert.spv", VK_SHADER_STAGE_VERTEX_BIT));
-    shaders.emplace_back(loadShader("gltfLoading/mesh.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT));
-
-    /// - TERRAIN Prepare
-    std::vector<VkPipelineShaderStageCreateInfo> shaders2;
-    shaders2.emplace_back(loadShader("triangle.vert.spv", VK_SHADER_STAGE_VERTEX_BIT));
-    shaders2.emplace_back(loadShader("triangle.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT));
-
     for (auto &script: scripts) {
-        Base::prepareVars vars;
-        vars.shaders = &shaders;
-        vars.shaders2 = &shaders2;
-        vars.renderPass = &renderPass;
-        vars.UBCount = swapchain.imageCount;
 
         if (script->getType() != "None"){
-            script->prepareObject(vars);
+            script->prepareObject();
         }
 
     }
@@ -105,8 +89,6 @@ void Renderer::generateScriptClasses() {
 
     // Also add class names to listbox
     UIOverlay->uiSettings.listBoxNames = classNames;
-
-
     scripts.reserve(classNames.size());
     // Create class instances of scripts
     for (auto &className: classNames) {
@@ -117,6 +99,8 @@ void Renderer::generateScriptClasses() {
     Base::SetupVars vars{};
     vars.device = vulkanDevice;
     vars.ui = &UIOverlay->uiSettings;
+    vars.renderPass = &renderPass;
+    vars.UBCount = swapchain.imageCount;
 
     for (auto &script: scripts) {
         assert(script);
@@ -125,57 +109,17 @@ void Renderer::generateScriptClasses() {
     printf("Setup finished\n");
 }
 
-void Renderer::draw() {
-    VulkanRenderer::prepareFrame();
-    buildCommandBuffers();
-    updateUniformBuffers();
-    UniformBufferSet currentUB = uniformBuffers[currentBuffer];
-
-    currentUB.scene.map();
-    currentUB.params.map();
-    currentUB.skybox.map();
-    //currentUB.object.map();
-    //currentUB.lightParams.map();
-    //memcpy(currentUB.lightParams.mapped, &fragShaderParams, sizeof(FragShaderParams));
-    //memcpy(currentUB.object.mapped, &shaderValuesObject, sizeof(SimpleUBOMatrix));
-    memcpy(currentUB.scene.mapped, shaderValuesScene, sizeof(UBOMatrices));
-    memcpy(currentUB.params.mapped, shaderValuesParams, sizeof(ShaderValuesParams));
-    memcpy(currentUB.skybox.mapped, shaderValuesSkybox, sizeof(UBOMatrices));
-    //currentUB.lightParams.unmap();
-    //currentUB.object.unmap();
-    currentUB.skybox.unmap();
-    currentUB.scene.unmap();
-    currentUB.params.unmap();
-
-    for (auto &script: scripts) {
-        if (script->getType() == "Terrain"){
-            script->updateUniformBufferData(currentBuffer, fragShaderParams, shaderValuesObject);
-        }
-    }
-    for (auto &script: scripts) {
-        if (script->getType() == "Render"){
-
-            script->updateUniformBufferData(currentBuffer, shaderValuesParams, shaderValuesScene);
-        }
-    }
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &drawCmdBuffers[currentBuffer];
-
-    vkQueueSubmit(queue, 1, &submitInfo, waitFences[currentBuffer]);
-    VulkanRenderer::submitFrame();
-}
-
-void Renderer::render() {
-
-    for (auto &script: scripts) {
-        script->update();
-    }
-
-    draw();
-}
 
 void Renderer::viewChanged() {
     updateUniformBuffers();
+}
+
+
+void Renderer::loadAssets() {
+    std::string sceneFile = Utils::getAssetsPath() + "models/DamagedHelmet/glTF-Embedded/DamagedHelmet.gltf";
+    std::cout << "Loading scene from " << sceneFile << std::endl;
+    //models.scene.loadFromFile(sceneFile, vulkanDevice, queue);
+
 }
 
 void Renderer::UIUpdate(UISettings uiSettings) {
@@ -281,12 +225,45 @@ void Renderer::buildCommandBuffers() {
     }
 }
 
-void Renderer::loadAssets() {
-    std::string sceneFile = Utils::getAssetsPath() + "models/DamagedHelmet/glTF-Embedded/DamagedHelmet.gltf";
-    std::cout << "Loading scene from " << sceneFile << std::endl;
-    //models.scene.loadFromFile(sceneFile, vulkanDevice, queue);
 
+
+void Renderer::render() {
+
+    for (auto &script: scripts) {
+        script->update();
+    }
+
+    draw();
 }
+
+
+void Renderer::draw() {
+    VulkanRenderer::prepareFrame();
+    buildCommandBuffers();
+    updateUniformBuffers();
+    UniformBufferSet currentUB = uniformBuffers[currentBuffer];
+
+    currentUB.skybox.map();
+    memcpy(currentUB.skybox.mapped, shaderValuesSkybox, sizeof(UBOMatrix));
+    currentUB.skybox.unmap();
+
+    for (auto &script: scripts) {
+        if (script->getType() == "Terrain"){
+            script->updateUniformBufferData(currentBuffer, fragShaderParams, shaderValuesObject);
+        }
+        if (script->getType() == "Render"){
+
+            script->updateUniformBufferData(currentBuffer, shaderValuesParams, shaderValuesScene);
+        }
+    }
+
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &drawCmdBuffers[currentBuffer];
+
+    vkQueueSubmit(queue, 1, &submitInfo, waitFences[currentBuffer]);
+    VulkanRenderer::submitFrame();
+}
+
 
 void Renderer::updateUniformBuffers() {
     // Scene
@@ -300,12 +277,12 @@ void Renderer::updateUniformBuffers() {
     fragShaderParams->lightPos = camera.viewPos; //glm::vec4(glm::vec3(50, 5, 50), 1.0f); //glm::vec4(glm::vec3(0.0f, 5.0f, -3.0f), 1.0f);
     fragShaderParams->viewPos =  camera.viewPos; //glm::vec4(camera.viewPos, 1.0f);
 
-    shaderValuesParams->lightDir= glm::vec4(glm::vec3(9, 5, -5), 1.0f); //glm::vec4(glm::vec3(0.0f, 5.0f, -3.0f), 1.0f);camera.viewPos;
+    shaderValuesParams->lightDir= glm::vec4(glm::vec3(0, 1, 0), 1.0f); //glm::vec4(glm::vec3(0.0f, 5.0f, -3.0f), 1.0f);camera.viewPos;
 
     shaderValuesScene->model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.5f, -3.0f));
     shaderValuesScene->model = glm::rotate( shaderValuesScene->model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     shaderValuesScene->model = glm::rotate( shaderValuesScene->model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
+    shaderValuesScene->lightPos = glm::vec4(0.0f, 3.0f, 0.0f, 0.0f);
     shaderValuesObject->model = glm::mat4(1.0f);
 
 
@@ -315,82 +292,22 @@ void Renderer::updateUniformBuffers() {
     shaderValuesSkybox->model = glm::mat4(glm::mat3(camera.matrices.view));
 }
 
-void Renderer::renderNode(vkglTF::Node *node, uint32_t cbIndex, vkglTF::Material::AlphaMode alphaMode) {
-    if (node->mesh) {
-        // Render mesh primitives
-        for (vkglTF::Primitive *primitive: node->mesh->primitives) {
-            if (primitive->material.alphaMode == alphaMode) {
+void Renderer::prepareUniformBuffers() {
+    for (auto &uniformBuffer: uniformBuffers) {
 
-                const std::vector<VkDescriptorSet> descriptorsets = {
-                        descriptorSets[cbIndex].scene,
-                        primitive->material.descriptorSet,
-                        node->mesh->uniformBuffer.descriptorSet,
-                };
-                vkCmdBindDescriptorSets(drawCmdBuffers[cbIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0,
-                                        static_cast<uint32_t>(descriptorsets.size()), descriptorsets.data(), 0, NULL);
+        vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                   &uniformBuffer.skybox, sizeof(UBOMatrix));
 
-                // Pass material parameters as push constants
-                pushConstBlockMaterial.emissiveFactor = primitive->material.emissiveFactor;
-                // To save push constant space, availabilty and texture coordiante set are combined
-                // -1 = texture not used for this material, >= 0 texture used and index of texture coordinate set
-                pushConstBlockMaterial.colorTextureSet =
-                        primitive->material.baseColorTexture != nullptr ? primitive->material.texCoordSets.baseColor
-                                                                        : -1;
-                pushConstBlockMaterial.normalTextureSet =
-                        primitive->material.normalTexture != nullptr ? primitive->material.texCoordSets.normal : -1;
-                pushConstBlockMaterial.occlusionTextureSet =
-                        primitive->material.occlusionTexture != nullptr ? primitive->material.texCoordSets.occlusion
-                                                                        : -1;
-                pushConstBlockMaterial.emissiveTextureSet =
-                        primitive->material.emissiveTexture != nullptr ? primitive->material.texCoordSets.emissive : -1;
-                pushConstBlockMaterial.alphaMask = static_cast<float>(primitive->material.alphaMode ==
-                                                                      vkglTF::Material::ALPHAMODE_MASK);
-                pushConstBlockMaterial.alphaMaskCutoff = primitive->material.alphaCutoff;
-
-                // TODO: glTF specs states that metallic roughness should be preferred, even if specular glosiness is present
-
-                if (primitive->material.pbrWorkflows.metallicRoughness) {
-                    // Metallic roughness workflow
-                    pushConstBlockMaterial.workflow = static_cast<float>(PBR_WORKFLOW_METALLIC_ROUGHNESS);
-                    pushConstBlockMaterial.baseColorFactor = primitive->material.baseColorFactor;
-                    pushConstBlockMaterial.metallicFactor = primitive->material.metallicFactor;
-                    pushConstBlockMaterial.roughnessFactor = primitive->material.roughnessFactor;
-                    pushConstBlockMaterial.PhysicalDescriptorTextureSet =
-                            primitive->material.metallicRoughnessTexture != nullptr
-                            ? primitive->material.texCoordSets.metallicRoughness : -1;
-                    pushConstBlockMaterial.colorTextureSet =
-                            primitive->material.baseColorTexture != nullptr ? primitive->material.texCoordSets.baseColor
-                                                                            : -1;
-                }
-
-                if (primitive->material.pbrWorkflows.specularGlossiness) {
-                    // Specular glossiness workflow
-                    pushConstBlockMaterial.workflow = static_cast<float>(PBR_WORKFLOW_SPECULAR_GLOSINESS);
-                    pushConstBlockMaterial.PhysicalDescriptorTextureSet =
-                            primitive->material.extension.specularGlossinessTexture != nullptr
-                            ? primitive->material.texCoordSets.specularGlossiness : -1;
-                    pushConstBlockMaterial.colorTextureSet = primitive->material.extension.diffuseTexture != nullptr
-                                                             ? primitive->material.texCoordSets.baseColor : -1;
-                    pushConstBlockMaterial.diffuseFactor = primitive->material.extension.diffuseFactor;
-                    pushConstBlockMaterial.specularFactor = glm::vec4(primitive->material.extension.specularFactor,
-                                                                      1.0f);
-                }
-
-                vkCmdPushConstants(drawCmdBuffers[cbIndex], pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                                   sizeof(PushConstBlockMaterial), &pushConstBlockMaterial);
-
-                if (primitive->hasIndices) {
-                    vkCmdDrawIndexed(drawCmdBuffers[cbIndex], primitive->indexCount, 1, primitive->firstIndex, 0, 0);
-                } else {
-                    vkCmdDraw(drawCmdBuffers[cbIndex], primitive->vertexCount, 1, 0, 0);
-                }
-            }
-        }
-
-    };
-    for (auto child: node->children) {
-        renderNode(child, cbIndex, alphaMode);
     }
+    // TODO REMEMBER TO CLEANUP
+    shaderValuesParams = new ShaderValuesParams();
+    shaderValuesObject = new UBOMatrix();
+    shaderValuesScene = new UBOMatrixLight();
+    shaderValuesSkybox = new UBOMatrix();
+    fragShaderParams = new FragShaderParams();
+
+    updateUniformBuffers();
 }
 
 void Renderer::preparePipelines() {
@@ -444,7 +361,7 @@ void Renderer::preparePipelines() {
 
     // Pipeline layout
     const std::vector<VkDescriptorSetLayout> setLayouts = {
-            descriptorSetLayouts.scene
+            descriptorSetLayouts.skybox
     };
     VkPipelineLayoutCreateInfo pipelineLayoutCI{};
     pipelineLayoutCI.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -492,7 +409,7 @@ void Renderer::preparePipelines() {
     pipelineCI.pStages = shaderStages.data();
     multisampleStateCI.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-// Skybox pipeline (background cube)
+// Skybox pipeline (background Cube)
     shaderStages = {
             loadShader("pbr_example/spv/skybox.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
             loadShader("pbr_example/spv/skybox.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
@@ -504,35 +421,8 @@ void Renderer::preparePipelines() {
 
 }
 
-void Renderer::prepareUniformBuffers() {
-    for (auto &uniformBuffer: uniformBuffers) {
-
-        vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                   &uniformBuffer.skybox, sizeof(UBOMatrices));
-
-
-        vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                   &uniformBuffer.params, sizeof(ShaderValuesParams));
-
-
-        vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                   &uniformBuffer.scene, sizeof(UBOMatrices));
-    }
-    // TODO REMEMBER TO CLEANUP
-    shaderValuesParams = new ShaderValuesParams();
-    shaderValuesObject = new SimpleUBOMatrix();
-    shaderValuesScene = new UBOMatrices();
-    shaderValuesSkybox = new UBOMatrices();
-    fragShaderParams = new FragShaderParams();
-
-    updateUniformBuffers();
-}
-
 void Renderer::setupDescriptors() {
-    // My cube
+    // My Cube
 
     /*
     Descriptor Pool
@@ -572,7 +462,7 @@ void Renderer::setupDescriptors() {
             {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1,
                                                               VK_SHADER_STAGE_VERTEX_BIT |
                                                               VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-            {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+            {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,         1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
             {2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
             {3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
             {4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
@@ -581,7 +471,7 @@ void Renderer::setupDescriptors() {
     descriptorSetLayoutCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     descriptorSetLayoutCI.pBindings = setLayoutBindings.data();
     descriptorSetLayoutCI.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
-    CHECK_RESULT(vkCreateDescriptorSetLayout(device, &descriptorSetLayoutCI, nullptr, &descriptorSetLayouts.scene));
+    CHECK_RESULT(vkCreateDescriptorSetLayout(device, &descriptorSetLayoutCI, nullptr, &descriptorSetLayouts.skybox));
 
 
     // Skybox (fixed set)
@@ -589,11 +479,11 @@ void Renderer::setupDescriptors() {
         VkDescriptorSetAllocateInfo descriptorSetAllocInfo{};
         descriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         descriptorSetAllocInfo.descriptorPool = descriptorPool;
-        descriptorSetAllocInfo.pSetLayouts = &descriptorSetLayouts.scene;
+        descriptorSetAllocInfo.pSetLayouts = &descriptorSetLayouts.skybox;
         descriptorSetAllocInfo.descriptorSetCount = 1;
         CHECK_RESULT(vkAllocateDescriptorSets(device, &descriptorSetAllocInfo, &descriptorSets[i].skybox));
 
-        std::array<VkWriteDescriptorSet, 3> writeDescriptorSets{};
+        std::array<VkWriteDescriptorSet, 2> writeDescriptorSets{};
 
         writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -603,25 +493,17 @@ void Renderer::setupDescriptors() {
         writeDescriptorSets[0].pBufferInfo = &uniformBuffers[i].skybox.descriptorBufferInfo;
 
         writeDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        writeDescriptorSets[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        writeDescriptorSets[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         writeDescriptorSets[1].descriptorCount = 1;
         writeDescriptorSets[1].dstSet = descriptorSets[i].skybox;
         writeDescriptorSets[1].dstBinding = 1;
-        writeDescriptorSets[1].pBufferInfo = &uniformBuffers[i].params.descriptorBufferInfo;
-
-        writeDescriptorSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        writeDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        writeDescriptorSets[2].descriptorCount = 1;
-        writeDescriptorSets[2].dstSet = descriptorSets[i].skybox;
-        writeDescriptorSets[2].dstBinding = 2;
-        writeDescriptorSets[2].pImageInfo = &textures.prefilteredCube.descriptor;
+        writeDescriptorSets[1].pImageInfo = &textures.prefilteredCube.descriptor;
 
         vkUpdateDescriptorSets(device, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0,
                                nullptr);
     }
 
 }
-
 
 void Renderer::generateBRDFLUT() {
     auto tStart = std::chrono::high_resolution_clock::now();
@@ -1318,7 +1200,7 @@ void Renderer::generateCubemaps() {
                 vkCmdSetViewport(cmdBuf, 0, 1, &viewport);
                 vkCmdSetScissor(cmdBuf, 0, 1, &scissor);
 
-                // Render scene from cube face's point of view
+                // Render scene from Cube face's point of view
                 vkCmdBeginRenderPass(cmdBuf, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
                 // Pass parameters for current pass using a push constant block
@@ -1368,7 +1250,7 @@ void Renderer::generateCubemaps() {
                                          0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
                 }
 
-                // Copy region for transfer from framebuffer to cube face
+                // Copy region for transfer from framebuffer to Cube face
                 VkImageCopy copyRegion{};
 
                 copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -1456,7 +1338,7 @@ void Renderer::generateCubemaps() {
 
         auto tEnd = std::chrono::high_resolution_clock::now();
         auto tDiff = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
-        std::cout << "Generating cube map with " << numMips << " mip levels took " << tDiff << " ms" << std::endl;
+        std::cout << "Generating Cube map with " << numMips << " mip levels took " << tDiff << " ms" << std::endl;
     }
 }
 

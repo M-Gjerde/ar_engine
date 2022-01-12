@@ -9,7 +9,7 @@ void Example::update() {
 }
 
 std::string Example::getType() {
-    return Base::getType();
+    return type;
 }
 
 void Example::setup(Base::SetupVars vars) {
