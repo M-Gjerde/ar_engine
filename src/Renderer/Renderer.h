@@ -22,6 +22,7 @@
 #include "ar_engine/src/builder/Example.h"
 #include <ar_engine/src/builder/Terrain.h>
 #include <ar_engine/src/builder/MyModelExample.h>
+#include <ar_engine/src/builder/Cube.h>
 
 #include <ar_engine/src/tools/Macros.h>
 
@@ -61,7 +62,6 @@ private:
 
 protected:
 
-    bool wireframe = false;
     enum PBRWorkflows{ PBR_WORKFLOW_METALLIC_ROUGHNESS = 0, PBR_WORKFLOW_SPECULAR_GLOSINESS = 1 };
 
     struct Textures {
@@ -73,14 +73,9 @@ protected:
     } textures{};
 
 
-    struct LightSource {
-        glm::vec3 color = glm::vec3(1.0f);
-        glm::vec3 rotation = glm::vec3(75.0f, 40.0f, 0.0f);
-    } lightSource;
-
-    UBOMatrices *shaderValuesScene{};
-    UBOMatrices *shaderValuesSkybox{};
-    SimpleUBOMatrix *shaderValuesObject{};
+    UBOMatrixLight *shaderValuesScene{};
+    UBOMatrix *shaderValuesSkybox{};
+    UBOMatrix *shaderValuesObject{};
     FragShaderParams *fragShaderParams{};
     ShaderValuesParams *shaderValuesParams{};
 
@@ -90,10 +85,8 @@ protected:
     } models;
 
     struct UniformBufferSet {
-        Buffer scene;
         Buffer params;
         Buffer skybox;
-        Buffer lightParams;
     };
     std::vector<UniformBufferSet> uniformBuffers{};
 
@@ -101,32 +94,16 @@ protected:
 
     struct Pipelines {
         VkPipeline skybox;
-        VkPipeline pbr;
-        VkPipeline pbrAlphaBlend;
     } pipelines{};
 
     struct DescriptorSetLayouts {
-        VkDescriptorSetLayout scene;
-        VkDescriptorSetLayout material;
-        VkDescriptorSetLayout node;
+        VkDescriptorSetLayout skybox;
     } descriptorSetLayouts{};
 
     struct DescriptorSets {
-        VkDescriptorSet scene;
         VkDescriptorSet skybox;
-        VkDescriptorSet lightParams;
-
     };
     std::vector<DescriptorSets> descriptorSets;
-
-    struct SkyBox{
-        VkDescriptorSet descriptorSet;
-        VkPipeline pipeline;
-        UBOMatrices ubo;
-        Buffer uboSet;
-        vkglTF::Model model;
-        TextureCubeMap textureCubeMap;
-    } skybox;
 
     struct PushConstBlockMaterial {
         glm::vec4 baseColorFactor;

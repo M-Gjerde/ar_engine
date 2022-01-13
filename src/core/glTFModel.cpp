@@ -381,6 +381,7 @@ VkSamplerAddressMode glTFModel::Model::getVkWrapMode(int32_t wrapMode) {
         case 33648:
             return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
     }
+    return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 }
 
 VkFilter glTFModel::Model::getVkFilterMode(int32_t filterMode) {
@@ -413,17 +414,17 @@ void glTFModel::prepareUniformBuffers(uint32_t count) {
 
     for (auto &uniformBuffer: uniformBuffers) {
 
-        device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                             &uniformBuffer.model, sizeof(SimpleUBOMatrix));
+        vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                   &uniformBuffer.model, sizeof(UBOMatrixLight));
 
-        device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                             &uniformBuffer.shaderValues, sizeof(ShaderValuesParams));
+        vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                   &uniformBuffer.shaderValues, sizeof(ShaderValuesParams));
 
-        device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                             &uniformBuffer.selection, sizeof(float));
+        vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                   &uniformBuffer.selection, sizeof(float));
 
     }
 
@@ -433,7 +434,7 @@ void glTFModel::updateUniformBufferData(uint32_t index, void *params, void *matr
     UniformBufferSet currentUB = uniformBuffers[index];
 
     currentUB.model.map();
-    memcpy(currentUB.model.mapped, matrix, sizeof(SimpleUBOMatrix));
+    memcpy(currentUB.model.mapped, matrix, sizeof(UBOMatrixLight));
     currentUB.model.unmap();
 
     currentUB.shaderValues.map();
@@ -442,7 +443,7 @@ void glTFModel::updateUniformBufferData(uint32_t index, void *params, void *matr
 
     currentUB.selection.map();
 
-    char* val = static_cast<char *>(selection);
+    char *val = static_cast<char *>(selection);
     float f = (float) atoi(val);
     memcpy(currentUB.selection.mapped, &f, sizeof(float));
     currentUB.selection.unmap();
@@ -462,30 +463,43 @@ void glTFModel::Primitive::setBoundingBox(glm::vec3 min, glm::vec3 max) {
 }
 
 void glTFModel::createDescriptorSetLayout() {
+
+    // TODO BETTER SELECTION PROCESS
     std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
-            {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1, VK_SHADER_STAGE_VERTEX_BIT,   nullptr},
-            //{1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-            {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-            {2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-            {3, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+            {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT,   nullptr},
+            {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
     };
+    if (model.materials[0].baseColorTexture != NULL) {
+        setLayoutBindings = {
+                {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1, VK_SHADER_STAGE_VERTEX_BIT,   nullptr},
+                //{1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                {2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                {3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+        };
+    }
+
+
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI{};
     descriptorSetLayoutCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     descriptorSetLayoutCI.pBindings = setLayoutBindings.data();
     descriptorSetLayoutCI.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
     CHECK_RESULT(
-            vkCreateDescriptorSetLayout(device->logicalDevice, &descriptorSetLayoutCI, nullptr, &descriptorSetLayout));
+            vkCreateDescriptorSetLayout(vulkanDevice->logicalDevice, &descriptorSetLayoutCI, nullptr,
+                                        &descriptorSetLayout));
 }
 
 void glTFModel::createDescriptors(uint32_t count) {
     descriptors.resize(count);
 
+    // Check for how many image descriptors
+
     /**
      * Create Descriptor Pool
      */
 
-    uint32_t uniformDescriptorCount = 3 * count + model.nodes.size();
-    uint32_t imageDescriptorSamplerCount = 3 * count * 3;
+    uint32_t uniformDescriptorCount = (3 * count + model.nodes.size());
+    uint32_t imageDescriptorSamplerCount = (3 * count * 3);
     std::vector<VkDescriptorPoolSize> poolSizes = {
             {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         uniformDescriptorCount},
             {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, imageDescriptorSamplerCount},
@@ -493,12 +507,14 @@ void glTFModel::createDescriptors(uint32_t count) {
     };
     VkDescriptorPoolCreateInfo poolCreateInfo = Populate::descriptorPoolCreateInfo(poolSizes,
                                                                                    count + model.nodes.size());
-    CHECK_RESULT(vkCreateDescriptorPool(device->logicalDevice, &poolCreateInfo, nullptr, &descriptorPool));
+    CHECK_RESULT(vkCreateDescriptorPool(vulkanDevice->logicalDevice, &poolCreateInfo, nullptr, &descriptorPool));
 
 
     /**
      * Create Descriptor Sets
      */
+
+
     for (auto i = 0; i < descriptors.size(); i++) {
 
         VkDescriptorSetAllocateInfo descriptorSetAllocInfo{};
@@ -506,9 +522,9 @@ void glTFModel::createDescriptors(uint32_t count) {
         descriptorSetAllocInfo.descriptorPool = descriptorPool;
         descriptorSetAllocInfo.pSetLayouts = &descriptorSetLayout;
         descriptorSetAllocInfo.descriptorSetCount = 1;
-        CHECK_RESULT(vkAllocateDescriptorSets(device->logicalDevice, &descriptorSetAllocInfo, &descriptors[i]));
+        CHECK_RESULT(vkAllocateDescriptorSets(vulkanDevice->logicalDevice, &descriptorSetAllocInfo, &descriptors[i]));
 
-        std::array<VkWriteDescriptorSet, 4> writeDescriptorSets{};
+        std::vector<VkWriteDescriptorSet> writeDescriptorSets(2);
 
         writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -517,36 +533,35 @@ void glTFModel::createDescriptors(uint32_t count) {
         writeDescriptorSets[0].dstBinding = 0;
         writeDescriptorSets[0].pBufferInfo = &uniformBuffers[i].model.descriptorBufferInfo;
 
-/*
         writeDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         writeDescriptorSets[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         writeDescriptorSets[1].descriptorCount = 1;
         writeDescriptorSets[1].dstSet = descriptors[i];
         writeDescriptorSets[1].dstBinding = 1;
-        writeDescriptorSets[1].pBufferInfo = &uniformBuffers[i].shaderValues.descriptorBufferInfo;*/
+        writeDescriptorSets[1].pBufferInfo = &uniformBuffers[i].selection.descriptorBufferInfo;
 
-        writeDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        writeDescriptorSets[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        writeDescriptorSets[1].descriptorCount = 1;
-        writeDescriptorSets[1].dstSet = descriptors[i];
-        writeDescriptorSets[1].dstBinding = 1;
-        writeDescriptorSets[1].pImageInfo = &model.textures[model.textureIndices.baseColor].descriptor;
+        if (model.materials[0].baseColorTexture != NULL) {
+            writeDescriptorSets.resize(3);
+            writeDescriptorSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            writeDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            writeDescriptorSets[2].descriptorCount = 1;
+            writeDescriptorSets[2].dstSet = descriptors[i];
+            writeDescriptorSets[2].dstBinding = 2;
+            writeDescriptorSets[2].pImageInfo = &model.textures[model.textureIndices.baseColor].descriptor;
+        }
 
-        writeDescriptorSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        writeDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        writeDescriptorSets[2].descriptorCount = 1;
-        writeDescriptorSets[2].dstSet = descriptors[i];
-        writeDescriptorSets[2].dstBinding = 2;
-        writeDescriptorSets[2].pImageInfo = &model.textures[model.textureIndices.normalMap].descriptor;
+        if (model.materials[0].normalTexture != NULL) {
+            writeDescriptorSets.resize(4);
+            writeDescriptorSets[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            writeDescriptorSets[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            writeDescriptorSets[3].descriptorCount = 1;
+            writeDescriptorSets[3].dstSet = descriptors[i];
+            writeDescriptorSets[3].dstBinding = 3;
+            writeDescriptorSets[3].pImageInfo = &model.textures[model.textureIndices.normalMap].descriptor;
+        }
 
-        writeDescriptorSets[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        writeDescriptorSets[3].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        writeDescriptorSets[3].descriptorCount = 1;
-        writeDescriptorSets[3].dstSet = descriptors[i];
-        writeDescriptorSets[3].dstBinding = 3;
-        writeDescriptorSets[3].pBufferInfo = &uniformBuffers[i].selection.descriptorBufferInfo;
 
-        vkUpdateDescriptorSets(device->logicalDevice, static_cast<uint32_t>(writeDescriptorSets.size()),
+        vkUpdateDescriptorSets(vulkanDevice->logicalDevice, static_cast<uint32_t>(writeDescriptorSets.size()),
                                writeDescriptorSets.data(), 0, NULL);
     }
 
@@ -561,7 +576,7 @@ void glTFModel::createDescriptors(uint32_t count) {
         descriptorSetLayoutCI.pBindings = setLayoutBindings.data();
         descriptorSetLayoutCI.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
         CHECK_RESULT(
-                vkCreateDescriptorSetLayout(device->logicalDevice, &descriptorSetLayoutCI, nullptr,
+                vkCreateDescriptorSetLayout(vulkanDevice->logicalDevice, &descriptorSetLayoutCI, nullptr,
                                             &descriptorSetLayoutNode));
 
         // Per-Node descriptor set
@@ -580,7 +595,7 @@ void glTFModel::setupNodeDescriptorSet(glTFModel::Node *node) {
         descriptorSetAllocInfo.pSetLayouts = &descriptorSetLayoutNode;
         descriptorSetAllocInfo.descriptorSetCount = 1;
         CHECK_RESULT(
-                vkAllocateDescriptorSets(device->logicalDevice, &descriptorSetAllocInfo,
+                vkAllocateDescriptorSets(vulkanDevice->logicalDevice, &descriptorSetAllocInfo,
                                          &node->mesh->uniformBuffer.descriptorSet));
 
         VkWriteDescriptorSet writeDescriptorSet{};
@@ -591,7 +606,7 @@ void glTFModel::setupNodeDescriptorSet(glTFModel::Node *node) {
         writeDescriptorSet.dstBinding = 0;
         writeDescriptorSet.pBufferInfo = &node->mesh->uniformBuffer.descriptor;
 
-        vkUpdateDescriptorSets(device->logicalDevice, 1, &writeDescriptorSet, 0, nullptr);
+        vkUpdateDescriptorSets(vulkanDevice->logicalDevice, 1, &writeDescriptorSet, 0, nullptr);
     }
     for (auto &child: node->children) {
         setupNodeDescriptorSet(child);
@@ -600,7 +615,6 @@ void glTFModel::setupNodeDescriptorSet(glTFModel::Node *node) {
 
 
 void glTFModel::createPipeline(VkRenderPass renderPass, std::vector<VkPipelineShaderStageCreateInfo> shaderStages) {
-
 
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCI = Populate::pipelineInputAssemblyStateCreateInfo(
             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, 0, VK_FALSE);
@@ -653,17 +667,17 @@ void glTFModel::createPipeline(VkRenderPass renderPass, std::vector<VkPipelineSh
     pipelineLayoutCI.pSetLayouts = setLayouts.data();
     pipelineLayoutCI.pushConstantRangeCount = 0;
     pipelineLayoutCI.pPushConstantRanges = nullptr;
-    CHECK_RESULT(vkCreatePipelineLayout(device->logicalDevice, &pipelineLayoutCI, nullptr, &pipelineLayout));
+    CHECK_RESULT(vkCreatePipelineLayout(vulkanDevice->logicalDevice, &pipelineLayoutCI, nullptr, &pipelineLayout));
 
 
     // Vertex bindings an attributes
     VkVertexInputBindingDescription vertexInputBinding = {0, sizeof(glTFModel::Model::Vertex),
                                                           VK_VERTEX_INPUT_RATE_VERTEX};
     std::vector<VkVertexInputAttributeDescription> vertexInputAttributes = {
-            {0, 0, VK_FORMAT_R32G32B32_SFLOAT,    0},
-            {1, 0, VK_FORMAT_R32G32B32_SFLOAT,    sizeof(float) * 3},
-            {2, 0, VK_FORMAT_R32G32_SFLOAT,       sizeof(float) * 6},
-            {3, 0, VK_FORMAT_R32G32_SFLOAT,       sizeof(float) * 8},
+            {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0},
+            {1, 0, VK_FORMAT_R32G32B32_SFLOAT, sizeof(float) * 3},
+            {2, 0, VK_FORMAT_R32G32_SFLOAT,    sizeof(float) * 6},
+            {3, 0, VK_FORMAT_R32G32_SFLOAT,    sizeof(float) * 8},
     };
     VkPipelineVertexInputStateCreateInfo vertexInputStateCI{};
     vertexInputStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -690,10 +704,10 @@ void glTFModel::createPipeline(VkRenderPass renderPass, std::vector<VkPipelineSh
     multisampleStateCI.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
 
-    CHECK_RESULT(vkCreateGraphicsPipelines(device->logicalDevice, nullptr, 1, &pipelineCI, nullptr, &pipeline));
+    CHECK_RESULT(vkCreateGraphicsPipelines(vulkanDevice->logicalDevice, nullptr, 1, &pipelineCI, nullptr, &pipeline));
 
     for (auto shaderStage: shaderStages) {
-        vkDestroyShaderModule(device->logicalDevice, shaderStage.module, nullptr);
+        vkDestroyShaderModule(vulkanDevice->logicalDevice, shaderStage.module, nullptr);
     }
 
 

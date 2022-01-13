@@ -9,7 +9,11 @@
 
 void Terrain::setup(SetupVars vars) {
     printf("Terrain setup\n");
-    this->device = vars.device;
+    vulkanDevice = vars.device; // TODO No actual need for multiple VkDevice references
+    b.renderPass = vars.renderPass;
+    b.UBCount = vars.UBCount;
+    b.device = vars.device;
+
 
     xSizeSlider.name = "xSize";
     xSizeSlider.lowRange = 0;
@@ -144,11 +148,16 @@ void Terrain::onUIUpdate(UISettings uiSettings) {
 
 }
 
-void Terrain::prepareObject(prepareVars vars) {
-    prepareUniformBuffers(vars.UBCount);
+void Terrain::prepareObject() {
+    prepareUniformBuffers(b.UBCount);
     createDescriptorSetLayout();
-    createDescriptors(vars.UBCount);
-    createPipeline(*vars.renderPass, *vars.shaders2);
+    createDescriptors(b.UBCount);
+
+    VkPipelineShaderStageCreateInfo vs = loadShader("triangle.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+    VkPipelineShaderStageCreateInfo fs = loadShader("triangle.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    std::vector<VkPipelineShaderStageCreateInfo> shaders = {{vs}, {fs}};
+    createPipeline(*b.renderPass, shaders);
 }
 
 void Terrain::updateUniformBufferData(uint32_t index, void *params, void *matrix) {

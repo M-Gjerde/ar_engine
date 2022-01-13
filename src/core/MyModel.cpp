@@ -31,7 +31,7 @@ void MyModel::useStagingBuffer(Model::Vertex *_vertices, uint32_t vertexCount, g
 
     // Create staging buffers
     // Vertex data
-    CHECK_RESULT(device->createBuffer(
+    CHECK_RESULT(vulkanDevice->createBuffer(
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
             vertexBufferSize,
@@ -40,7 +40,7 @@ void MyModel::useStagingBuffer(Model::Vertex *_vertices, uint32_t vertexCount, g
             _vertices));
     // Index data
     if (indexBufferSize > 0) {
-        CHECK_RESULT(device->createBuffer(
+        CHECK_RESULT(vulkanDevice->createBuffer(
                 VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                 indexBufferSize,
@@ -51,7 +51,7 @@ void MyModel::useStagingBuffer(Model::Vertex *_vertices, uint32_t vertexCount, g
 
     // Create device local buffers
     // Vertex buffer
-    CHECK_RESULT(device->createBuffer(
+    CHECK_RESULT(vulkanDevice->createBuffer(
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
             vertexBufferSize,
@@ -59,7 +59,7 @@ void MyModel::useStagingBuffer(Model::Vertex *_vertices, uint32_t vertexCount, g
             &model.vertices.memory));
     // Index buffer
     if (indexBufferSize > 0) {
-        CHECK_RESULT(device->createBuffer(
+        CHECK_RESULT(vulkanDevice->createBuffer(
                 VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                 indexBufferSize,
@@ -68,7 +68,7 @@ void MyModel::useStagingBuffer(Model::Vertex *_vertices, uint32_t vertexCount, g
     }
 
     // Copy from staging buffers
-    VkCommandBuffer copyCmd = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+    VkCommandBuffer copyCmd = vulkanDevice->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
     VkBufferCopy copyRegion = {};
     copyRegion.size = vertexBufferSize;
     vkCmdCopyBuffer(copyCmd, vertexStaging.buffer, model.vertices.buffer, 1, &copyRegion);
@@ -76,13 +76,13 @@ void MyModel::useStagingBuffer(Model::Vertex *_vertices, uint32_t vertexCount, g
         copyRegion.size = indexBufferSize;
         vkCmdCopyBuffer(copyCmd, indexStaging.buffer, model.indices.buffer, 1, &copyRegion);
     }
-    device->flushCommandBuffer(copyCmd, device->transferQueue, true);
-    vkDestroyBuffer(device->logicalDevice, vertexStaging.buffer, nullptr);
-    vkFreeMemory(device->logicalDevice, vertexStaging.memory, nullptr);
+    vulkanDevice->flushCommandBuffer(copyCmd, vulkanDevice->transferQueue, true);
+    vkDestroyBuffer(vulkanDevice->logicalDevice, vertexStaging.buffer, nullptr);
+    vkFreeMemory(vulkanDevice->logicalDevice, vertexStaging.memory, nullptr);
 
     if (indexBufferSize > 0) {
-        vkDestroyBuffer(device->logicalDevice, indexStaging.buffer, nullptr);
-        vkFreeMemory(device->logicalDevice, indexStaging.memory, nullptr);
+        vkDestroyBuffer(vulkanDevice->logicalDevice, indexStaging.buffer, nullptr);
+        vkFreeMemory(vulkanDevice->logicalDevice, indexStaging.memory, nullptr);
     }
 }
 
@@ -113,7 +113,7 @@ void MyModel::createDescriptors(uint32_t count) {
     descriptorPoolCI.poolSizeCount = 1;
     descriptorPoolCI.pPoolSizes = poolSizes.data();
     descriptorPoolCI.maxSets = count;
-    CHECK_RESULT(vkCreateDescriptorPool(device->logicalDevice, &descriptorPoolCI, nullptr, &descriptorPool));
+    CHECK_RESULT(vkCreateDescriptorPool(vulkanDevice->logicalDevice, &descriptorPoolCI, nullptr, &descriptorPool));
 
 
     for (uint32_t i = 0; i < uniformBuffers.size(); ++i) {
@@ -122,7 +122,7 @@ void MyModel::createDescriptors(uint32_t count) {
                                                                                                  &descriptorSetLayout,
                                                                                                  1);
 
-        CHECK_RESULT(vkAllocateDescriptorSets(device->logicalDevice, &descriptorSetAllocInfo, &descriptors[i]));
+        CHECK_RESULT(vkAllocateDescriptorSets(vulkanDevice->logicalDevice, &descriptorSetAllocInfo, &descriptors[i]));
 
         std::array<VkWriteDescriptorSet, 2> writeDescriptorSet = {Populate::writeDescriptorSet(descriptors[i],
                                                                                                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -139,7 +139,7 @@ void MyModel::createDescriptors(uint32_t count) {
                                                                                                        .descriptorBufferInfo,
                                                                                                1)
         };
-        vkUpdateDescriptorSets(device->logicalDevice, 2, writeDescriptorSet.data(), 0,
+        vkUpdateDescriptorSets(vulkanDevice->logicalDevice, 2, writeDescriptorSet.data(), 0,
                                nullptr);
     }
 }
@@ -152,13 +152,13 @@ void MyModel::createDescriptorSetLayout() {
     VkDescriptorSetLayoutCreateInfo layoutCreateInfo = Populate::descriptorSetLayoutCreateInfo(bindings.data(),
                                                                                                bindings.size());
 
-    CHECK_RESULT(vkCreateDescriptorSetLayout(device->logicalDevice, &layoutCreateInfo, nullptr, &descriptorSetLayout));
+    CHECK_RESULT(vkCreateDescriptorSetLayout(vulkanDevice->logicalDevice, &layoutCreateInfo, nullptr, &descriptorSetLayout));
 
 }
 
 void MyModel::createPipelineLayout() {
     VkPipelineLayoutCreateInfo info = Populate::pipelineLayoutCreateInfo(&descriptorSetLayout, 1);
-    CHECK_RESULT(vkCreatePipelineLayout(device->logicalDevice, &info, nullptr, &pipelineLayout))
+    CHECK_RESULT(vkCreatePipelineLayout(vulkanDevice->logicalDevice, &info, nullptr, &pipelineLayout))
 }
 
 void MyModel::createPipeline(VkRenderPass pT, std::vector<VkPipelineShaderStageCreateInfo> shaderStages) {
@@ -248,11 +248,11 @@ void MyModel::createPipeline(VkRenderPass pT, std::vector<VkPipelineShaderStageC
 
     pipelineCI.layout = pipelineLayout;
 
-    CHECK_RESULT(vkCreateGraphicsPipelines(device->logicalDevice, nullptr, 1, &pipelineCI, nullptr, &pipeline));
+    CHECK_RESULT(vkCreateGraphicsPipelines(vulkanDevice->logicalDevice, nullptr, 1, &pipelineCI, nullptr, &pipeline));
 
 
     for (auto shaderStage: shaderStages) {
-        vkDestroyShaderModule(device->logicalDevice, shaderStage.module, nullptr);
+        vkDestroyShaderModule(vulkanDevice->logicalDevice, shaderStage.module, nullptr);
     }
 }
 
@@ -261,13 +261,13 @@ void MyModel::prepareUniformBuffers(uint32_t count) {
 
     for (auto &uniformBuffer: uniformBuffers) {
 
-        device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                              &uniformBuffer.lightParams, sizeof(FragShaderParams));
 
-        device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                             &uniformBuffer.object, sizeof(SimpleUBOMatrix));
+                             &uniformBuffer.object, sizeof(UBOMatrix));
 
 
     }
@@ -278,7 +278,7 @@ void MyModel::updateUniformBufferData(uint32_t index, void* params, void* matrix
     UniformBufferSet currentUB = uniformBuffers[index];
 
     currentUB.object.map();
-    memcpy( currentUB.object.mapped, matrix, sizeof(SimpleUBOMatrix));
+    memcpy( currentUB.object.mapped, matrix, sizeof(UBOMatrix));
     currentUB.object.unmap();
 
     currentUB.lightParams.map();

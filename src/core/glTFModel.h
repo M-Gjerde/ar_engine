@@ -19,9 +19,9 @@
 class glTFModel {
 public:
 
-    VulkanDevice* device;
-
     glTFModel();
+
+    VulkanDevice *vulkanDevice;
 
     struct Primitive {
         uint32_t firstIndex{};

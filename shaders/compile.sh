@@ -6,3 +6,6 @@ glslc ./imgui/ui.frag -o ./imgui/ui.frag.spv
 
 glslc ./gltfLoading/mesh.vert -o ./gltfLoading/mesh.vert.spv
 glslc ./gltfLoading/mesh.frag -o ./gltfLoading/mesh.frag.spv
+
+glslc ./myScene/box.vert -o ./myScene/box.vert.spv
+glslc ./myScene/box.frag -o ./myScene/box.frag.spv

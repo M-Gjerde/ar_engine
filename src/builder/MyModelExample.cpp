@@ -6,7 +6,10 @@
 
 void MyModelExample::setup(Base::SetupVars vars) {
     printf("MyModelExample setup\n");
-    this->device = vars.device;
+    this->vulkanDevice = vars.device;
+    b.device = vars.device;
+    b.UBCount = vars.UBCount;
+    b.renderPass = vars.renderPass;
 
     std::string fileName;
     //loadFromFile(fileName);
@@ -17,6 +20,8 @@ void MyModelExample::setup(Base::SetupVars vars) {
     vars.ui->dropDownItems.emplace_back("Grayscale");
     vars.ui->dropDownItems.emplace_back("Albedo");
     vars.ui->dropDownItems.emplace_back("Albedo + Normal");
+
+
 }
 
 void MyModelExample::update() {
@@ -41,11 +46,16 @@ void MyModelExample::onUIUpdate(UISettings uiSettings) {
     printf("Selection %s\n", (char *) selection);
 }
 
-void MyModelExample::prepareObject(prepareVars vars) {
-    prepareUniformBuffers(vars.UBCount);
+void MyModelExample::prepareObject() {
+    prepareUniformBuffers(b.UBCount);
     createDescriptorSetLayout();
-    createDescriptors(vars.UBCount);
-    createPipeline(*vars.renderPass, *vars.shaders);
+    createDescriptors(b.UBCount);
+
+    VkPipelineShaderStageCreateInfo vs = loadShader("gltfLoading/mesh.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+    VkPipelineShaderStageCreateInfo fs = loadShader("gltfLoading/mesh.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    std::vector<VkPipelineShaderStageCreateInfo> shaders = {{vs}, {fs}};
+    createPipeline(*b.renderPass, shaders);
 
 }
 

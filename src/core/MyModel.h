@@ -18,8 +18,6 @@ class MyModel {
 
 public:
     MyModel();
-
-
     struct Model {
         struct Vertex {
             glm::vec3 pos;
@@ -92,9 +90,8 @@ public:
     void createDescriptors(uint32_t count);
 
 protected:
-    VulkanDevice *device{};
     MyModel *self = this;
-
+    VulkanDevice *vulkanDevice;
 
     void useStagingBuffer(Model::Vertex *_vertices, uint32_t vertexCount, unsigned int *_indices, uint32_t indexCount);
 

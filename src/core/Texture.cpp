@@ -1002,7 +1002,7 @@ void TextureCubeMap::loadFromFile(std::string filename, VulkanDevice *device, Vk
     }
     // Cube faces count as array layers in Vulkan
      imageCreateInfo.arrayLayers = 6;
-    // This flag is required for cube map images
+    // This flag is required for Cube map images
     imageCreateInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
 
@@ -1038,7 +1038,7 @@ void TextureCubeMap::loadFromFile(std::string filename, VulkanDevice *device, Vk
             VK_PIPELINE_STAGE_HOST_BIT,
             VK_PIPELINE_STAGE_TRANSFER_BIT);
 
-    // Copy the cube map faces from the staging buffer to the optimal tiled image
+    // Copy the Cube map faces from the staging buffer to the optimal tiled image
     vkCmdCopyBufferToImage(
             copyCmd,
             stagingBuffer,

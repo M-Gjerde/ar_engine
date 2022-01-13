@@ -6,12 +6,13 @@ layout (location = 2) in vec2 inUV;
 layout (location = 3) in vec3 inViewVec;
 layout (location = 4) in vec3 inLightVec;
 
-layout (set = 0, binding = 1) uniform sampler2D samplerColorMap;
-layout (set = 0, binding = 2) uniform sampler2D samplerTextureMap;
+layout (set = 0, binding = 2) uniform sampler2D samplerColorMap;
+layout (set = 0, binding = 3) uniform sampler2D samplerTextureMap;
 
-layout(set = 0, binding = 3) uniform SELECT {
+layout(set = 0, binding = 1) uniform SELECT {
     float map;
 } select;
+
 
 layout (location = 0) out vec4 outFragColor;
 
@@ -30,9 +31,8 @@ void main()
     if (select.map == 2){
         color = texture(samplerColorMap, inUV).rgb;
         vec4 N = texture(samplerTextureMap, inUV);
-        N = normalize(N * 2.0 - 1.0);
+        //N = normalize(N * 2.0 - 1.0);
 
-        normals = N.rgb;
     }
 
     vec3 ambient = color * 0.1;
@@ -43,6 +43,7 @@ void main()
     vec3 specular = pow(max(dot(R, V), 0.0), 16.0) * vec3(0.75);
     outFragColor = vec4(ambient + diffuse * color.rgb + specular, 1.0);
 
+    //outFragColor = vec4(normals, 1.0f);
 
     //color = vec4(0.3, 0.3, 0.3, 1.0);
     //outFragColor = color;
