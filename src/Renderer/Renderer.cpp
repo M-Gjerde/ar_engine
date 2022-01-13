@@ -19,7 +19,7 @@ void Renderer::createSkybox() {
     //std::string environmentFile = Utils::getAssetsPath() + "environments/gcanyon_cube.ktx";
     //std::string environmentFile = getAssetsPath() + "environments/cubemap_yokohama_rgba.ktx";
     //std::string environmentFile = Utils::getAssetsPath() + "environments/cubemap_space.ktx";
-    std::string environmentFile = Utils::getAssetsPath() + "environments/cubemap_vulkan.ktx";
+    std::string environmentFile = Utils::getAssetsPath() + "environments/papermill.ktx";
     //std::string environmentFile = getAssetsPath() + "environments/cubemap_space.ktx";
     models.skybox.loadFromFile(Utils::getAssetsPath() + "models/Box/glTF-Embedded/Box.gltf", vulkanDevice, queue);
     textures.environmentCube.loadFromFile(environmentFile, vulkanDevice, queue, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,

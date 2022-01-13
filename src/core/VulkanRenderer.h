@@ -210,6 +210,7 @@ private:
     /** @brief Default function to handle cursor position input, calls the override function mouseMoved(...) **/
     void handleMouseMove(int32_t x, int32_t y);
 
+    static VkPhysicalDevice pickPhysicalDevice(std::vector<VkPhysicalDevice> devices);
 };
 
 

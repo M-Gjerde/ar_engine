@@ -1,11 +1,13 @@
-glslc ./triangle.vert -o triangle.vert.spv
-glslc ./triangle.frag -o triangle.frag.spv
+glslc="../compiler/shaderc/build/glslc/glslc"
 
-glslc ./imgui/ui.vert -o ./imgui/ui.vert.spv
-glslc ./imgui/ui.frag -o ./imgui/ui.frag.spv
+$glslc ./triangle.vert -o triangle.vert.spv
+$glslc ./triangle.frag -o triangle.frag.spv
 
-glslc ./gltfLoading/mesh.vert -o ./gltfLoading/mesh.vert.spv
-glslc ./gltfLoading/mesh.frag -o ./gltfLoading/mesh.frag.spv
+$glslc ./imgui/ui.vert -o ./imgui/ui.vert.spv
+$glslc ./imgui/ui.frag -o ./imgui/ui.frag.spv
 
-glslc ./myScene/box.vert -o ./myScene/box.vert.spv
-glslc ./myScene/box.frag -o ./myScene/box.frag.spv
+$glslc ./gltfLoading/mesh.vert -o ./gltfLoading/mesh.vert.spv
+$glslc ./gltfLoading/mesh.frag -o ./gltfLoading/mesh.frag.spv
+
+$glslc ./myScene/box.vert -o ./myScene/box.vert.spv
+$glslc ./myScene/box.frag -o ./myScene/box.frag.spv

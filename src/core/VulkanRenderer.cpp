@@ -46,6 +46,7 @@ VkResult VulkanRenderer::createInstance(bool enableValidation) {
     }
 
     const std::vector<const char *> validationLayers = {"VK_LAYER_KHRONOS_validation"};
+
     // The VK_LAYER_KHRONOS_validation contains all current validation functionality.
     if (settings.validation) {
 
@@ -94,8 +95,8 @@ bool VulkanRenderer::initVulkan() {
     }
     // Select physical device to be used for the Vulkan example
     // Defaults to the first device unless anything else specified
-    uint32_t selectedDevice = 1;
-    physicalDevice = physicalDevices[selectedDevice];
+
+    physicalDevice = pickPhysicalDevice(physicalDevices);
     // Store properties (including limits), features and memory properties of the physical device (so that examples can check against them)
     vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
     vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
@@ -685,5 +686,30 @@ void VulkanRenderer::mouseButtonCallback(GLFWwindow *window, int button, int act
                 myApp->mouseButtons.left = false;
         }
     }
+}
+
+VkPhysicalDevice VulkanRenderer::pickPhysicalDevice(std::vector<VkPhysicalDevice> devices) {
+
+    if (devices.empty())
+        throw std::runtime_error("No physical devices available");
+
+    for (auto & device : devices){
+        VkPhysicalDeviceProperties properties{};
+        VkPhysicalDeviceFeatures features{};
+        VkPhysicalDeviceMemoryProperties memoryProperties{};
+
+        vkGetPhysicalDeviceProperties(device, &properties);
+        vkGetPhysicalDeviceFeatures(device, &features);
+        vkGetPhysicalDeviceMemoryProperties(device, &memoryProperties);
+
+        // Search for a discrete GPU and prefer this one
+        if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU){
+            return device;
+        }
+
+    }
+
+    // If no discrete GPU were found just return the first device found
+    return devices[0];
 }
 

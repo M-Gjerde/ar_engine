@@ -2,5 +2,13 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/compiler/shaderc" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/validation/Vulkan-Loader" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/validation/Vulkan-ValidationLayers" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/validation/Vulkan-ValidationLayers/external/SPIRV-Headers" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/validation/Vulkan-ValidationLayers/external/SPIRV-Tools" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/validation/Vulkan-ValidationLayers/external/Vulkan-Headers" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/validation/Vulkan-ValidationLayers/external/googletest" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/validation/Vulkan-ValidationLayers/external/robin-hood-hashing" vcs="Git" />
   </component>
 </project>
