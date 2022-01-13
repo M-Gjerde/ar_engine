@@ -15,9 +15,6 @@
 #include <fstream>
 #include <filesystem>
 
-// External
-#include <tiny_obj_loader.h>
-
 // Engine
 #include "ar_engine/src/builder/Example.h"
 #include <ar_engine/src/builder/Terrain.h>

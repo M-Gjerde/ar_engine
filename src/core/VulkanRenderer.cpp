@@ -94,7 +94,7 @@ bool VulkanRenderer::initVulkan() {
     }
     // Select physical device to be used for the Vulkan example
     // Defaults to the first device unless anything else specified
-    uint32_t selectedDevice = 0;
+    uint32_t selectedDevice = 1;
     physicalDevice = physicalDevices[selectedDevice];
     // Store properties (including limits), features and memory properties of the physical device (so that examples can check against them)
     vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
