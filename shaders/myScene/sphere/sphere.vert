@@ -12,21 +12,19 @@ layout (set = 0, binding = 0) uniform UBOScene
     mat4 model;
 } ubo;
 
-
 layout (location = 0) out vec3 outNormal;
 layout (location = 1) out vec2 outUV;
 layout (location = 2) out vec3 FragPos;
 
-
 void main()
 {
+
     gl_Position = ubo.projection * ubo.view * ubo.model * vec4(inPos.xyz, 1.0);
 
     outNormal = mat3(transpose(inverse(ubo.model))) * inNormal;
 
     outUV = inUV;
     FragPos = vec3(ubo.model * vec4(inPos, 1.0));
-
 
 
 

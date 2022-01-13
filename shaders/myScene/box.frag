@@ -10,6 +10,10 @@ layout(set = 0, binding = 1) uniform SELECT {
     float map;
 } select;
 
+layout(set = 0, binding = 2) uniform INFO {
+    float map;
+} info;
+
 
 layout (location = 0) out vec4 outFragColor;
 

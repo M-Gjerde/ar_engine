@@ -416,11 +416,11 @@ void glTFModel::prepareUniformBuffers(uint32_t count) {
 
         vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                   &uniformBuffer.model, sizeof(UBOMatrixLight));
+                                   &uniformBuffer.model, sizeof(UBOMatrix));
 
         vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                   &uniformBuffer.shaderValues, sizeof(ShaderValuesParams));
+                                   &uniformBuffer.shaderValues, sizeof(FragShaderParams));
 
         vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -434,7 +434,7 @@ void glTFModel::updateUniformBufferData(uint32_t index, void *params, void *matr
     UniformBufferSet currentUB = uniformBuffers[index];
 
     currentUB.model.map();
-    memcpy(currentUB.model.mapped, matrix, sizeof(UBOMatrixLight));
+    memcpy(currentUB.model.mapped, matrix, sizeof(UBOMatrix));
     currentUB.model.unmap();
 
     currentUB.shaderValues.map();
@@ -468,15 +468,17 @@ void glTFModel::createDescriptorSetLayout() {
     std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
             {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT,   nullptr},
             {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+            {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}
     };
-    if (model.materials[0].baseColorTexture != NULL) {
-        setLayoutBindings = {
-                {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1, VK_SHADER_STAGE_VERTEX_BIT,   nullptr},
-                //{1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                {2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                {3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-        };
+
+
+    if (model.textureIndices.baseColor != -1){
+        setLayoutBindings.push_back({3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
+    }
+
+    if (model.textureIndices.normalMap != -1) {
+        setLayoutBindings.push_back({4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
+
     }
 
 
@@ -524,7 +526,7 @@ void glTFModel::createDescriptors(uint32_t count) {
         descriptorSetAllocInfo.descriptorSetCount = 1;
         CHECK_RESULT(vkAllocateDescriptorSets(vulkanDevice->logicalDevice, &descriptorSetAllocInfo, &descriptors[i]));
 
-        std::vector<VkWriteDescriptorSet> writeDescriptorSets(2);
+        std::vector<VkWriteDescriptorSet> writeDescriptorSets(3);
 
         writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -538,26 +540,33 @@ void glTFModel::createDescriptors(uint32_t count) {
         writeDescriptorSets[1].descriptorCount = 1;
         writeDescriptorSets[1].dstSet = descriptors[i];
         writeDescriptorSets[1].dstBinding = 1;
-        writeDescriptorSets[1].pBufferInfo = &uniformBuffers[i].selection.descriptorBufferInfo;
+        writeDescriptorSets[1].pBufferInfo = &uniformBuffers[i].shaderValues.descriptorBufferInfo;
 
-        if (model.materials[0].baseColorTexture != NULL) {
-            writeDescriptorSets.resize(3);
-            writeDescriptorSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            writeDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            writeDescriptorSets[2].descriptorCount = 1;
-            writeDescriptorSets[2].dstSet = descriptors[i];
-            writeDescriptorSets[2].dstBinding = 2;
-            writeDescriptorSets[2].pImageInfo = &model.textures[model.textureIndices.baseColor].descriptor;
-        }
+        writeDescriptorSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writeDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        writeDescriptorSets[2].descriptorCount = 1;
+        writeDescriptorSets[2].dstSet = descriptors[i];
+        writeDescriptorSets[2].dstBinding = 2;
+        writeDescriptorSets[2].pBufferInfo = &uniformBuffers[i].selection.descriptorBufferInfo;
 
-        if (model.materials[0].normalTexture != NULL) {
+        if (model.textureIndices.baseColor != -1) {
             writeDescriptorSets.resize(4);
             writeDescriptorSets[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             writeDescriptorSets[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
             writeDescriptorSets[3].descriptorCount = 1;
             writeDescriptorSets[3].dstSet = descriptors[i];
             writeDescriptorSets[3].dstBinding = 3;
-            writeDescriptorSets[3].pImageInfo = &model.textures[model.textureIndices.normalMap].descriptor;
+            writeDescriptorSets[3].pImageInfo = &model.textures[model.textureIndices.baseColor].descriptor;
+        }
+
+        if (model.textureIndices.normalMap != -1) {
+            writeDescriptorSets.resize(5);
+            writeDescriptorSets[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            writeDescriptorSets[4].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            writeDescriptorSets[4].descriptorCount = 1;
+            writeDescriptorSets[4].dstSet = descriptors[i];
+            writeDescriptorSets[4].dstBinding = 4;
+            writeDescriptorSets[4].pImageInfo = &model.textures[model.textureIndices.normalMap].descriptor;
         }
 
 

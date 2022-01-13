@@ -20,6 +20,7 @@
 #include <ar_engine/src/builder/Terrain.h>
 #include <ar_engine/src/builder/MyModelExample.h>
 #include <ar_engine/src/builder/Cube.h>
+#include <ar_engine/src/builder/Sphere.h>
 
 #include <ar_engine/src/tools/Macros.h>
 
@@ -70,11 +71,11 @@ protected:
     } textures{};
 
 
-    UBOMatrixLight *shaderValuesScene{};
-    UBOMatrix *shaderValuesSkybox{};
-    UBOMatrix *shaderValuesObject{};
+    UBOMatrix *uboHelmet{};
+    UBOMatrix *uboSkybox{};
+    UBOMatrix *uboTerrain{};
     FragShaderParams *fragShaderParams{};
-    ShaderValuesParams *shaderValuesParams{};
+    //ShaderValuesParams *shaderValuesPasrams{};
 
     struct Models {
         vkglTF::Model scene;

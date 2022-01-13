@@ -11,3 +11,6 @@ $glslc ./gltfLoading/mesh.frag -o ./gltfLoading/mesh.frag.spv
 
 $glslc ./myScene/box.vert -o ./myScene/box.vert.spv
 $glslc ./myScene/box.frag -o ./myScene/box.frag.spv
+
+$glslc ./myScene/sphere/sphere.vert -o ./myScene/sphere/sphere.vert.spv
+$glslc ./myScene/sphere/sphere.frag -o ./myScene/sphere/sphere.frag.spv

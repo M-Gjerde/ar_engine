@@ -4,6 +4,7 @@ layout (location = 0) in vec3 inNormal;
 layout (location = 1) in vec2 inUV;
 layout (location = 2) in vec3 FragPos;
 
+
 layout(set = 0, binding = 1) uniform INFO {
     vec4 lightColor;
     vec4 objectColor;
@@ -16,7 +17,6 @@ layout(set = 0, binding = 2) uniform SELECT {
     float map;
 } select ;
 
-
 layout (set = 0, binding = 3) uniform sampler2D samplerColorMap;
 layout (set = 0, binding = 4) uniform sampler2D samplerTextureMap;
 
@@ -24,20 +24,13 @@ layout (location = 0) out vec4 outFragColor;
 
 void main()
 {
-    vec3 color = vec3(0.7, 0.7, 0.7);
-    vec3 normals = normalize(inNormal);
 
     if (select.map == 0){
-        color = vec3(0.7, 0.7, 0.7);
     }
 
     if (select.map == 1){
-        color = texture(samplerColorMap, inUV).rgb;
     }
     if (select.map == 2){
-        color = texture(samplerColorMap, inUV).rgb;
-        vec4 N = texture(samplerTextureMap, inUV);
-        //N = normalize(N * 2.0 - 1.0);
 
     }
 
@@ -54,12 +47,14 @@ void main()
     float specularStrength = 0.7;
     vec3 viewDir = normalize(info.viewPos.xyz - FragPos);
     vec3 reflectDir = reflect(-lightDir, norm);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 64);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 8);
     vec3 specular = specularStrength * spec * info.lightColor.rgb;
 
-    vec3 result = (ambient + diffuse + specular) * color;
+    vec3 result = (ambient + diffuse + specular) * info.objectColor.xyz;
 
     outFragColor = vec4(result, 1.0);
 
+    //color = vec4(0.3, 0.3, 0.3, 1.0);
+    //outFragColor = color;
 
 }

@@ -97,8 +97,8 @@ public:
     };
 
     struct TextureIndices{
-        uint32_t baseColor;
-        uint32_t normalMap;
+        uint32_t baseColor = -1;
+        uint32_t normalMap = -1;
     } ;
 
     struct Model {

@@ -31,12 +31,8 @@ void Cube::draw(VkCommandBuffer commandBuffer, uint32_t i) {
 }
 
 void Cube::updateUniformBufferData(uint32_t index, void *params, void *matrix) {
-    UBOMatrixLight mat{};
 
-    memcpy(&mat, matrix, sizeof(UBOMatrixLight));
-    mat.model = glm::translate(mat.model, glm::vec3(0.0f, -1.0f, -3.0f));
-
-    glTFModel::updateUniformBufferData(index, params, &mat, selection);
+    glTFModel::updateUniformBufferData(index, params, matrix, selection);
 
 }
 

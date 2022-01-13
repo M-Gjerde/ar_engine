@@ -10,7 +10,6 @@ layout (set = 0, binding = 0) uniform UBOScene
     mat4 projection;
     mat4 view;
     mat4 model;
-    vec4 lightPos;
 } uboScene;
 
 layout (location = 0) out vec3 outNormal;
@@ -29,9 +28,6 @@ void main()
     vec4 pos = uboScene.view * vec4(inPos, 1.0);
     outNormal = mat3(uboScene.view) * inNormal;
     //vec3 lPos = mat3(uboScene.view) * uboScene.lightPos.xyz;
-    outLightVec = -uboScene.lightPos.xyz;
     outViewVec = pos.xyz;
-
-
 
 }

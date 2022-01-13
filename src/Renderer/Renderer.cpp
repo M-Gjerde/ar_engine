@@ -244,16 +244,16 @@ void Renderer::draw() {
     UniformBufferSet currentUB = uniformBuffers[currentBuffer];
 
     currentUB.skybox.map();
-    memcpy(currentUB.skybox.mapped, shaderValuesSkybox, sizeof(UBOMatrix));
+    memcpy(currentUB.skybox.mapped, uboSkybox, sizeof(UBOMatrix));
     currentUB.skybox.unmap();
 
     for (auto &script: scripts) {
         if (script->getType() == "Terrain"){
-            script->updateUniformBufferData(currentBuffer, fragShaderParams, shaderValuesObject);
+            script->updateUniformBufferData(currentBuffer, fragShaderParams, uboTerrain);
         }
         if (script->getType() == "Render"){
 
-            script->updateUniformBufferData(currentBuffer, shaderValuesParams, shaderValuesScene);
+            script->updateUniformBufferData(currentBuffer, fragShaderParams, uboHelmet);
         }
     }
 
@@ -267,29 +267,29 @@ void Renderer::draw() {
 
 void Renderer::updateUniformBuffers() {
     // Scene
-    shaderValuesScene->projection = camera.matrices.perspective;
-    shaderValuesScene->view = camera.matrices.view;
-    shaderValuesObject->projection = camera.matrices.perspective;
-    shaderValuesObject->view = camera.matrices.view;
+    uboHelmet->projection = camera.matrices.perspective;
+    uboHelmet->view = camera.matrices.view;
+    uboTerrain->projection = camera.matrices.perspective;
+    uboTerrain->view = camera.matrices.view;
 
     fragShaderParams->objectColor = glm::vec4(0.25f, 0.25f, 0.25f, 1.0f);
     fragShaderParams->lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-    fragShaderParams->lightPos = camera.viewPos; //glm::vec4(glm::vec3(50, 5, 50), 1.0f); //glm::vec4(glm::vec3(0.0f, 5.0f, -3.0f), 1.0f);
+    fragShaderParams->lightPos = glm::vec4(glm::vec3(0, -3, 0), 1.0f); //glm::vec4(glm::vec3(0.0f, 5.0f, -3.0f), 1.0f);
     fragShaderParams->viewPos =  camera.viewPos; //glm::vec4(camera.viewPos, 1.0f);
 
-    shaderValuesParams->lightDir= glm::vec4(glm::vec3(0, 1, 0), 1.0f); //glm::vec4(glm::vec3(0.0f, 5.0f, -3.0f), 1.0f);camera.viewPos;
+    //shaderValuesParams->lightDir= glm::vec4(glm::vec3(0, 1, 0), 1.0f); //glm::vec4(glm::vec3(0.0f, 5.0f, -3.0f), 1.0f);camera.viewPos;
 
-    shaderValuesScene->model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.5f, -3.0f));
-    shaderValuesScene->model = glm::rotate( shaderValuesScene->model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    shaderValuesScene->model = glm::rotate( shaderValuesScene->model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    shaderValuesScene->lightPos = glm::vec4(0.0f, 3.0f, 0.0f, 0.0f);
-    shaderValuesObject->model = glm::mat4(1.0f);
+    //shaderValuesScene->model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.5f, -3.0f));
+    //shaderValuesScene->model = glm::rotate( shaderValuesScene->model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    //shaderValuesScene->model = glm::rotate( shaderValuesScene->model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    uboTerrain->model = glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f));
 
+    uboHelmet->model = glm::mat4(1.0f);
 
     // Skybox
-    shaderValuesSkybox->projection = camera.matrices.perspective;
-    shaderValuesSkybox->view = camera.matrices.view;
-    shaderValuesSkybox->model = glm::mat4(glm::mat3(camera.matrices.view));
+    uboSkybox->projection = camera.matrices.perspective;
+    uboSkybox->view = camera.matrices.view;
+    uboSkybox->model = glm::mat4(glm::mat3(camera.matrices.view));
 }
 
 void Renderer::prepareUniformBuffers() {
@@ -301,10 +301,10 @@ void Renderer::prepareUniformBuffers() {
 
     }
     // TODO REMEMBER TO CLEANUP
-    shaderValuesParams = new ShaderValuesParams();
-    shaderValuesObject = new UBOMatrix();
-    shaderValuesScene = new UBOMatrixLight();
-    shaderValuesSkybox = new UBOMatrix();
+    //shaderValuesParams = new ShaderValuesParams();
+    uboTerrain = new UBOMatrix();
+    uboHelmet = new UBOMatrix();
+    uboSkybox = new UBOMatrix();
     fragShaderParams = new FragShaderParams();
 
     updateUniformBuffers();

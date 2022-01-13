@@ -42,6 +42,8 @@ public:
     }
 
     std::string type = "None";
+
+
 };
 
 #endif //AR_ENGINE_BASE_H
