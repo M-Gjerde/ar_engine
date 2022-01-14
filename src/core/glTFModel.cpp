@@ -2,9 +2,6 @@
 // Created by magnus on 12/10/21.
 //
 
-#include <glm/gtc/type_ptr.hpp>
-#include <ar_engine/src/tools/Macros.h>
-#include <ar_engine/src/Renderer/shaderParams.h>
 #include "glTFModel.h"
 
 
@@ -409,46 +406,6 @@ glTFModel::glTFModel() {
     printf("glTFModel Constructor\n");
 }
 
-void glTFModel::prepareUniformBuffers(uint32_t count) {
-    uniformBuffers.resize(count);
-
-    for (auto &uniformBuffer: uniformBuffers) {
-
-        vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                   &uniformBuffer.model, sizeof(UBOMatrix));
-
-        vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                   &uniformBuffer.shaderValues, sizeof(FragShaderParams));
-
-        vulkanDevice->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                   &uniformBuffer.selection, sizeof(float));
-
-    }
-
-}
-
-void glTFModel::updateUniformBufferData(uint32_t index, void *params, void *matrix, void *selection) {
-    UniformBufferSet currentUB = uniformBuffers[index];
-
-    currentUB.model.map();
-    memcpy(currentUB.model.mapped, matrix, sizeof(UBOMatrix));
-    currentUB.model.unmap();
-
-    currentUB.shaderValues.map();
-    memcpy(currentUB.shaderValues.mapped, params, sizeof(FragShaderParams));
-    currentUB.shaderValues.unmap();
-
-    currentUB.selection.map();
-
-    char *val = static_cast<char *>(selection);
-    float f = (float) atoi(val);
-    memcpy(currentUB.selection.mapped, &f, sizeof(float));
-    currentUB.selection.unmap();
-
-}
 
 glTFModel::Primitive::Primitive(uint32_t _firstIndex, uint32_t indexCount, uint32_t vertexCount) {
     this->firstIndex = _firstIndex;
@@ -491,7 +448,7 @@ void glTFModel::createDescriptorSetLayout() {
                                         &descriptorSetLayout));
 }
 
-void glTFModel::createDescriptors(uint32_t count) {
+void glTFModel::createDescriptors(uint32_t count, std::vector<Base::UniformBufferSet> ubo) {
     descriptors.resize(count);
 
     // Check for how many image descriptors
@@ -533,21 +490,21 @@ void glTFModel::createDescriptors(uint32_t count) {
         writeDescriptorSets[0].descriptorCount = 1;
         writeDescriptorSets[0].dstSet = descriptors[i];
         writeDescriptorSets[0].dstBinding = 0;
-        writeDescriptorSets[0].pBufferInfo = &uniformBuffers[i].model.descriptorBufferInfo;
+        writeDescriptorSets[0].pBufferInfo = &ubo[i].vert.descriptorBufferInfo;
 
         writeDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         writeDescriptorSets[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         writeDescriptorSets[1].descriptorCount = 1;
         writeDescriptorSets[1].dstSet = descriptors[i];
         writeDescriptorSets[1].dstBinding = 1;
-        writeDescriptorSets[1].pBufferInfo = &uniformBuffers[i].shaderValues.descriptorBufferInfo;
+        writeDescriptorSets[1].pBufferInfo = &ubo[i].frag.descriptorBufferInfo;
 
         writeDescriptorSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         writeDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         writeDescriptorSets[2].descriptorCount = 1;
         writeDescriptorSets[2].dstSet = descriptors[i];
         writeDescriptorSets[2].dstBinding = 2;
-        writeDescriptorSets[2].pBufferInfo = &uniformBuffers[i].selection.descriptorBufferInfo;
+        writeDescriptorSets[2].pBufferInfo = &ubo[i].fragSelect.descriptorBufferInfo;
 
         if (model.textureIndices.baseColor != -1) {
             writeDescriptorSets.resize(4);

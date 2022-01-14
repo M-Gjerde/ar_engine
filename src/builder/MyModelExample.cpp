@@ -17,10 +17,18 @@ void MyModelExample::setup(Base::SetupVars vars) {
                        vars.device->transferQueue, 1.0f);
 
 
-    vars.ui->dropDownItems.emplace_back("Grayscale");
-    vars.ui->dropDownItems.emplace_back("Albedo");
-    vars.ui->dropDownItems.emplace_back("Albedo + Normal");
+    std::vector<UISettings::DropDownItem> dropDownItems;
+    dropDownItems.emplace_back(UISettings::DropDownItem(type));
+    dropDownItems.emplace_back(UISettings::DropDownItem(type));
+    dropDownItems.emplace_back(UISettings::DropDownItem(type));
 
+    dropDownItems[0].dropdown = "Grayscale";
+    dropDownItems[1].dropdown = "Albedo";
+    dropDownItems[2].dropdown = "Albedo + Normal";
+
+    for (auto item : dropDownItems){
+        vars.ui->createDropDown(&item);
+    }
 
 }
 
@@ -33,13 +41,13 @@ void MyModelExample::onUIUpdate(UISettings uiSettings) {
     if (uiSettings.selectedDropDown == NULL)
         return;
 
-    if (strcmp(uiSettings.selectedDropDown, "Grayscale") == 0){
+    if (strcmp(uiSettings.selectedDropDown, "Grayscale") == 0) {
         selection = (void *) "0";
     }
-    if (strcmp(uiSettings.selectedDropDown, "Albedo") == 0){
+    if (strcmp(uiSettings.selectedDropDown, "Albedo") == 0) {
         selection = (void *) "1";
     }
-    if (strcmp(uiSettings.selectedDropDown, "Albedo + Normal") == 0){
+    if (strcmp(uiSettings.selectedDropDown, "Albedo + Normal") == 0) {
         selection = (void *) "2";
     }
 
@@ -47,21 +55,31 @@ void MyModelExample::onUIUpdate(UISettings uiSettings) {
 }
 
 void MyModelExample::prepareObject() {
-    prepareUniformBuffers(b.UBCount);
+    createUniformBuffers();
     createDescriptorSetLayout();
-    createDescriptors(b.UBCount);
+    createDescriptors(b.UBCount, uniformBuffers);
 
     VkPipelineShaderStageCreateInfo vs = loadShader("gltfLoading/mesh.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
     VkPipelineShaderStageCreateInfo fs = loadShader("gltfLoading/mesh.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    std::vector<VkPipelineShaderStageCreateInfo> shaders = {{vs}, {fs}};
+    std::vector<VkPipelineShaderStageCreateInfo> shaders = {{vs},
+                                                            {fs}};
     createPipeline(*b.renderPass, shaders);
 
 }
 
-void MyModelExample::updateUniformBufferData(uint32_t index, void *params, void *matrix) {
-    glTFModel::updateUniformBufferData(index, params, matrix, selection);
+void MyModelExample::updateUniformBufferData(uint32_t index, void *params, void *matrix, Camera *camera) {
+    UBOMatrix mat{};
+    mat.model = glm::mat4(1.0f);
+    mat.projection = camera->matrices.perspective;
+    mat.view = camera->matrices.view;
 
+    mat.model = glm::translate(mat.model, glm::vec3(4.0f, 0.0f, -1.0f));
+
+    mat.model = glm::rotate(mat.model, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    mat.model = glm::rotate(mat.model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+    Base::updateUniformBufferData(index, params, &mat, selection);
 }
 
 void MyModelExample::draw(VkCommandBuffer commandBuffer, uint32_t i) {

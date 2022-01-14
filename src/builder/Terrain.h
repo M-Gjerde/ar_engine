@@ -38,13 +38,13 @@ public:
     std::string type = "Disable";
 
 
-    UISettings::intSlider xSizeSlider {};
-    UISettings::intSlider zSizeSlider {};
-    UISettings::intSlider noise {};
-    UISettings::intSlider sinMod {};
+    UISettings::intSlider xSizeSlider{type};
+    UISettings::intSlider zSizeSlider {type};
+    UISettings::intSlider noise {type};
+    UISettings::intSlider sinMod {type};
 
     void prepareObject() override;
-    void updateUniformBufferData(uint32_t index, void *params, void *matrix) override;
+    void updateUniformBufferData(uint32_t index, void *params, void *matrix, Camera* camera) override;
     void draw(VkCommandBuffer commandBuffer, uint32_t i) override;
 };
 

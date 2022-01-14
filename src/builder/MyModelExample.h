@@ -41,17 +41,15 @@ public:
 
     /** @brief public string to determine if this script should be attaced to an object,
     * create a new object or do nothing. Types: Generator | None | Name of object in object folder **/
-    std::string type = "Disabled";
+    std::string type = "Render";
 
     void *selection = (void *) "0";
 
     void prepareObject() override;
 
-    void updateUniformBufferData(uint32_t index, void *params, void *matrix) override;
-
     void draw(VkCommandBuffer commandBuffer, uint32_t i) override;
 
-
+    void updateUniformBufferData(uint32_t index, void *params, void *matrix, Camera *camera) override;
 };
 
 

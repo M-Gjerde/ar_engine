@@ -7,6 +7,8 @@
 
 #include <ar_engine/src/core/MyModel.h>
 #include "ar_engine/src/imgui/UISettings.h"
+#include "Camera.h"
+
 class Base {
 public:
 
@@ -27,8 +29,8 @@ public:
 
     /**@brief Render Commands **/
     virtual void prepareObject(){};
-    virtual void updateUniformBufferData(uint32_t index, void *params, void *matrix) {};
     virtual void draw(VkCommandBuffer commandBuffer, uint32_t i){};
+    virtual void updateUniformBufferData(uint32_t index, void *params, void *matrix, Camera* camera) {};
 
     [[nodiscard]] VkPipelineShaderStageCreateInfo loadShader(const std::string& fileName, VkShaderStageFlagBits stage) const {
         VkPipelineShaderStageCreateInfo shaderStage = {};
@@ -42,6 +44,62 @@ public:
     }
 
     std::string type = "None";
+
+    /**@brief A standard set of uniform buffers */
+    struct UniformBufferSet {
+        Buffer vert;
+        Buffer frag;
+        Buffer fragSelect;
+    };
+
+protected:
+    std::vector<UniformBufferSet> uniformBuffers;
+    void createUniformBuffers(){
+        uniformBuffers.resize(b.UBCount);
+
+        for (auto &uniformBuffer: uniformBuffers) {
+
+            b.device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                       &uniformBuffer.vert, sizeof(UBOMatrix));
+
+            b.device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                       &uniformBuffer.frag, sizeof(FragShaderParams));
+
+            b.device->createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                       &uniformBuffer.fragSelect, sizeof(float));
+
+        }
+
+    }
+
+    void updateUniformBufferData(uint32_t index, void *params, void *matrix, void *selection) {
+
+        // If initialized
+        if(uniformBuffers.empty())
+            return;
+
+        UniformBufferSet currentUB = uniformBuffers[index];
+
+        // TODO unceesarry mapping and unmapping occuring here maybe.
+        currentUB.vert.map();
+        memcpy(currentUB.vert.mapped, matrix, sizeof(UBOMatrix));
+        currentUB.vert.unmap();
+
+        currentUB.frag.map();
+        memcpy(currentUB.frag.mapped, params, sizeof(FragShaderParams));
+        currentUB.frag.unmap();
+
+        currentUB.fragSelect.map();
+
+        char *val = static_cast<char *>(selection);
+        float f = (float) atoi(val);
+        memcpy(currentUB.fragSelect.mapped, &f, sizeof(float));
+        currentUB.fragSelect.unmap();
+
+    }
 
 
 };

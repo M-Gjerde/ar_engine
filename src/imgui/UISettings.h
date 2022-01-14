@@ -20,13 +20,30 @@ public:
         int lowRange{};
         int highRange{};
         int val{};
+
+        explicit intSlider(std::string type) {
+            scriptType = std::move(type);
+        }
+
+        std::string scriptType;
+
+    };
+
+    struct DropDownItem {
+        std::string dropdown;
+        std::string selected;
+        explicit DropDownItem(std::string type) {
+            scriptType = std::move(type);
+        }
+
+        std::string scriptType;
     };
 
     bool rotate = true;
     bool displayLogos = true;
     bool displayBackground = true;
     bool toggleGridSize = true;
-    float movementSpeed = 0.8;
+    float movementSpeed = 0.2;
     std::array<float, 50> frameTimes{};
     float frameTimeMin = 9999.0f, frameTimeMax = 0.0f;
     float lightTimer = 0.0f;
@@ -42,15 +59,22 @@ public:
         return selectedListboxIndex;
     }
 
-
     std::vector<intSlider *> intSliders;
 
     void createIntSlider(intSlider *slider) {
+        if (slider->scriptType != "Render")
+            return;
         intSliders.emplace_back(slider);
     }
 
     std::vector<std::string> dropDownItems;
-    const char* selectedDropDown = "Select texture map";
+    const char *selectedDropDown = "Grayscale";
+    void createDropDown(DropDownItem* items){
+        if (items->scriptType != "Render")
+            return;
+        dropDownItems.emplace_back(items->dropdown);
+    }
+
 
 };
 

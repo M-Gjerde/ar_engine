@@ -390,11 +390,13 @@ public:
         //updated |= ImGui::Checkbox("Render models", &uiSettings.rotate);
         //updated |= ImGui::Checkbox("Display logos", &uiSettings.displayLogos);
         //updated |= ImGui::Checkbox("Display background", &uiSettings.displayBackground);
-        updated |= ImGui::Checkbox("Toggle grid size", &uiSettings.toggleGridSize);
+        //updated |= ImGui::Checkbox("Toggle grid size", &uiSettings.toggleGridSize);
         updated |= ImGui::SliderFloat("Movement speed", &uiSettings.movementSpeed, 0.05f, 10.0f);
 
         if (!uiSettings.intSliders.empty()) {
             for (const auto &slider: uiSettings.intSliders) {
+
+
                 updated |= ImGui::SliderInt(slider->name.c_str(), &slider->val, slider->lowRange, slider->highRange);
 
             }
@@ -424,6 +426,7 @@ public:
             ImGui::EndListBox();
         }
 
+        if (!uiSettings.dropDownItems.empty()){
         if (ImGui::BeginCombo("##combo",
                               uiSettings.selectedDropDown)) // The second parameter is the label previewed before opening the combo.
         {
@@ -439,7 +442,7 @@ public:
             }
             ImGui::EndCombo();
         }
-
+        }
         active = ImGui::IsAnyItemHovered() || ImGui::IsAnyItemFocused() || ImGui::IsAnyItemActive();
 
         ImGui::End();

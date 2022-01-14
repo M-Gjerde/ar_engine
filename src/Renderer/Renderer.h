@@ -71,10 +71,9 @@ protected:
     } textures{};
 
 
-    UBOMatrix *uboHelmet{};
-    UBOMatrix *uboSkybox{};
-    UBOMatrix *uboTerrain{};
-    FragShaderParams *fragShaderParams{};
+    UBOMatrix *UBOVert{};
+    UBOMatrix * UBOskybox{};
+    FragShaderParams *UBOFrag{};
     //ShaderValuesParams *shaderValuesPasrams{};
 
     struct Models {
@@ -83,7 +82,6 @@ protected:
     } models;
 
     struct UniformBufferSet {
-        Buffer params;
         Buffer skybox;
     };
     std::vector<UniformBufferSet> uniformBuffers{};

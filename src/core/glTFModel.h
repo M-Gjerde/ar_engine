@@ -13,6 +13,11 @@
 #include "tiny_gltf.h"
 #include "Texture.h"
 
+#include <glm/gtc/type_ptr.hpp>
+#include <ar_engine/src/tools/Macros.h>
+#include <ar_engine/src/Renderer/shaderParams.h>
+#include "Base.h"
+
 // Changing this value here also requires changing it in the vertex shader
 #define MAX_NUM_JOINTS 128u
 
@@ -153,14 +158,7 @@ public:
         Node* nodeFromIndex(uint32_t index);
     } model;
 
-    struct UniformBufferSet {
-        Buffer model;
-        Buffer shaderValues;
-        Buffer selection;
-    };
 
-
-    std::vector<UniformBufferSet> uniformBuffers{};
     std::vector<VkDescriptorSet> descriptors;
     VkDescriptorSetLayout descriptorSetLayout{};
     VkDescriptorSetLayout descriptorSetLayoutNode{};
@@ -169,14 +167,10 @@ public:
     VkPipeline pipeline{};
     VkPipelineLayout pipelineLayout{};
 
-    void prepareUniformBuffers(uint32_t count);
-
-
-    void updateUniformBufferData(uint32_t index, void *params, void *matrix, void *selection);
 
     void createDescriptorSetLayout();
 
-    void createDescriptors(uint32_t count);
+    void createDescriptors(uint32_t count, std::vector<Base::UniformBufferSet> ubo);
 
     void setupNodeDescriptorSet(Node *node);
 

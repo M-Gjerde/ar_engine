@@ -31,9 +31,10 @@ void Sphere::onUIUpdate(UISettings uiSettings) {
 }
 
 void Sphere::prepareObject() {
-    prepareUniformBuffers(b.UBCount);
+    createUniformBuffers();
+
     createDescriptorSetLayout();
-    createDescriptors(b.UBCount);
+    createDescriptors(b.UBCount, Base::uniformBuffers);
 
     VkPipelineShaderStageCreateInfo vs = loadShader("myScene/sphere/sphere.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
     VkPipelineShaderStageCreateInfo fs = loadShader("myScene/sphere/sphere.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -43,10 +44,15 @@ void Sphere::prepareObject() {
 
 }
 
-void Sphere::updateUniformBufferData(uint32_t index, void *params, void *matrix) {
+void Sphere::updateUniformBufferData(uint32_t index, void *params, void *matrix, Camera *camera) {
+    UBOMatrix mat{};
+    mat.model = glm::mat4(1.0f);
+    mat.projection = camera->matrices.perspective;
+    mat.view = camera->matrices.view;
 
-    glTFModel::updateUniformBufferData(index, params, matrix, selection);
+    mat.model = glm::translate(mat.model, glm::vec3(0.0f, 0.0f, -4.0f));
 
+    Base::updateUniformBufferData(index, params, &mat, selection);
 }
 
 void Sphere::draw(VkCommandBuffer commandBuffer, uint32_t i) {
