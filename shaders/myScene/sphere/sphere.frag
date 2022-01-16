@@ -15,7 +15,7 @@ layout(set = 0, binding = 1) uniform INFO {
 
 layout(set = 0, binding = 2) uniform SELECT {
     float map;
-} select ;
+} select;
 
 layout (set = 0, binding = 3) uniform sampler2D samplerColorMap;
 layout (set = 0, binding = 4) uniform sampler2D samplerTextureMap;
@@ -50,7 +50,10 @@ void main()
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 8);
     vec3 specular = specularStrength * spec * info.lightColor.rgb;
 
-    vec3 result = (ambient + diffuse + specular) * info.objectColor.xyz;
+
+
+    //vec3 result = (ambient + diffuse + specular) * color;
+    vec3 result = texture(samplerColorMap, inUV).rgb;
 
     outFragColor = vec4(result, 1.0);
 

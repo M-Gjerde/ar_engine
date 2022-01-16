@@ -554,37 +554,24 @@ Texture2D::fromBuffer(void *buffer, VkDeviceSize bufferSize, VkFormat format, ui
     height = texHeight;
     mipLevels = 1;
 
-    VkMemoryAllocateInfo memAllocInfo = Populate::memoryAllocateInfo();
-    VkMemoryRequirements memReqs;
-
-    // Use a separate command buffer for texture loading
-    VkCommandBuffer copyCmd = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
-
     // Create a host-visible staging buffer that contains the raw image data
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingMemory;
 
-    VkBufferCreateInfo bufferCreateInfo = Populate::bufferCreateInfo();
-    bufferCreateInfo.size = bufferSize;
-    // This buffer is used as a transfer source for the buffer copy
-    bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    CHECK_RESULT(device->createBuffer(
+            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            bufferSize,
+            &stagingBuffer,
+            &stagingMemory, buffer));
 
 
-    CHECK_RESULT(vkCreateBuffer(device->logicalDevice, &bufferCreateInfo, nullptr, &stagingBuffer));
-
-    // Get memory requirements for the staging buffer (alignment, memory type bits)
+    // Create the memory backing up the buffer handle
+    VkMemoryRequirements memReqs;
     vkGetBufferMemoryRequirements(device->logicalDevice, stagingBuffer, &memReqs);
+    VkMemoryAllocateInfo memAlloc = Populate::memoryAllocateInfo();
+    memAlloc.allocationSize = memReqs.size;
 
-    memAllocInfo.allocationSize = memReqs.size;
-    // Get memory type index for a host visible buffer
-    memAllocInfo.memoryTypeIndex = device->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                                                                 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-
-    (vkAllocateMemory(device->logicalDevice, &memAllocInfo, nullptr, &stagingMemory));
-
-    (vkBindBufferMemory(device->logicalDevice, stagingBuffer, stagingMemory, 0));
 
     // Copy texture data into staging buffer
     uint8_t *data;
@@ -624,11 +611,10 @@ Texture2D::fromBuffer(void *buffer, VkDeviceSize bufferSize, VkFormat format, ui
 
     vkGetImageMemoryRequirements(device->logicalDevice, image, &memReqs);
 
-    memAllocInfo.allocationSize = memReqs.size;
+    memAlloc.allocationSize = memReqs.size;
+    memAlloc.memoryTypeIndex = device->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    memAllocInfo.memoryTypeIndex = device->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-    CHECK_RESULT(vkAllocateMemory(device->logicalDevice, &memAllocInfo, nullptr, &deviceMemory));
+    CHECK_RESULT(vkAllocateMemory(device->logicalDevice, &memAlloc, nullptr, &deviceMemory));
 
     CHECK_RESULT(vkBindImageMemory(device->logicalDevice, image, deviceMemory, 0));
 
@@ -637,6 +623,9 @@ Texture2D::fromBuffer(void *buffer, VkDeviceSize bufferSize, VkFormat format, ui
     subresourceRange.baseMipLevel = 0;
     subresourceRange.levelCount = mipLevels;
     subresourceRange.layerCount = 1;
+
+    // Use a separate command buffer for texture loading
+    VkCommandBuffer copyCmd = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
     // Image barrier for optimal image (target)
     // Optimal image will be used as destination for the copy

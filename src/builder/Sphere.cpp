@@ -25,6 +25,9 @@ void Sphere::setup(Base::SetupVars vars) {
     model.loadFromFile(Utils::getAssetsPath() + "models/sphere/sphere.gltf", vars.device,
                        vars.device->transferQueue, 1.0f);
 
+    //
+    model.setTexture(Utils::getAssetsPath() + "textures/mercury.jpg");
+
 }
 
 void Sphere::onUIUpdate(UISettings uiSettings) {

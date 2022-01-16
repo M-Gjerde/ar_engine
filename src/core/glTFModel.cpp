@@ -4,6 +4,11 @@
 
 #include "glTFModel.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+
 
 void glTFModel::Model::loadFromFile(std::string filename, VulkanDevice *device, VkQueue transferQueue, float scale) {
     tinygltf::Model gltfModel;
@@ -39,6 +44,7 @@ void glTFModel::Model::loadFromFile(std::string filename, VulkanDevice *device, 
     size_t vertexBufferSize = vertexBuffer.size() * sizeof(Vertex);
     size_t indexBufferSize = indexBuffer.size() * sizeof(uint32_t);
     indices.count = static_cast<uint32_t>(indexBuffer.size());
+
 
     assert(vertexBufferSize > 0);
 
@@ -85,20 +91,15 @@ void glTFModel::Model::loadFromFile(std::string filename, VulkanDevice *device, 
                 &indices.memory));
     }
 
-    // Copy from staging buffers
-    VkCommandBuffer copyCmd = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
-
     VkBufferCopy copyRegion = {};
-
     copyRegion.size = vertexBufferSize;
-    vkCmdCopyBuffer(copyCmd, vertexStaging.buffer, vertices.buffer, 1, &copyRegion);
+    device->copyVkBuffer(&vertexStaging.buffer, &vertices.buffer, &copyRegion);
 
     if (indexBufferSize > 0) {
         copyRegion.size = indexBufferSize;
-        vkCmdCopyBuffer(copyCmd, indexStaging.buffer, indices.buffer, 1, &copyRegion);
+        device->copyVkBuffer(&indexStaging.buffer, &indices.buffer, &copyRegion);
     }
 
-    device->flushCommandBuffer(copyCmd, transferQueue, true);
 
     vkDestroyBuffer(device->logicalDevice, vertexStaging.buffer, nullptr);
     vkFreeMemory(device->logicalDevice, vertexStaging.memory, nullptr);
@@ -401,6 +402,38 @@ VkFilter glTFModel::Model::getVkFilterMode(int32_t filterMode) {
     }
 }
 
+void glTFModel::Model::setTexture(std::basic_string<char, std::char_traits<char>, std::allocator<char>> fileName) {
+    // Create texture image
+
+    int texWidth, texHeight, texChannels;
+    stbi_uc *pixels = stbi_load(fileName.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    VkDeviceSize imageSize = texWidth * texHeight * 4;
+    if (!pixels) {
+        throw std::runtime_error("failed to load texture image!");
+    }
+
+    Texture2D texture;
+    stbi_write_jpg("jpg_test_.jpg", texWidth, texHeight, texChannels, pixels, 100);
+
+
+
+    texture.fromBuffer(pixels, imageSize, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, device, device->transferQueue);
+
+
+    textureIndices.baseColor = 0;
+    textures.push_back(texture);
+
+    Texture::TextureSampler sampler{};
+    sampler.magFilter = VK_FILTER_LINEAR;
+    sampler.minFilter = VK_FILTER_LINEAR;
+    sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    textureSamplers.push_back(sampler);
+
+
+}
+
 
 glTFModel::glTFModel() {
     printf("glTFModel Constructor\n");
@@ -429,12 +462,14 @@ void glTFModel::createDescriptorSetLayout() {
     };
 
 
-    if (model.textureIndices.baseColor != -1){
-        setLayoutBindings.push_back({3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
+    if (model.textureIndices.baseColor != -1) {
+        setLayoutBindings.push_back(
+                {3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
     }
 
     if (model.textureIndices.normalMap != -1) {
-        setLayoutBindings.push_back({4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
+        setLayoutBindings.push_back(
+                {4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr});
 
     }
 

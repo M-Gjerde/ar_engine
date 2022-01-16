@@ -55,7 +55,7 @@ struct VulkanDevice {
                         VkQueueFlags requestedQueueTypes = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT);
 
     VkCommandPool createCommandPool(uint32_t queueFamilyIndex,
-                                           VkCommandPoolCreateFlags createFlags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+                                    VkCommandPoolCreateFlags createFlags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
     bool extensionSupported(std::string extension);
 
@@ -67,18 +67,19 @@ struct VulkanDevice {
 
     void copyBuffer(Buffer *src, Buffer *dst, VkQueue queue, VkBufferCopy *copyRegion = nullptr);
 
+    void copyVkBuffer(VkBuffer *src, VkBuffer *dst, VkBufferCopy *copyRegion);
+
     VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, VkCommandPool pool, bool begin = false);
 
     VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, bool begin = false);
 
     void beginCommandBuffer(VkCommandBuffer commandBuffer);
 
-
     void flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, VkCommandPool pool, bool free = true);
 
     void flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free = true);
-};
 
+};
 
 
 #endif //AR_ENGINE_VULKANDEVICE_H

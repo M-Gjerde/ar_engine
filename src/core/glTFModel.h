@@ -156,6 +156,8 @@ public:
         void loadFromFile(std::string filename, VulkanDevice *device, VkQueue transferQueue, float scale);
         Node* findNode(Node* parent, uint32_t index);
         Node* nodeFromIndex(uint32_t index);
+
+        void setTexture(std::basic_string<char, std::char_traits<char>, std::allocator<char>> basicString);
     } model;
 
 

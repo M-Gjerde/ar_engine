@@ -313,9 +313,11 @@ VulkanDevice::createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags 
 
     // Create the memory backing up the buffer handle
     VkMemoryRequirements memReqs;
-    VkMemoryAllocateInfo memAlloc = Populate::memoryAllocateInfo();
     vkGetBufferMemoryRequirements(logicalDevice, *buffer, &memReqs);
+    assert(size <= memReqs.size);
+    VkMemoryAllocateInfo memAlloc = Populate::memoryAllocateInfo();
     memAlloc.allocationSize = memReqs.size;
+
     // Find a memory type index that fits the properties of the buffer
     memAlloc.memoryTypeIndex = getMemoryType(memReqs.memoryTypeBits, memoryPropertyFlags);
     // If the buffer has VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT set we also need to enable the appropriate flag during allocation
@@ -412,7 +414,7 @@ VkResult VulkanDevice::createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPrope
 }
 
 /**
-* Copy buffer data from src to dst using VkCmdCopyBuffer
+* Copy Buffer data from src to dst using VkCmdCopyBuffer
 *
 * @param src Pointer to the source buffer to copy from
 * @param dst Pointer to the destination buffer to copy to
@@ -437,6 +439,19 @@ void VulkanDevice::copyBuffer(Buffer *src, Buffer *dst, VkQueue queue, VkBufferC
     flushCommandBuffer(copyCmd, queue);
 }
 
+/**
+ * @brief Function to copy data between VkBuffer
+ * @param src Buffer source to copy from
+ * @param dst Buffer to copy to
+ * @param copyRegion How much buffer to copy
+ */
+void VulkanDevice::copyVkBuffer(VkBuffer *src, VkBuffer *dst, VkBufferCopy *copyRegion) {
+
+    VkCommandBuffer copyCmd = createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+    vkCmdCopyBuffer(copyCmd, *src, *dst, 1, copyRegion);
+    flushCommandBuffer(copyCmd, transferQueue, true);
+
+}
 
 /**
 * Allocate a command buffer from the command pool
