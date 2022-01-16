@@ -158,6 +158,8 @@ public:
         Node* nodeFromIndex(uint32_t index);
 
         void setTexture(std::basic_string<char, std::char_traits<char>, std::allocator<char>> basicString);
+
+        void setNormalMap(std::basic_string<char, std::char_traits<char>, std::allocator<char>> basicString);
     } model;
 
 

@@ -13,9 +13,11 @@ layout (set = 0, binding = 0) uniform UBOScene
 } ubo;
 
 
-layout (location = 0) out vec3 outNormal;
-layout (location = 1) out vec2 outUV;
-layout (location = 2) out vec3 FragPos;
+layout (location = 0) out vec3 outPos;
+layout (location = 1) out vec3 outNormal;
+layout (location = 2) out vec2 outUV;
+layout (location = 3) out vec3 FragPos;
+layout (location = 4) out mat4 model;
 
 
 void main()
@@ -27,7 +29,8 @@ void main()
     outUV = inUV;
     FragPos = vec3(ubo.model * vec4(inPos, 1.0));
 
-
+    model = ubo.model;
+    outPos = inPos;
 
 
 }

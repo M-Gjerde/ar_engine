@@ -415,11 +415,7 @@ void glTFModel::Model::setTexture(std::basic_string<char, std::char_traits<char>
     Texture2D texture;
     stbi_write_jpg("jpg_test_.jpg", texWidth, texHeight, texChannels, pixels, 100);
 
-
-
     texture.fromBuffer(pixels, imageSize, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, device, device->transferQueue);
-
-
     textureIndices.baseColor = 0;
     textures.push_back(texture);
 
@@ -431,6 +427,30 @@ void glTFModel::Model::setTexture(std::basic_string<char, std::char_traits<char>
     sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     textureSamplers.push_back(sampler);
 
+
+}
+// TODO USE ENUMS TO SET COLOR OR NORMAL INSTEAD OF SEPARATE ALMOST INDENTICAL FUNCTIONS
+void glTFModel::Model::setNormalMap(std::basic_string<char, std::char_traits<char>, std::allocator<char>> fileName) {
+
+    int texWidth, texHeight, texChannels;
+    stbi_uc *pixels = stbi_load(fileName.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    VkDeviceSize imageSize = texWidth * texHeight * 4;
+    if (!pixels) {
+        throw std::runtime_error("failed to load texture image!");
+    }
+
+    Texture2D texture;
+    texture.fromBuffer(pixels, imageSize, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, device, device->transferQueue);
+    textureIndices.normalMap = 1;
+    textures.push_back(texture);
+
+    Texture::TextureSampler sampler{};
+    sampler.magFilter = VK_FILTER_LINEAR;
+    sampler.minFilter = VK_FILTER_LINEAR;
+    sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    textureSamplers.push_back(sampler);
 
 }
 
