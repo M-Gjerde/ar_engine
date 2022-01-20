@@ -17,7 +17,7 @@ void Mercury::setup(Base::SetupVars vars) {
 
     std::string fileName;
     //loadFromFile(fileName);
-    model.loadFromFile(Utils::getAssetsPath() + "models/sphere/sphere.gltf", vars.device,
+    model.loadFromFile(Utils::getAssetsPath() + "models/asteroid/asteroid_high_res.gltf", vars.device,
                        vars.device->transferQueue, 1.0f);
 
     model.setTexture(Utils::getAssetsPath() + "textures/mercury.jpg");
