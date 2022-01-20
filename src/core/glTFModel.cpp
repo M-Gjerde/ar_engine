@@ -415,7 +415,7 @@ void glTFModel::Model::setTexture(std::basic_string<char, std::char_traits<char>
     Texture2D texture;
     stbi_write_jpg("jpg_test_.jpg", texWidth, texHeight, texChannels, pixels, 100);
 
-    texture.fromBuffer(pixels, imageSize, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, device, device->transferQueue);
+   texture.fromBuffer(pixels, imageSize, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, device, device->transferQueue);
     textureIndices.baseColor = 0;
     textures.push_back(texture);
 

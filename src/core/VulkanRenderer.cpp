@@ -3,6 +3,7 @@
 //
 
 
+#include <thread>
 #include "VulkanRenderer.h"
 
 VulkanRenderer::VulkanRenderer(bool enableValidation) {
@@ -468,7 +469,7 @@ void VulkanRenderer::renderLoop() {
     destWidth = width;
     destHeight = height;
 
-    auto lastTimestamp = std::chrono::high_resolution_clock::now();
+    auto graphLastTimestamp = std::chrono::high_resolution_clock::now();
 
     while (!glfwWindowShouldClose(window)) {
         auto tStart = std::chrono::high_resolution_clock::now();
@@ -480,22 +481,39 @@ void VulkanRenderer::renderLoop() {
         updateOverlay();
 
         render();
-        frameCounter++;
+
+
         auto tEnd = std::chrono::high_resolution_clock::now();
-        auto tDiff = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
-        frameTimer = tDiff / 1000.0f;
+
+        frameCounter++;
+
+        float fpsTimer = std::chrono::duration<double, std::milli>(tEnd - graphLastTimestamp).count();
+        if (fpsTimer > 1000.0f) {
+            lastFPS = (float) frameCounter * (1000.0f / fpsTimer);
+            frameCounter = 0;
+            graphLastTimestamp = tEnd;
+        }
+
+        auto tDiff = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - tStart).count();
+
+        frameTimer = (float) tDiff / 1000.0f;
+
+        // 60 FPS with with fpsTimeLimiter
+
+        /*
+        double fpsTimeLimiter = 0.01666666666;
+        if (frameTimer < fpsTimeLimiter){
+            double us = (fpsTimeLimiter - frameTimer) * 1000 * 1000;
+            std::this_thread::sleep_for(std::chrono::microseconds (static_cast<long>(us)));
+        }
+        */
 
         camera.update(frameTimer);
         if (camera.moving()) {
             viewUpdated = true;
         }
 
-        float fpsTimer = std::chrono::duration<double, std::milli>(tEnd - lastTimestamp).count();
-        if (fpsTimer > 1000.0f) {
-            lastFPS = (float) frameCounter * (1000.0f / fpsTimer);
-            frameCounter = 0;
-            lastTimestamp = tEnd;
-        }
+
     }
     // Flush device to make sure all resources can be freed
     if (device != VK_NULL_HANDLE) {

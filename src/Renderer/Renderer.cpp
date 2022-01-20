@@ -14,7 +14,8 @@ void Renderer::prepare() {
 
 void Renderer::createSkybox() {
 
-    textures.empty.loadFromFile(Utils::getAssetsPath() + "textures/empty.ktx", VK_FORMAT_R8G8B8A8_UNORM, vulkanDevice, queue);
+    textures.empty.loadFromFile(Utils::getAssetsPath() + "textures/empty.ktx", VK_FORMAT_R8G8B8A8_UNORM, vulkanDevice,
+                                queue);
     //std::string environmentFile = Utils::getAssetsPath() + "environments/gcanyon_cube.ktx";
     //std::string environmentFile = Utils::getAssetsPath() + "environments/gcanyon_cube.ktx";
     //std::string environmentFile = getAssetsPath() + "environments/cubemap_yokohama_rgba.ktx";
@@ -41,8 +42,8 @@ void Renderer::prepareRenderer() {
     camera.setPerspective(60.0f, (float) width / (float) height, 0.001f, 1024.0f);
     camera.rotationSpeed = 0.25f;
     camera.movementSpeed = 0.1f;
-    camera.setPosition({0.0f, 0.0f, -0.75f});
-    camera.setRotation({0.0f, 0.0f, 0.0f});
+    camera.setPosition({-6.0f, 7.0f, -5.5f});
+    camera.setRotation({-35.0f, -45.0f, 0.0f});
 
     uniformBuffers.resize(swapchain.imageCount);
     descriptorSets.resize(swapchain.imageCount);
@@ -58,7 +59,7 @@ void Renderer::prepareRenderer() {
 
     for (auto &script: scripts) {
 
-        if (script->getType() != "None"){
+        if (script->getType() != "None") {
             script->prepareObject();
         }
 
@@ -176,13 +177,13 @@ void Renderer::buildCommandBuffers() {
 
 
         for (auto &script: scripts) {
-            if (script->getType() == "Terrain"){
+            if (script->getType() == "Terrain") {
                 script->draw(drawCmdBuffers[i], i);
             }
         }
 
         for (auto &script: scripts) {
-            if (script->getType() == "Render"){
+            if (script->getType() == "Render") {
                 script->draw(drawCmdBuffers[i], i);
             }
 
@@ -226,12 +227,7 @@ void Renderer::buildCommandBuffers() {
 }
 
 
-
 void Renderer::render() {
-
-    for (auto &script: scripts) {
-        script->update();
-    }
 
     draw();
 }
@@ -240,7 +236,6 @@ void Renderer::render() {
 void Renderer::draw() {
     VulkanRenderer::prepareFrame();
     buildCommandBuffers();
-    updateUniformBuffers();
     UniformBufferSet currentUB = uniformBuffers[currentBuffer];
 
     // Skybox
@@ -256,35 +251,36 @@ void Renderer::draw() {
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &drawCmdBuffers[currentBuffer];
 
+    // Scene
+    UBOFrag->objectColor = glm::vec4(0.25f, 0.25f, 0.25f, 1.0f);
+    UBOFrag->lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    UBOFrag->lightPos = glm::vec4(glm::vec3(0.0f, 0.0f, 0.0f), 1.0f);
+    UBOFrag->viewPos = camera.viewPos;
+
+    UBOVert->projection = camera.matrices.perspective;
+    UBOVert->view = camera.matrices.view;
+    UBOVert->model = glm::mat4(1.0f);
+
+    Base::Render renderData{};
+    renderData.camera = &camera;
+    renderData.params = (void *) UBOFrag;
+    renderData.matrix = (void *) UBOVert;
+    renderData.deltaT = frameTimer;
+    renderData.index = currentBuffer;
+
+    for (auto &script: scripts) {
+        if (script->getType() == "Render") {
+            script->updateUniformBufferData(renderData);
+        }
+    }
+
+
     vkQueueSubmit(queue, 1, &submitInfo, waitFences[currentBuffer]);
     VulkanRenderer::submitFrame();
 }
 
 
 void Renderer::updateUniformBuffers() {
-    // Scene
-    UBOVert->projection = camera.matrices.perspective;
-    UBOVert->view = camera.matrices.view;
-
-
-    UBOFrag->objectColor = glm::vec4(0.25f, 0.25f, 0.25f, 1.0f);
-    UBOFrag->lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-    UBOFrag->lightPos = glm::vec4(glm::vec3(-4.0f, 0.0f, 0.0f), 1.0f);
-    UBOFrag->viewPos =  camera.viewPos;
-
-    UBOVert->model = glm::mat4(1.0f);
-
-
-
-    for (auto &script: scripts) {
-        if (script->getType() == "Terrain"){
-            script->updateUniformBufferData(currentBuffer, UBOFrag, UBOVert, &camera);
-        }
-        if (script->getType() == "Render"){
-
-            script->updateUniformBufferData(currentBuffer, UBOFrag, UBOVert, &camera);
-        }
-    }
 
 
 }
@@ -375,9 +371,9 @@ void Renderer::preparePipelines() {
     VkVertexInputBindingDescription vertexInputBinding = {0, sizeof(vkglTF::Model::Vertex),
                                                           VK_VERTEX_INPUT_RATE_VERTEX};
     std::vector<VkVertexInputAttributeDescription> vertexInputAttributes = {
-            {0, 0, VK_FORMAT_R32G32B32_SFLOAT,    0},
-            {1, 0, VK_FORMAT_R32G32B32_SFLOAT,    sizeof(float) * 3},
-            {2, 0, VK_FORMAT_R32G32_SFLOAT,       sizeof(float) * 6},
+            {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0},
+            {1, 0, VK_FORMAT_R32G32B32_SFLOAT, sizeof(float) * 3},
+            {2, 0, VK_FORMAT_R32G32_SFLOAT,    sizeof(float) * 6},
     };
     VkPipelineVertexInputStateCreateInfo vertexInputStateCI{};
     vertexInputStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -458,7 +454,7 @@ void Renderer::setupDescriptors() {
             {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1,
                                                               VK_SHADER_STAGE_VERTEX_BIT |
                                                               VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-            {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,         1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+            {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
             {2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
             {3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
             {4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},

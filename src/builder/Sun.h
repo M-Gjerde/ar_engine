@@ -2,28 +2,28 @@
 // Created by magnus on 1/12/22.
 //
 
-#ifndef AR_ENGINE_CUBE_H
-#define AR_ENGINE_CUBE_H
+#ifndef AR_ENGINE_SUN_H
+#define AR_ENGINE_SUN_H
 
 
 #include <ar_engine/src/core/ScriptBuilder.h>
 #include <ar_engine/src/core/glTFModel.h>
 
 /** @brief Example class for implementing a script. Remember to include ScriptBuilder.h **/
-class Cube : public Base, public RegisteredInFactory<Cube>, glTFModel {
+class Sun : public Base, public RegisteredInFactory<Sun>, glTFModel {
 
 public:
     /** @brief Constructor. Just run s_bRegistered variable such that the class is
      * not discarded during compiler initialization. Using the power of static variables to ensure this **/
-    Cube() {
+    Sun() {
         s_bRegistered;
     }
 
     /** @brief Static method to create class, returns a unique ptr of Example **/
-    static std::unique_ptr<Base> CreateMethod() { return std::make_unique<Cube>(); }
+    static std::unique_ptr<Base> CreateMethod() { return std::make_unique<Sun>(); }
 
     /** @brief Name which is registered for this class. Same as ClassName **/
-    static std::string GetFactoryName() { return "Cube"; }
+    static std::string GetFactoryName() { return "Sun"; }
 
     /** @brief Setup function called one during engine prepare **/
     void setup(SetupVars vars) override;
@@ -42,10 +42,10 @@ public:
     std::string type = "Render";
 
     void *selection = (void *) "0";
+    UBOMatrix mat;
+    float rotation = 0.0f;
 
     void prepareObject() override;
-
-    void updateUniformBufferData(uint32_t index, void *params, void *matrix, Camera* camera) override;
 
     void draw(VkCommandBuffer commandBuffer, uint32_t i) override;
 
@@ -53,4 +53,4 @@ public:
 
 
 
-#endif //AR_ENGINE_CUBE_H
+#endif //AR_ENGINE_SUN_H

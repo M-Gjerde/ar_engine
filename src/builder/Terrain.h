@@ -44,7 +44,6 @@ public:
     UISettings::intSlider sinMod {type};
 
     void prepareObject() override;
-    void updateUniformBufferData(uint32_t index, void *params, void *matrix, Camera* camera) override;
     void draw(VkCommandBuffer commandBuffer, uint32_t i) override;
 };
 

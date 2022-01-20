@@ -2,27 +2,27 @@
 // Created by magnus on 9/5/21.
 //
 
-#ifndef AR_ENGINE_SPHERE_H
-#define AR_ENGINE_SPHERE_H
+#ifndef AR_ENGINE_MERCURY_H
+#define AR_ENGINE_MERCURY_H
 
 #include <ar_engine/src/core/ScriptBuilder.h>
 #include <ar_engine/src/core/glTFModel.h>
 
 /** @brief Example class for implementing a script. Remember to include ScriptBuilder.h **/
-class Sphere : public Base, public RegisteredInFactory<Sphere>, glTFModel {
+class Mercury : public Base, public RegisteredInFactory<Mercury>, glTFModel {
 
 public:
     /** @brief Constructor. Just run s_bRegistered variable such that the class is
      * not discarded during compiler initialization. Using the power of static variables to ensure this **/
-    Sphere() {
+    Mercury() {
         s_bRegistered;
     }
 
     /** @brief Static method to create class, returns a unique ptr of Example **/
-    static std::unique_ptr<Base> CreateMethod() { return std::make_unique<Sphere>(); }
+    static std::unique_ptr<Base> CreateMethod() { return std::make_unique<Mercury>(); }
 
     /** @brief Name which is registered for this class. Same as ClassName **/
-    static std::string GetFactoryName() { return "Sphere"; }
+    static std::string GetFactoryName() { return "Mercury"; }
 
     /** @brief Setup function called one during engine prepare **/
     void setup(SetupVars vars) override;
@@ -41,15 +41,15 @@ public:
     std::string type = "Render";
 
     void *selection = (void *) "0";
-
+    UBOMatrix mat{};
+    float rotation = 0.0f;
+    float x = 0, z = 0;
 
     void prepareObject() override;
-
-    void updateUniformBufferData(uint32_t index, void *params, void *matrix, Camera* camera) override;
 
     void draw(VkCommandBuffer commandBuffer, uint32_t i) override;
 
 };
 
 
-#endif //AR_ENGINE_SPHERE_H
+#endif //AR_ENGINE_MERCURY_H

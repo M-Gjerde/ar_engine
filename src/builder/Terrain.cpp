@@ -160,16 +160,18 @@ void Terrain::prepareObject() {
     createPipeline(*b.renderPass, shaders);
 }
 
-void Terrain::updateUniformBufferData(uint32_t index, void *params, void *matrix, Camera *camera) {
+/*
+ * void Terrain::updateUniformBufferData(Base::Render renderData) {
     UBOMatrix mat{};
     mat.model = glm::mat4(1.0f);
-    mat.projection = camera->matrices.perspective;
-    mat.view = camera->matrices.view;
+    mat.projection = renderData.camera->matrices.perspective;
+    mat.view = renderData.camera->matrices.view;
 
     mat.model = glm::translate(mat.model, glm::vec3(-2.0f, 0.0f, 0.0f));
 
-    MyModel::updateUniformBufferData(index, params, &mat);
+    MyModel::updateUniformBufferData(renderData.index, renderData.params, &mat);
 }
+ */
 
 void Terrain::draw(VkCommandBuffer commandBuffer, uint32_t i) {
     MyModel::draw(commandBuffer, i);

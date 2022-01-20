@@ -2,9 +2,9 @@
 // Created by magnus on 12/10/21.
 //
 
-#include "MyModelExample.h"
+#include "DamagedHelmet.h"
 
-void MyModelExample::setup(Base::SetupVars vars) {
+void DamagedHelmet::setup(Base::SetupVars vars) {
     printf("MyModelExample setup\n");
     this->vulkanDevice = vars.device;
     b.device = vars.device;
@@ -32,11 +32,22 @@ void MyModelExample::setup(Base::SetupVars vars) {
 
 }
 
-void MyModelExample::update() {
+void DamagedHelmet::update() {
+
+    UBOMatrix mat{};
+    mat.model = glm::mat4(1.0f);
+    mat.model = glm::translate(mat.model, glm::vec3(4.0f, 0.0f, -1.0f));
+    mat.model = glm::rotate(mat.model, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    mat.model = glm::rotate(mat.model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+    auto* d = (UBOMatrix *) data.matrix;
+    d->model = mat.model;
+
+    data.selection = selection;
 
 }
 
-void MyModelExample::onUIUpdate(UISettings uiSettings) {
+void DamagedHelmet::onUIUpdate(UISettings uiSettings) {
 
     if (uiSettings.selectedDropDown == NULL)
         return;
@@ -54,7 +65,7 @@ void MyModelExample::onUIUpdate(UISettings uiSettings) {
     printf("Selection %s\n", (char *) selection);
 }
 
-void MyModelExample::prepareObject() {
+void DamagedHelmet::prepareObject() {
     createUniformBuffers();
     createDescriptorSetLayout();
     createDescriptors(b.UBCount, uniformBuffers);
@@ -68,25 +79,11 @@ void MyModelExample::prepareObject() {
 
 }
 
-void MyModelExample::updateUniformBufferData(uint32_t index, void *params, void *matrix, Camera *camera) {
-    UBOMatrix mat{};
-    mat.model = glm::mat4(1.0f);
-    mat.projection = camera->matrices.perspective;
-    mat.view = camera->matrices.view;
-
-    mat.model = glm::translate(mat.model, glm::vec3(4.0f, 0.0f, -1.0f));
-
-    mat.model = glm::rotate(mat.model, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    mat.model = glm::rotate(mat.model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-    Base::updateUniformBufferData(index, params, &mat, selection);
-}
-
-void MyModelExample::draw(VkCommandBuffer commandBuffer, uint32_t i) {
+void DamagedHelmet::draw(VkCommandBuffer commandBuffer, uint32_t i) {
     glTFModel::draw(commandBuffer, i);
 
 }
 
-std::string MyModelExample::getType() {
+std::string DamagedHelmet::getType() {
     return type;
 }

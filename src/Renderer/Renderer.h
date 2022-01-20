@@ -18,9 +18,9 @@
 // Engine
 #include "ar_engine/src/builder/Example.h"
 #include <ar_engine/src/builder/Terrain.h>
-#include <ar_engine/src/builder/MyModelExample.h>
-#include <ar_engine/src/builder/Cube.h>
-#include <ar_engine/src/builder/Sphere.h>
+#include <ar_engine/src/builder/DamagedHelmet.h>
+#include <ar_engine/src/builder/Sun.h>
+#include <ar_engine/src/builder/Mercury.h>
 
 #include <ar_engine/src/tools/Macros.h>
 

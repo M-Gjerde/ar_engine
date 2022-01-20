@@ -62,8 +62,8 @@ void main()
     vec3 ambient = ambientStrength * info.lightColor.rgb;
 
     // diffuse
-    vec3 norm = getNormal();
-
+    //vec3 norm = getNormal();
+    vec3 norm = normalize(inNormal);
     vec3 lightDir = normalize(info.lightPos.xyz - FragPos);
     float diff = max(dot(norm, lightDir), 0.0);
     vec3 diffuse = diff * info.lightColor.rgb;

@@ -63,7 +63,7 @@ public:
 
     float rotationSpeed = 1.0f;
     float movementSpeed = 1.0f;
-    float speedModifier = 10.0f;
+    float speedModifier = 50.0f;
 
     bool updated = false;
     bool flipY = false;
