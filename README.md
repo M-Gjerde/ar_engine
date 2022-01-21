@@ -24,13 +24,13 @@ Playing around with vulkan while attempting to implement a PBR-pipeline from scr
 
 
 ### High Res mesh loaded, (120 mb with phong lightning + normal map)
-  <img src="/Pictures/vulkan_render.png" alt="render" width="900" />
+  <img style="text-align:center; src="/Pictures/vulkan_render.png" alt="render" width="600" />
 
 
 ### Testing with glTF model DamagedHelmet with simple mesh to the left compared to albedo + normal map on the right
-<p float="center">
-  <img src="/Pictures/vulkan_render2.png" alt="render" width="400" />
-  <img src="/Pictures/vulkan_render3.png" alt="render" width="350" />
+<p float="center" style="text-align:center;>
+  <img src="/Pictures/vulkan_render2.png" alt="render" width="300" />
+  <img src="/Pictures/vulkan_render3.png" alt="render" width="250" />
 </p>
 
 
