@@ -1,6 +1,5 @@
-# README Boilerplate
+# Vulkan Renderer
 
-A template of README best practices to make your README simple to understand and easy to use.
 
 ## Table of Contents
 
@@ -9,34 +8,36 @@ A template of README best practices to make your README simple to understand and
 - [Support](#support)
 - [Contributing](#contributing)
 
+
+
 ## Installation
+Prerequisites:
+Vulkan development package.
 
-Download to your project directory, add `README.md`, and commit:
+Download to your project directory.
+Look into setup.sh for installation
 
-```sh
-curl -LO http://git.io/Xy0Chg
-git add README.md
-git commit -m "Use README Boilerplate"
-```
+## Purpose
 
-## Usage
+Vulkan Renderer
+Playing around with vulkan while attempting to implement a PBR-pipeline from scratch.
 
-Replace the contents of `README.md` with your project's:
 
-- Name
-- Description
-- Installation instructions
-- Usage instructions
-- Support instructions
-- Contributing instructions
-- Licence
+### High Res mesh loaded, (120 mb with phong lightning + normal map)
+![alt text](Pictures/vulkan_render.png)
 
-Feel free to remove any sections that aren't applicable to your project.
+
+<p float="left">
+  <img src="/Pictures/vulkan_render2.png" alt="render" width="600" />
+  <img src="/Pictures/vulkan_render3.png" alt="render" width="600" />
+</p>
+
+
 
 ## Support
 
-Please [open an issue](https://github.com/fraction/readme-boilerplate/issues/new) for support.
+Please [open an issue] for support.
 
 ## Contributing
 
-Please contribute using [Github Flow](https://guides.github.com/introduction/flow/). Create a branch, add commits, and [open a pull request](https://github.com/fraction/readme-boilerplate/compare/).
+Please contribute using [Github Flow](https://guides.github.com/introduction/flow/). Create a branch, add commits, and [open a pull request].
