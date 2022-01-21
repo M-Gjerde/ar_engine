@@ -42,5 +42,7 @@ Display only the mesh to the left in a solid color compared to albedo + normal m
 Please [open an issue] for support.
 
 ## Contributing
+This repo was inspired from
+[SaschaWillems](https://github.com/SaschaWillems/Vulkan-glTF-PBR) 's use of using the Vulkan Graphics API.
 
 Please contribute using [Github Flow](https://guides.github.com/introduction/flow/). Create a branch, add commits, and [open a pull request].
