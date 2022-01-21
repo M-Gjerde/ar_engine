@@ -24,12 +24,13 @@ Playing around with vulkan while attempting to implement a PBR-pipeline from scr
 
 
 ### High Res mesh loaded, (120 mb with phong lightning + normal map)
-![alt text](Pictures/vulkan_render.png)
+  <img src="/Pictures/vulkan_render.png" alt="render" width="900" />
+
 
 
 <p float="left">
   <img src="/Pictures/vulkan_render2.png" alt="render" width="500" />
-  <img src="/Pictures/vulkan_render3.png" alt="render" width="400" />
+  <img src="/Pictures/vulkan_render3.png" alt="render" width="450" />
 </p>
 
 
