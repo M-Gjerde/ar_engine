@@ -27,7 +27,7 @@ Playing around with vulkan while attempting to implement a PBR-pipeline from scr
   <img src="/Pictures/vulkan_render.png" alt="render" width="900" />
 
 
-
+### Testing with glTF model DamagedHelmet with simple mesh to the left compared to albedo + normal map on the right
 <p float="left">
   <img src="/Pictures/vulkan_render2.png" alt="render" width="500" />
   <img src="/Pictures/vulkan_render3.png" alt="render" width="450" />
