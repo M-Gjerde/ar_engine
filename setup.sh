@@ -29,7 +29,7 @@ cd build ||
 python3 ../scripts/update_deps.py --dir ../external --arch x64 --config debug || exit
 cmake -C ../external/helper.cmake -DCMAKE_BUILD_TYPE=Release .. || exit
 cmake --build . --config Debug || exit
-echo "Successfully installed glslc compiler in project folder"
+echo "Successfully installed vulkan validation layers"
 
 
 # Remember to download assets from home ftp server.
