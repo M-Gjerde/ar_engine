@@ -23,9 +23,9 @@ Vulkan Renderer
 Playing around with vulkan while attempting to implement a PBR-pipeline from scratch.
 
 
-### High Res mesh loaded, (120 mb with phong lightning + normal map)
+### Rendering own meshes made with Blender.
 <p float="center">
-  <img src="/Pictures/vulkan_render.png" alt="render" width="600" />
+  <img src="/Pictures/vulkan_render.png" alt="render" width="300" />
 </p>
 
 ### Testing with glTF model DamagedHelmet
