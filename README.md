@@ -28,8 +28,8 @@ Playing around with vulkan while attempting to implement a PBR-pipeline from scr
 
 
 <p float="left">
-  <img src="/Pictures/vulkan_render2.png" alt="render" width="600" />
-  <img src="/Pictures/vulkan_render3.png" alt="render" width="600" />
+  <img src="/Pictures/vulkan_render2.png" alt="render" width="400" />
+  <img src="/Pictures/vulkan_render3.png" alt="render" width="400" />
 </p>
 
 
