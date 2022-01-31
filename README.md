@@ -11,11 +11,9 @@
 
 
 ## Installation
-Prerequisites:
-Vulkan development package.
 
-Download to your project directory.
-Look into setup.sh for installation
+Project not currently portable.
+
 
 ## Purpose
 
