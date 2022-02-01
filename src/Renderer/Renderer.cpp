@@ -14,20 +14,18 @@ void Renderer::prepare() {
 
 void Renderer::createSkybox() {
 
-    textures.empty.loadFromFile(Utils::getAssetsPath() + "textures/empty.ktx", VK_FORMAT_R8G8B8A8_UNORM, vulkanDevice,
-                                queue);
+    //textures.empty.loadFromFile(Utils::getAssetsPath() + "textures/empty.ktx", VK_FORMAT_R8G8B8A8_UNORM, vulkanDevice,queue);
     //std::string environmentFile = Utils::getAssetsPath() + "environments/gcanyon_cube.ktx";
     //std::string environmentFile = Utils::getAssetsPath() + "environments/gcanyon_cube.ktx";
     //std::string environmentFile = getAssetsPath() + "environments/cubemap_yokohama_rgba.ktx";
     //std::string environmentFile = Utils::getAssetsPath() + "environments/cubemap_space.ktx";
-    std::string environmentFile = Utils::getAssetsPath() + "environments/papermill.ktx";
+    //std::string environmentFile = Utils::getAssetsPath() + "environments/papermill.ktx";
     //std::string environmentFile = getAssetsPath() + "environments/cubemap_space.ktx";
-    models.skybox.loadFromFile(Utils::getAssetsPath() + "models/Box/glTF-Embedded/Box.gltf", vulkanDevice, queue);
-    textures.environmentCube.loadFromFile(environmentFile, vulkanDevice, queue, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    generateCubemaps();
-    generateBRDFLUT();
+    //models.skybox.loadFromFile(Utils::getAssetsPath() + "models/Box/glTF-Embedded/Box.gltf", vulkanDevice, queue);
+    //textures.environmentCube.loadFromFile(environmentFile, vulkanDevice, queue, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    //generateCubemaps();
+    //generateBRDFLUT();
 
 
 }
@@ -50,12 +48,11 @@ void Renderer::prepareRenderer() {
 
     generateScriptClasses();
     // Prepare the Renderer class
-    loadAssets();
-    createSkybox();
+    //createSkybox();
 
     prepareUniformBuffers();
-    setupDescriptors();
-    preparePipelines();
+    //setupDescriptors();
+    //preparePipelines();
 
     for (auto &script: scripts) {
 
@@ -116,13 +113,6 @@ void Renderer::viewChanged() {
 }
 
 
-void Renderer::loadAssets() {
-    std::string sceneFile = Utils::getAssetsPath() + "models/DamagedHelmet/glTF-Embedded/DamagedHelmet.gltf";
-    std::cout << "Loading scene from " << sceneFile << std::endl;
-    //models.scene.loadFromFile(sceneFile, vulkanDevice, queue);
-
-}
-
 void Renderer::UIUpdate(UISettings uiSettings) {
     //printf("Index: %d, name: %s\n", uiSettings.getSelectedItem(), uiSettings.listBoxNames[uiSettings.getSelectedItem()].c_str());
 
@@ -170,11 +160,12 @@ void Renderer::buildCommandBuffers() {
         vkCmdSetViewport(drawCmdBuffers[i], 0, 1, &viewport);
         vkCmdSetScissor(drawCmdBuffers[i], 0, 1, &scissor);
 
+        /*
         vkCmdBindDescriptorSets(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1,
                                 &descriptorSets[i].skybox, 0, nullptr);
         vkCmdBindPipeline(drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.skybox);
         models.skybox.draw(drawCmdBuffers[i]);
-
+        */
 
         for (auto &script: scripts) {
             if (script->getType() == "Terrain") {
@@ -1220,7 +1211,7 @@ void Renderer::generateCubemaps() {
 
                 VkDeviceSize offsets[1] = {0};
 
-                models.skybox.draw(cmdBuf);
+                //models.skybox.draw(cmdBuf);
                 vkCmdEndRenderPass(cmdBuf);
 
                 VkImageSubresourceRange subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};

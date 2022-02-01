@@ -9,7 +9,7 @@
 #include <iostream>
 #include <vector>
 #include <cassert>
-#include <ar_engine/src/core/structs.h>
+#include <ar_engine/src/discarded/structs.h>
 #include "VulkanDevice.h"
 #include "Base.h"
 

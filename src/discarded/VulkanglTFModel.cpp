@@ -8,9 +8,6 @@
 
 #pragma once
 
-#define TINYGLTF_IMPLEMENTATION
-#define TINYGLTF_NO_STB_IMAGE_WRITE
-#define STBI_MSC_SECURE_CRT
 
 
 #include <ar_engine/src/tools/Utils.h>

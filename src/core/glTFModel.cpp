@@ -2,12 +2,17 @@
 // Created by magnus on 12/10/21.
 //
 
+
+#define TINYGLTF_IMPLEMENTATION
+#define TINYGLTF_NO_STB_IMAGE_WRITE
+#define STBI_MSC_SECURE_CRT
+
 #include "glTFModel.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
+
+
 
 
 void glTFModel::Model::loadFromFile(std::string filename, VulkanDevice *device, VkQueue transferQueue, float scale) {
@@ -413,9 +418,7 @@ void glTFModel::Model::setTexture(std::basic_string<char, std::char_traits<char>
     }
 
     Texture2D texture;
-    stbi_write_jpg("jpg_test_.jpg", texWidth, texHeight, texChannels, pixels, 100);
-
-   texture.fromBuffer(pixels, imageSize, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, device, device->transferQueue);
+    texture.fromBuffer(pixels, imageSize, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, device, device->transferQueue);
     textureIndices.baseColor = 0;
     textures.push_back(texture);
 

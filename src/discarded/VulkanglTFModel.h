@@ -15,7 +15,7 @@
 #include <vector>
 
 #include "vulkan/vulkan.h"
-#include "VulkanDevice.h"
+#include "ar_engine/src/core/VulkanDevice.h"
 #include <ar_engine/src/tools/Macros.h>
 
 #define GLM_FORCE_RADIANS
@@ -24,7 +24,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
-#include <tiny_gltf.h>
+#include <ar_engine/external/tinygltf/tiny_gltf.h>
 
 
 

@@ -24,7 +24,7 @@
 
 #include <ar_engine/src/tools/Macros.h>
 
-#include <ar_engine/src/core/VulkanglTFModel.h>
+#include <ar_engine/src/discarded/VulkanglTFModel.h>
 #include <ar_engine/src/core/Texture.h>
 #include <ar_engine/src/core/MyModel.h>
 #include <ar_engine/src/core/VulkanRenderer.h>

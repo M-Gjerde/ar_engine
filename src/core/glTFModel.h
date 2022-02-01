@@ -10,7 +10,6 @@
 #include <glm/detail/type_quat.hpp>
 #include "VulkanDevice.h"
 #include "glm/glm.hpp"
-#include "tiny_gltf.h"
 #include "Texture.h"
 
 #include <glm/gtc/type_ptr.hpp>

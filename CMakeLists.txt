@@ -46,5 +46,5 @@ add_library(VulkanRenderer ${ENGINE_SRC} src/core/Base.h)
 set_target_properties(VulkanRenderer PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(VulkanRenderer GUI ${LIBRARIES})
 
-add_executable(engine main.cpp src/core/structs.h)
+add_executable(engine main.cpp src/discarded/structs.h)
 target_link_libraries(engine VulkanRenderer)
