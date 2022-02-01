@@ -60,66 +60,9 @@ private:
 
 protected:
 
-    enum PBRWorkflows{ PBR_WORKFLOW_METALLIC_ROUGHNESS = 0, PBR_WORKFLOW_SPECULAR_GLOSINESS = 1 };
-
-    struct Textures {
-        TextureCubeMap environmentCube;
-        Texture2D empty;
-        Texture2D lutBrdf;
-        TextureCubeMap irradianceCube;
-        TextureCubeMap prefilteredCube;
-    } textures{};
-
-
     UBOMatrix *UBOVert{};
-    UBOMatrix * UBOskybox{};
     FragShaderParams *UBOFrag{};
-    //ShaderValuesParams *shaderValuesPasrams{};
 
-    struct Models {
-        vkglTF::Model scene;
-        vkglTF::Model skybox;
-    } models;
-
-    struct UniformBufferSet {
-        Buffer skybox;
-    };
-    std::vector<UniformBufferSet> uniformBuffers{};
-
-    VkPipelineLayout pipelineLayout{};
-
-    struct Pipelines {
-        VkPipeline skybox;
-    } pipelines{};
-
-    struct DescriptorSetLayouts {
-        VkDescriptorSetLayout skybox;
-    } descriptorSetLayouts{};
-
-    struct DescriptorSets {
-        VkDescriptorSet skybox;
-    };
-    std::vector<DescriptorSets> descriptorSets;
-
-    struct PushConstBlockMaterial {
-        glm::vec4 baseColorFactor;
-        glm::vec4 emissiveFactor;
-        glm::vec4 diffuseFactor;
-        glm::vec4 specularFactor;
-        float workflow;
-        int colorTextureSet;
-        int PhysicalDescriptorTextureSet;
-        int normalTextureSet;
-        int occlusionTextureSet;
-        int emissiveTextureSet;
-        float metallicFactor;
-        float roughnessFactor;
-        float alphaMask;
-        float alphaMaskCutoff;
-    } pushConstBlockMaterial{};
-
-    void setupDescriptors();
-    void preparePipelines();
 
     void updateUniformBuffers();
     void prepareUniformBuffers();
@@ -127,24 +70,10 @@ protected:
     void viewChanged() override;
     void addDeviceFeatures() override;
     void buildCommandBuffers() override;
-    void prepare() override;
     void UIUpdate(UISettings uiSettings) override;
 
     void generateScriptClasses();
-    void loadAssets();
 
-
-    void setupNodeDescriptorSet(vkglTF::Node *node);
-
-    void generateBRDFLUT();
-
-    void generateCubemaps();
-
-    void renderNode(vkglTF::Node *node, uint32_t cbIndex, vkglTF::Material::AlphaMode alphaMode);
-
-    void defaultUniformBuffers();
-
-    void createSkybox();
 };
 
 
