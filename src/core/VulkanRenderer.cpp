@@ -206,7 +206,7 @@ void VulkanRenderer::setupDepthStencil() {
     imageCI.arrayLayers = 1;
     imageCI.samples = VK_SAMPLE_COUNT_1_BIT;
     imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
-    imageCI.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    imageCI.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
     VkResult result = vkCreateImage(device, &imageCI, nullptr, &depthStencil.image);
     if (result != VK_SUCCESS) throw std::runtime_error("Failed to create depth image");

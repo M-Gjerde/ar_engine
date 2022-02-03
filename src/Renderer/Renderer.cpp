@@ -6,6 +6,9 @@
 
 #include "Renderer.h"
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+
+#include "stb_image_write.h"
 
 void Renderer::prepareRenderer() {
     camera.type = Camera::CameraType::firstperson;
@@ -163,15 +166,61 @@ void Renderer::draw() {
     renderData.deltaT = frameTimer;
     renderData.index = currentBuffer;
 
+
     for (auto &script: scripts) {
         if (script->getType() == "Render") {
             script->updateUniformBufferData(renderData);
         }
     }
 
-
     vkQueueSubmit(queue, 1, &submitInfo, waitFences[currentBuffer]);
     VulkanRenderer::submitFrame();
+
+
+    Buffer buffer;
+    vulkanDevice->createBuffer(VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                               &buffer, (VkDeviceSize) width * height * 4);
+
+    VkBufferImageCopy bufferImageCopy{};
+    bufferImageCopy.imageExtent.height = height;
+    bufferImageCopy.imageExtent.width = width;
+    bufferImageCopy.imageExtent.depth = 1;
+    bufferImageCopy.imageSubresource.baseArrayLayer = 0;
+    bufferImageCopy.imageSubresource.layerCount = 1;
+    bufferImageCopy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    bufferImageCopy.imageSubresource.mipLevel = 0;
+    bufferImageCopy.bufferOffset = 0;
+    bufferImageCopy.imageOffset.z = 0;
+    bufferImageCopy.imageOffset.y = 0;
+    bufferImageCopy.imageOffset.x = 0;
+    bufferImageCopy.bufferImageHeight = 0;
+
+    VkCommandBuffer cmdBuffer =
+            vulkanDevice->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, cmdPool, true);
+
+    Utils::setImageLayout(cmdBuffer, depthStencil.image, VK_IMAGE_ASPECT_DEPTH_BIT,
+                          VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                          VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+    vkCmdCopyImageToBuffer(cmdBuffer, depthStencil.image,
+                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, buffer.buffer, 1, &bufferImageCopy);
+
+    vulkanDevice->flushCommandBuffer(cmdBuffer, queue,  cmdPool);
+
+    void *data;
+    vkMapMemory(device, buffer.memory, 0, VK_WHOLE_SIZE, 0, &data);
+
+    auto *dataP = (uint32_t *) data;
+    auto *pixels = (unsigned char *) malloc(width * height * 4);
+
+    for (int i = 0; i < width * height; ++i) {
+        pixels[i] = static_cast<unsigned char>(dataP[i] * 255);
+    }
+
+    stbi_write_jpg("../depthimage.jpg", width, height, 1, data, 90);
+
+
 }
 
 
