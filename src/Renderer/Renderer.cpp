@@ -195,6 +195,7 @@ void Renderer::draw() {
     bufferImageCopy.imageOffset.y = 0;
     bufferImageCopy.imageOffset.x = 0;
     bufferImageCopy.bufferImageHeight = 0;
+    bufferImageCopy.bufferRowLength = 0;
 
     VkCommandBuffer cmdBuffer =
             vulkanDevice->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, cmdPool, true);
@@ -206,19 +207,29 @@ void Renderer::draw() {
     vkCmdCopyImageToBuffer(cmdBuffer, depthStencil.image,
                            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, buffer.buffer, 1, &bufferImageCopy);
 
-    vulkanDevice->flushCommandBuffer(cmdBuffer, queue,  cmdPool);
+    vulkanDevice->flushCommandBuffer(cmdBuffer, queue, cmdPool);
 
-    void *data;
-    vkMapMemory(device, buffer.memory, 0, VK_WHOLE_SIZE, 0, &data);
+    buffer.map();
+    auto *dataP = (float *) buffer.mapped;
 
-    auto *dataP = (uint32_t *) data;
-    auto *pixels = (unsigned char *) malloc(width * height * 4);
+    auto *pixels = (uint8_t *) malloc(width * height * 4);
 
+    float min = 100;
+    float max = 0;
     for (int i = 0; i < width * height; ++i) {
-        pixels[i] = static_cast<unsigned char>(dataP[i] * 255);
+        auto pixelData = (float) dataP[i];
+
+        if (pixelData < min)
+            min = pixelData;
+
+        if (pixelData > max)
+            max = pixelData;
+
+        pixels[i] = (uint8_t) (pixelData * 255);
     }
 
-    stbi_write_jpg("../depthimage.jpg", width, height, 1, data, 90);
+    stbi_write_png("../stbpng.png", width, height, 1, pixels, width);
+    buffer.unmap();
 
 
 }
