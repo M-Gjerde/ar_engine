@@ -7,7 +7,6 @@
 #include "Renderer.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-
 #include "stb_image_write.h"
 
 void Renderer::prepareRenderer() {
@@ -265,5 +264,6 @@ void Renderer::storeDepthFrame() {
     stbi_write_png("../depthimage.png", width, height, 1, uintPixels, width);
     buffer.unmap();
 
-
+    delete floatPixels;
+    delete uintPixels;
 }
