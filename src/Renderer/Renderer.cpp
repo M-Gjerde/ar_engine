@@ -22,11 +22,9 @@ void Renderer::prepareRenderer() {
     prepareUniformBuffers();
 
     for (auto &script: scripts) {
-
         if (script->getType() != "None") {
             script->prepareObject();
         }
-
     }
 
 }
@@ -88,6 +86,7 @@ void Renderer::UIUpdate(UISettings uiSettings) {
     for (auto &script: scripts) {
         script->onUIUpdate(uiSettings);
     }
+
 }
 
 void Renderer::addDeviceFeatures() {
@@ -150,6 +149,10 @@ void Renderer::buildCommandBuffers() {
 
 void Renderer::render() {
     draw();
+
+    if (UIOverlay->uiSettings.toggleDepthImage)
+        storeDepthFrame();
+
 }
 
 void Renderer::draw() {
@@ -177,6 +180,31 @@ void Renderer::draw() {
     VulkanRenderer::submitFrame();
 
 
+}
+
+
+void Renderer::updateUniformBuffers() {
+    // Scene
+    UBOFrag->objectColor = glm::vec4(0.25f, 0.25f, 0.25f, 1.0f);
+    UBOFrag->lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    UBOFrag->lightPos = glm::vec4(glm::vec3(0.0f, 0.0f, 0.0f), 1.0f);
+    UBOFrag->viewPos = camera.viewPos;
+
+    UBOVert->projection = camera.matrices.perspective;
+    UBOVert->view = camera.matrices.view;
+    UBOVert->model = glm::mat4(1.0f);
+
+}
+
+void Renderer::prepareUniformBuffers() {
+    // TODO REMEMBER TO CLEANUP
+    UBOVert = new UBOMatrix();
+    UBOFrag = new FragShaderParams();
+
+    updateUniformBuffers();
+}
+
+void Renderer::storeDepthFrame() {
     Buffer buffer;
     vulkanDevice->createBuffer(VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -210,48 +238,32 @@ void Renderer::draw() {
     vulkanDevice->flushCommandBuffer(cmdBuffer, queue, cmdPool);
 
     buffer.map();
-    auto *dataP = (float *) buffer.mapped;
 
-    auto *pixels = (uint8_t *) malloc(width * height * 4);
+
+    auto *floatPixels = (float *) malloc(width * height * 4);
+    memcpy(floatPixels, buffer.mapped, width * height * sizeof(float));
+
+    auto *uintPixels = (uint8_t *) malloc(width * height);
 
     float min = 100;
     float max = 0;
-    for (int i = 0; i < width * height; ++i) {
-        auto pixelData = (float) dataP[i];
+    for (int i = 0; i < (width * height); ++i) {
+        float pixelData = floatPixels[i];
 
-        if (pixelData < min)
+        if (pixelData < min){
             min = pixelData;
+        }
 
         if (pixelData > max)
             max = pixelData;
 
-        pixels[i] = (uint8_t) (pixelData * 255);
+        float data = (1.0f - pixelData) * 100000;
+        uintPixels[i] = (uint8_t) data;
+
     }
 
-    stbi_write_png("../stbpng.png", width, height, 1, pixels, width);
+    stbi_write_png("../depthimage.png", width, height, 1, uintPixels, width);
     buffer.unmap();
 
 
-}
-
-
-void Renderer::updateUniformBuffers() {
-    // Scene
-    UBOFrag->objectColor = glm::vec4(0.25f, 0.25f, 0.25f, 1.0f);
-    UBOFrag->lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-    UBOFrag->lightPos = glm::vec4(glm::vec3(0.0f, 0.0f, 0.0f), 1.0f);
-    UBOFrag->viewPos = camera.viewPos;
-
-    UBOVert->projection = camera.matrices.perspective;
-    UBOVert->view = camera.matrices.view;
-    UBOVert->model = glm::mat4(1.0f);
-
-}
-
-void Renderer::prepareUniformBuffers() {
-    // TODO REMEMBER TO CLEANUP
-    UBOVert = new UBOMatrix();
-    UBOFrag = new FragShaderParams();
-
-    updateUniformBuffers();
 }

@@ -393,6 +393,8 @@ public:
         //updated |= ImGui::Checkbox("Toggle grid size", &uiSettings.toggleGridSize);
         updated |= ImGui::SliderFloat("Movement speed", &uiSettings.movementSpeed, 0.05f, 10.0f);
 
+        updated |= ImGui::Checkbox("Store depth image", &uiSettings.toggleDepthImage);
+
         if (!uiSettings.intSliders.empty()) {
             for (const auto &slider: uiSettings.intSliders) {
 

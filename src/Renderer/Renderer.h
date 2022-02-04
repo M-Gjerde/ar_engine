@@ -74,6 +74,7 @@ protected:
 
     void generateScriptClasses();
 
+    void storeDepthFrame();
 };
 
 

@@ -43,6 +43,8 @@ public:
     bool displayLogos = true;
     bool displayBackground = true;
     bool toggleGridSize = true;
+    bool toggleDepthImage = false;
+
     float movementSpeed = 0.2;
     std::array<float, 50> frameTimes{};
     float frameTimeMin = 9999.0f, frameTimeMax = 0.0f;
