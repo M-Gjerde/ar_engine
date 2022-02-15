@@ -356,7 +356,7 @@ void glTFModel::Model::loadMaterials(tinygltf::Model &gltfModel) {
     for (tinygltf::Material &mat: gltfModel.materials) {
         glTFModel::Material material{};
         if (mat.values.find("baseColorTexture") != mat.values.end()) {
-            material.baseColorTexture = &textures[mat.additionalValues["baseColorTexture"].TextureIndex()];
+            material.baseColorTexture = &textures[mat.values["baseColorTexture"].TextureIndex()];
             material.texCoordSets.baseColor = mat.values["baseColorTexture"].TextureTexCoord();
             textureIndices.baseColor = 0;
 

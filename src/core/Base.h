@@ -92,7 +92,7 @@ public:
         shaderStage.stage = stage;
         shaderStage.module = Utils::loadShader((Utils::getShadersPath() + fileName).c_str(), b.device->logicalDevice);
         shaderStage.pName = "main";
-        assert(shaderStage.module != VK_NULL_HANDLE);
+            assert(shaderStage.module != VK_NULL_HANDLE);
         // TODO CLEANUP SHADERMODULES WHEN UNUSED
         return shaderStage;
     }
