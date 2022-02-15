@@ -50,8 +50,8 @@ void Sun::prepareObject() {
     createDescriptorSetLayout();
     createDescriptors(b.UBCount, uniformBuffers);
 
-    VkPipelineShaderStageCreateInfo vs = loadShader("myScene/box.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-    VkPipelineShaderStageCreateInfo fs = loadShader("myScene/box.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkPipelineShaderStageCreateInfo vs = loadShader("myScene/spv/box.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+    VkPipelineShaderStageCreateInfo fs = loadShader("myScene/spv/box.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
     std::vector<VkPipelineShaderStageCreateInfo> shaders = {{vs}, {fs}};
     createPipeline(*b.renderPass, shaders);

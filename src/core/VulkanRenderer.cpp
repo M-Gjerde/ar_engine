@@ -407,8 +407,8 @@ void VulkanRenderer::prepare() {
     UIOverlay = new ImGUI(vulkanDevice);
     UIOverlay->init((float) width, (float) height);
     UIOverlay->shaders = {
-            loadShader("imgui/ui.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
-            loadShader("imgui/ui.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT),
+            loadShader("imgui/spv/ui.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
+            loadShader("imgui/spv/ui.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT),
     };
     UIOverlay->initResources(renderPass, queue, Utils::getShadersPath());
 

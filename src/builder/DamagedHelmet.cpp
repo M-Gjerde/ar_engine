@@ -70,8 +70,8 @@ void DamagedHelmet::prepareObject() {
     createDescriptorSetLayout();
     createDescriptors(b.UBCount, uniformBuffers);
 
-    VkPipelineShaderStageCreateInfo vs = loadShader("gltfLoading/mesh.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-    VkPipelineShaderStageCreateInfo fs = loadShader("gltfLoading/mesh.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkPipelineShaderStageCreateInfo vs = loadShader("myScene/spv/mesh.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+    VkPipelineShaderStageCreateInfo fs = loadShader("myScene/spv/mesh.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
     std::vector<VkPipelineShaderStageCreateInfo> shaders = {{vs},
                                                             {fs}};

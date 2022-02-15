@@ -58,8 +58,8 @@ void Mercury::prepareObject() {
     createDescriptorSetLayout();
     createDescriptors(b.UBCount, Base::uniformBuffers);
 
-    VkPipelineShaderStageCreateInfo vs = loadShader("myScene/sphere/sphere.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-    VkPipelineShaderStageCreateInfo fs = loadShader("myScene/sphere/sphere.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkPipelineShaderStageCreateInfo vs = loadShader("myScene/spv/sphere.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+    VkPipelineShaderStageCreateInfo fs = loadShader("myScene/spv/sphere.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
     std::vector<VkPipelineShaderStageCreateInfo> shaders = {{vs},
                                                             {fs}};

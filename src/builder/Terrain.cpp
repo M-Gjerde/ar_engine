@@ -153,8 +153,8 @@ void Terrain::prepareObject() {
     createDescriptorSetLayout();
     createDescriptors(b.UBCount);
 
-    VkPipelineShaderStageCreateInfo vs = loadShader("triangle.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-    VkPipelineShaderStageCreateInfo fs = loadShader("triangle.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+    VkPipelineShaderStageCreateInfo vs = loadShader("myScene/spv/triangle.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+    VkPipelineShaderStageCreateInfo fs = loadShader("myScene/spv/triangle.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
     std::vector<VkPipelineShaderStageCreateInfo> shaders = {{vs}, {fs}};
     createPipeline(*b.renderPass, shaders);
